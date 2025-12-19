@@ -5,7 +5,7 @@ import { NewCategory, UpdateCategory } from "../products.types";
 
 export const categoriesRepo = {
   async createCategory(data: NewCategory) {
-    const [newCategory] = await db
+    const newCategory = await db
       .insert(categoriesTable)
       .values(data)
       .returning();
