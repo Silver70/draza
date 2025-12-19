@@ -83,6 +83,30 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     <html>
       <head>
         <HeadContent />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const storageKey = 'vite-ui-theme';
+                const theme = localStorage.getItem(storageKey) || 'system';
+                const colorScheme = localStorage.getItem(storageKey + '-color') || 'default';
+
+                const root = document.documentElement;
+
+                // Apply theme mode
+                if (theme === 'system') {
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  root.classList.add(systemTheme);
+                } else {
+                  root.classList.add(theme);
+                }
+
+                // Apply color scheme
+                root.classList.add('theme-' + colorScheme);
+              })();
+            `,
+          }}
+        />
       </head>
       <body>
         <ThemeProvider defaultTheme="system" defaultColorScheme="default">
