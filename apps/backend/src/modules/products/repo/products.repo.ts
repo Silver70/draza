@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "../../../shared/db";
-import { productsTable, productVariantsTable } from "../../../shared/db/catalogue";
+import { productsTable, productVariantsTable, categoriesTable } from "../../../shared/db/catalogue";
 import { NewProduct, UpdateProduct, NewProductVariant, UpdateProductVariant } from "../products.types";
 
 export const productsRepo = {
@@ -22,7 +22,24 @@ export const productsRepo = {
   },
 
   async getAllProducts() {
-    const products = await db.select().from(productsTable);
+    const products = await db
+      .select({
+        id: productsTable.id,
+        name: productsTable.name,
+        slug: productsTable.slug,
+        description: productsTable.description,
+        categoryId: productsTable.categoryId,
+        isActive: productsTable.isActive,
+        createdAt: productsTable.createdAt,
+        updatedAt: productsTable.updatedAt,
+        category: {
+          id: categoriesTable.id,
+          name: categoriesTable.name,
+          slug: categoriesTable.slug,
+        },
+      })
+      .from(productsTable)
+      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id));
     return products;
   },
 

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
+import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const InventoryProductsIndexRoute = InventoryProductsIndexRouteImport.update({
   path: '/inventory/products/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
+  id: '/inventory/products/create',
+  path: '/inventory/products/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inventory/products'
+  fullPaths: '/' | '/inventory/products/create' | '/inventory/products'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/inventory/products'
-  id: '__root__' | '/' | '/inventory/products/'
+  to: '/' | '/inventory/products/create' | '/inventory/products'
+  id: '__root__' | '/' | '/inventory/products/create' | '/inventory/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inventory/products/create': {
+      id: '/inventory/products/create'
+      path: '/inventory/products/create'
+      fullPath: '/inventory/products/create'
+      preLoaderRoute: typeof InventoryProductsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  InventoryProductsCreateRoute: InventoryProductsCreateRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
 }
 export const routeTree = rootRouteImport

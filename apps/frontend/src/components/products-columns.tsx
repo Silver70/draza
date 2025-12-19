@@ -12,15 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-export type Product = {
-  id: string
-  name: string
-  category: string
-  price: number
-  stock: number
-  status: "in_stock" | "low_stock" | "out_of_stock"
-}
+import type { Product } from "@/utils/products"
 
 export const columns: ColumnDef<Product>[] = [
   {
@@ -63,66 +55,60 @@ export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: "category",
     header: "Category",
+    cell: ({ row }) => {
+      const category = row.getValue("category") as { id: string; name: string; slug: string } | null | undefined
+      return (
+        <div className="text-sm">
+          {category?.name || <span className="text-muted-foreground">Uncategorized</span>}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "slug",
+    header: "Slug",
     cell: ({ row }) => (
-      <div className="capitalize">{row.getValue("category")}</div>
+      <div className="text-muted-foreground font-mono text-sm">
+        {row.getValue("slug")}
+      </div>
     ),
   },
   {
-    accessorKey: "price",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Price
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const price = parseFloat(row.getValue("price"))
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(price)
-      return <div className="font-medium">{formatted}</div>
-    },
-  },
-  {
-    accessorKey: "stock",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Stock
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      return <div className="text-center">{row.getValue("stock")}</div>
-    },
-  },
-  {
-    accessorKey: "status",
+    accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const statusStyles = {
-        in_stock: "bg-green-100 text-green-800",
-        low_stock: "bg-yellow-100 text-yellow-800",
-        out_of_stock: "bg-red-100 text-red-800",
-      }
+      const isActive = row.getValue("isActive") as boolean
       return (
         <div
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-            statusStyles[status as keyof typeof statusStyles]
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            isActive
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
           }`}
         >
-          {status.replace("_", " ")}
+          {isActive ? "Active" : "Inactive"}
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "createdAt",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Created
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("createdAt"))
+      return (
+        <div className="text-sm">
+          {date.toLocaleDateString()}
         </div>
       )
     },

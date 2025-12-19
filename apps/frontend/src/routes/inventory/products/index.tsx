@@ -1,95 +1,35 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { DataTable } from '@/components/data-table'
-import { columns, type Product } from '@/components/products-columns'
+import { columns } from '@/components/products-columns'
+import { useNavigate } from '@tanstack/react-router'
+import { productsQueryOptions } from '@/utils/products'
 
 export const Route = createFileRoute('/inventory/products/')({
   component: RouteComponent,
+  
+  loader: ({ context: { queryClient } }) =>
+  queryClient.ensureQueryData(productsQueryOptions()),
+  pendingComponent: PendingComponent,
+  errorComponent: ErrorComponent,
 })
 
-const fakeProducts: Product[] = [
-  {
-    id: "PROD001",
-    name: "Wireless Mouse",
-    category: "electronics",
-    price: 29.99,
-    stock: 150,
-    status: "in_stock",
-  },
-  {
-    id: "PROD002",
-    name: "USB-C Cable",
-    category: "accessories",
-    price: 12.99,
-    stock: 8,
-    status: "low_stock",
-  },
-  {
-    id: "PROD003",
-    name: "Mechanical Keyboard",
-    category: "electronics",
-    price: 89.99,
-    stock: 0,
-    status: "out_of_stock",
-  },
-  {
-    id: "PROD004",
-    name: "Laptop Stand",
-    category: "accessories",
-    price: 45.00,
-    stock: 75,
-    status: "in_stock",
-  },
-  {
-    id: "PROD005",
-    name: "Webcam HD",
-    category: "electronics",
-    price: 59.99,
-    stock: 25,
-    status: "in_stock",
-  },
-  {
-    id: "PROD006",
-    name: "Monitor 27 inch",
-    category: "electronics",
-    price: 299.99,
-    stock: 5,
-    status: "low_stock",
-  },
-  {
-    id: "PROD007",
-    name: "Desk Mat",
-    category: "accessories",
-    price: 24.99,
-    stock: 200,
-    status: "in_stock",
-  },
-  {
-    id: "PROD008",
-    name: "Headphones",
-    category: "electronics",
-    price: 79.99,
-    stock: 0,
-    status: "out_of_stock",
-  },
-  {
-    id: "PROD009",
-    name: "Phone Charger",
-    category: "accessories",
-    price: 19.99,
-    stock: 120,
-    status: "in_stock",
-  },
-  {
-    id: "PROD010",
-    name: "External SSD 1TB",
-    category: "storage",
-    price: 129.99,
-    stock: 45,
-    status: "in_stock",
-  },
-]
+function PendingComponent() {
+  return (
+    <>
+      <div className="space-y-2">
+        <div className="h-9 w-48 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-64 bg-muted animate-pulse rounded" />
+      </div>
+      <div className="space-y-4">
+        <div className="h-10 w-full bg-muted animate-pulse rounded" />
+        <div className="h-96 w-full bg-muted animate-pulse rounded-lg" />
+      </div>
+    </>
+  )
+}
 
-function RouteComponent() {
+function ErrorComponent({ error }: { error: Error }) {
   return (
     <>
       <div className="space-y-2">
@@ -98,12 +38,53 @@ function RouteComponent() {
           Manage your product inventory
         </p>
       </div>
-      <DataTable
-        columns={columns}
-        data={fakeProducts}
-        searchKey="name"
-        searchPlaceholder="Search products..."
-      />
+      <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-destructive/10 border-destructive/20">
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-semibold text-destructive">Error loading products</h3>
+          <p className="text-sm text-muted-foreground">
+            {error.message || 'Failed to fetch products. Please try again later.'}
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
+function RouteComponent() {
+  const { data: products } = useSuspenseQuery(productsQueryOptions())
+  const navigate = useNavigate()
+  const handleAddProduct = () => {
+    // TODO: Navigate to add product page or open modal
+    navigate({ to: '/inventory/products/create' })
+  }
+
+  return (
+    <>
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+        <p className="text-muted-foreground">
+          Manage your product inventory
+        </p>
+      </div>
+      {products.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-muted/50">
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold">No products found</h3>
+            <p className="text-sm text-muted-foreground">
+              Get started by creating your first product.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={products}
+          searchKey="name"
+          searchPlaceholder="Search products..."
+          onAddNew={handleAddProduct}
+          addNewLabel="Add Product"
+        />
+      )}
     </>
   )
 }
