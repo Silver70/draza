@@ -14,6 +14,7 @@ import { DefaultCatchBoundary } from '~/components/DefaultCatchBoundary'
 import { NotFound } from '~/components/NotFound'
 import { SidebarProvider } from '~/components/ui/sidebar'
 import { AppSidebar } from '~/components/app-sidebar'
+import { ThemeProvider } from '~/components/theme-provider'
 import appCss from '~/styles/app.css?url'
 import { seo } from '~/utils/seo'
 
@@ -84,10 +85,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <SidebarProvider>
-          <AppSidebar />
-          {children}
-        </SidebarProvider>
+        <ThemeProvider defaultTheme="system" defaultColorScheme="default">
+          <SidebarProvider>
+            <AppSidebar />
+            {children}
+          </SidebarProvider>
+        </ThemeProvider>
         <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools buttonPosition="bottom-left" />
         <Scripts />

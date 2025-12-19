@@ -5,6 +5,9 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  Moon,
+  Sun,
+  Monitor,
 } from "lucide-react"
 
 import {
@@ -27,6 +30,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "~/components/ui/sidebar"
+import { useTheme } from "~/components/theme-provider"
 
 export function NavUser({
   user,
@@ -38,6 +42,15 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { theme, colorScheme, setTheme, setColorScheme } = useTheme()
+
+  const colorSchemes = [
+    { value: "default", label: "Default", color: "bg-gray-500" },
+    { value: "blue", label: "Blue", color: "bg-blue-500" },
+    { value: "green", label: "Green", color: "bg-green-500" },
+    { value: "purple", label: "Purple", color: "bg-purple-500" },
+    { value: "orange", label: "Orange", color: "bg-orange-500" },
+  ]
 
   return (
     <SidebarMenu>
@@ -98,6 +111,36 @@ export function NavUser({
                 <Bell />
                 Notifications
               </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Theme Mode</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun />
+                Light
+                {theme === "light" && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon />
+                Dark
+                {theme === "dark" && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                <Monitor />
+                System
+                {theme === "system" && <span className="ml-auto">✓</span>}
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Color Scheme</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              {colorSchemes.map((scheme) => (
+                <DropdownMenuItem key={scheme.value} onClick={() => setColorScheme(scheme.value as any)}>
+                  <div className={`h-4 w-4 rounded-full ${scheme.color}`} />
+                  {scheme.label}
+                  {colorScheme === scheme.value && <span className="ml-auto">✓</span>}
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
