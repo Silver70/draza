@@ -96,7 +96,7 @@ export type CollectionWithProducts = Collection & {
 // Category schemas
 export const createCategorySchema = z.object({
   name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
+  slug: z.string().min(1).optional(),
   parentId: z.string().uuid().optional().nullable(),
 });
 
@@ -109,7 +109,7 @@ export const updateCategorySchema = z.object({
 // Product schemas
 export const createProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
+  slug: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
   categoryId: z.string().uuid("Invalid category ID"),
   isActive: z.boolean().default(true),
@@ -163,7 +163,7 @@ export const createProductVariantAttributeSchema = z.object({
 // Collection schemas
 export const createCollectionSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  slug: z.string().min(1, "Slug is required"),
+  slug: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
   isActive: z.boolean().default(true),
 });

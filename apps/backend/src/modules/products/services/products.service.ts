@@ -4,8 +4,13 @@ import {
   NewProduct,
   UpdateProduct,
   NewProductVariant,
-  UpdateProductVariant,
 } from "../products.types";
+import { generateSlug, generateSKU, generateUniqueSKU } from "../utils";
+import {
+  generateVariantCombinations,
+  bulkCreateVariants,
+  AttributeWithValues,
+} from "../utils/variantGenerator";
 
 export const productsService = {
   /**
@@ -127,29 +132,32 @@ export const productsService = {
   /**
    * Create a new product
    */
-  create: async (data: NewProduct) => {
+  create: async (data: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string })) => {
     // Validate category exists
     const category = await categoriesRepo.getCategoryById(data.categoryId);
     if (!category) {
       throw new Error("Category not found");
     }
 
+    // Auto-generate slug if not provided
+    const slug = data.slug || generateSlug(data.name);
+
     // Check if slug already exists
     const products = await productsRepo.getAllProducts();
-    const existingProduct = products.find((p) => p.slug === data.slug);
+    const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
-    return await productsRepo.createProduct(data);
+    return await productsRepo.createProduct({ ...data, slug });
   },
 
   /**
    * Create a product with variants in a single transaction
    */
   createWithVariants: async (data: {
-    product: NewProduct;
-    variants?: Array<Omit<NewProductVariant, "productId">>;
+    product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });
+    variants?: Array<Omit<NewProductVariant, "productId"> & { sku?: string }>;
   }) => {
     // Validate category exists
     const category = await categoriesRepo.getCategoryById(data.product.categoryId);
@@ -157,22 +165,29 @@ export const productsService = {
       throw new Error("Category not found");
     }
 
+    // Auto-generate slug if not provided
+    const slug = data.product.slug || generateSlug(data.product.name);
+
     // Check if slug already exists
     const products = await productsRepo.getAllProducts();
-    const existingProduct = products.find((p) => p.slug === data.product.slug);
+    const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
     // Create the product
-    const product = await productsRepo.createProduct(data.product);
+    const product = await productsRepo.createProduct({ ...data.product, slug });
 
     // Create variants if provided
     const variants = [];
     if (data.variants && data.variants.length > 0) {
       for (const variantData of data.variants) {
+        // Auto-generate SKU if not provided
+        const sku = variantData.sku || generateUniqueSKU(slug, []);
+
         const variant = await productVariantsRepo.createProductVariant({
           ...variantData,
+          sku,
           productId: product.id,
         });
         variants.push(variant);
@@ -378,5 +393,127 @@ export const productsService = {
     }
 
     return outOfStockProducts;
+  },
+
+  /**
+   * Generate variant combinations from attributes (without creating them)
+   */
+  generateVariantCombinations: async (
+    productId: string,
+    attributes: AttributeWithValues[],
+    defaultQuantity: number = 0
+  ) => {
+    const product = await productsRepo.getProductById(productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    return generateVariantCombinations(product.slug, attributes, defaultQuantity);
+  },
+
+  /**
+   * Generate and create variants from attribute combinations
+   */
+  generateAndCreateVariants: async (
+    productId: string,
+    attributes: AttributeWithValues[],
+    defaultQuantity: number = 0
+  ) => {
+    const product = await productsRepo.getProductById(productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    // Generate all variant combinations
+    const variantCombinations = generateVariantCombinations(
+      product.slug,
+      attributes,
+      defaultQuantity
+    );
+
+    if (variantCombinations.length === 0) {
+      throw new Error("No variant combinations generated");
+    }
+
+    // Bulk create variants
+    const result = await bulkCreateVariants(productId, variantCombinations);
+
+    return result;
+  },
+
+  /**
+   * Create a product with auto-generated variants from attributes
+   */
+  createProductWithGeneratedVariants: async (data: {
+    product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });
+    attributes: AttributeWithValues[];
+    defaultQuantity?: number;
+  }) => {
+    // Validate category exists
+    const category = await categoriesRepo.getCategoryById(data.product.categoryId);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    // Auto-generate slug if not provided
+    const slug = data.product.slug || generateSlug(data.product.name);
+
+    // Check if slug already exists
+    const products = await productsRepo.getAllProducts();
+    const existingProduct = products.find((p) => p.slug === slug);
+    if (existingProduct) {
+      throw new Error("Product with this slug already exists");
+    }
+
+    // Create the product
+    const product = await productsRepo.createProduct({ ...data.product, slug });
+
+    // Generate and create variants
+    const variantCombinations = generateVariantCombinations(
+      slug,
+      data.attributes,
+      data.defaultQuantity || 0
+    );
+
+    const variantResult = await bulkCreateVariants(product.id, variantCombinations);
+
+    return {
+      product,
+      variantResult,
+    };
+  },
+
+  /**
+   * Create a single variant with auto-generated SKU
+   */
+  createVariantWithAutoSKU: async (
+    productId: string,
+    data: Omit<NewProductVariant, "productId" | "sku"> & { sku?: string; attributeValues?: string[] }
+  ) => {
+    const product = await productsRepo.getProductById(productId);
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    // Auto-generate SKU if not provided
+    const sku = data.sku || generateSKU(product.slug, data.attributeValues || []);
+
+    // Check if SKU already exists
+    const existingVariant = await productVariantsRepo.getProductVariantBySku(sku);
+    if (existingVariant) {
+      // If SKU exists, generate a unique one with timestamp
+      const uniqueSKU = generateUniqueSKU(product.slug, data.attributeValues || []);
+      return await productVariantsRepo.createProductVariant({
+        productId,
+        sku: uniqueSKU,
+        quantityInStock: data.quantityInStock,
+      });
+    }
+
+    return await productVariantsRepo.createProductVariant({
+      productId,
+      sku,
+      quantityInStock: data.quantityInStock,
+    });
   },
 };

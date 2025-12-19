@@ -1,6 +1,7 @@
 import { categoriesRepo } from "../repo/catagories.repo";
 import { productsRepo } from "../repo";
 import { NewCategory, UpdateCategory } from "../products.types";
+import { generateSlug } from "../utils";
 
 export const categoriesService = {
   /**
@@ -129,9 +130,12 @@ export const categoriesService = {
   /**
    * Create a new category
    */
-  create: async (data: NewCategory) => {
+  create: async (data: NewCategory | (Omit<NewCategory, "slug"> & { slug?: string })) => {
+    // Auto-generate slug if not provided
+    const slug = data.slug || generateSlug(data.name);
+
     // Check if slug already exists
-    const existingCategory = await categoriesRepo.getCategoryBySlug(data.slug);
+    const existingCategory = await categoriesRepo.getCategoryBySlug(slug);
     if (existingCategory) {
       throw new Error("Category with this slug already exists");
     }
@@ -144,7 +148,7 @@ export const categoriesService = {
       }
     }
 
-    return await categoriesRepo.createCategory(data);
+    return await categoriesRepo.createCategory({ ...data, slug });
   },
 
   /**
