@@ -5,6 +5,7 @@ import {
   timestamp,
   boolean,
   integer,
+  numeric,
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -44,6 +45,7 @@ export const productVariantsTable = pgTable("product_variants", {
     .notNull()
     .references(() => productsTable.id),
   sku: text("sku").notNull().unique(),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   quantityInStock: integer("quantity_in_stock").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at")
