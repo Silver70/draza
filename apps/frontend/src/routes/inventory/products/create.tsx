@@ -25,7 +25,6 @@ import {
   createProductWithVariants,
   createAttribute,
   addAttributeValue,
-  type Attribute,
   type AttributeWithValues,
 } from '~/utils/products'
 import { PendingComponent } from '~/components/Pending'
@@ -52,9 +51,6 @@ const productSchema = z.object({
   categoryId: z.string().min(1, 'Please select a category'),
   isActive: z.boolean(),
 })
-
-type ProductFormData = z.infer<typeof productSchema>
-
 
 // Selected attribute with values for variant generation
 type SelectedAttribute = {
@@ -101,14 +97,59 @@ function RouteComponent() {
 
         console.log('Product data:', validatedData)
 
-        // Create product via API
-        const newProduct = await createProduct({ data: validatedData })
+        // Check if we should create with variants
+        if (createWithVariants && selectedAttributes.length > 0) {
+          // Validate that each selected attribute has at least one value
+          const invalidAttributes = selectedAttributes.filter(
+            attr => attr.values.length === 0
+          )
 
-        toast.success('Product created successfully!', {
-          description: `${newProduct.name} has been added to your inventory.`,
-        })
+          if (invalidAttributes.length > 0) {
+            toast.error('Invalid attributes', {
+              description: `Please select at least one value for: ${invalidAttributes.map(a => a.attributeName).join(', ')}`,
+            })
+            return
+          }
 
-      
+          // Transform selected attributes to the format expected by the API
+          const attributesForApi: AttributeWithValues[] = selectedAttributes.map(attr => ({
+            attributeId: attr.attributeId,
+            attributeName: attr.attributeName,
+            values: attr.values,
+          }))
+
+          console.log('Creating product with variants:', {
+            product: validatedData,
+            attributes: attributesForApi,
+            defaultQuantity,
+          })
+
+          // Create product with variants
+          const result = await createProductWithVariants({
+            data: {
+              product: validatedData,
+              attributes: attributesForApi,
+              defaultQuantity,
+            },
+          })
+
+          toast.success('Product with variants created successfully!', {
+            description: `${result.product.name} has been created with ${result.variantResult.createdCount} variants.`,
+          })
+
+          // Navigate to products list
+          navigate({ to: '/inventory/products' })
+        } else {
+          // Create product without variants (basic product)
+          const newProduct = await createProduct({ data: validatedData })
+
+          toast.success('Product created successfully!', {
+            description: `${newProduct.name} has been added to your inventory.`,
+          })
+
+          // Navigate to products list
+          navigate({ to: '/inventory/products' })
+        }
       } catch (error) {
         if (error instanceof z.ZodError) {
           toast.error('Validation failed', {
@@ -123,6 +164,14 @@ function RouteComponent() {
       }
     },
   })
+
+  // Calculate the total number of variants that will be generated
+  const calculateVariantCount = () => {
+    if (selectedAttributes.length === 0) return 0
+    return selectedAttributes.reduce((total, attr) => {
+      return total * attr.values.length
+    }, 1)
+  }
 
   // Helper functions for managing attributes
   const handleAddExistingAttribute = (attributeId: string) => {
@@ -141,26 +190,6 @@ function RouteComponent() {
 
   const handleRemoveAttribute = (id: string) => {
     setSelectedAttributes(selectedAttributes.filter(attr => attr.id !== id))
-  }
-
-  const handleToggleAttributeValue = (attrId: string, valueId: string) => {
-    setSelectedAttributes(selectedAttributes.map(attr => {
-      if (attr.id === attrId) {
-        const hasValue = attr.values.some(v => v.id === valueId)
-        const attributeObj = attributes.find(a => a.id === attr.attributeId)
-        const valueObj = attributeObj?.values?.find(v => v.id === valueId)
-
-        if (!valueObj) return attr
-
-        return {
-          ...attr,
-          values: hasValue
-            ? attr.values.filter(v => v.id !== valueId)
-            : [...attr.values, { id: valueObj.id, value: valueObj.value }]
-        }
-      }
-      return attr
-    }))
   }
 
   const handleAddNewAttribute = async () => {
@@ -228,7 +257,14 @@ function RouteComponent() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 space-y-6">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        form.handleSubmit()
+      }}
+      className="w-full max-w-4xl mx-auto py-8 px-4 space-y-6"
+    >
       {/* Basic Product Information Card */}
       <Card>
         <CardHeader>
@@ -237,15 +273,7 @@ function RouteComponent() {
             Fill out the form below to add a new product to your inventory.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              form.handleSubmit()
-            }}
-            className="space-y-6"
-          >
+        <CardContent className="space-y-6">
             {/* Product Name Field */}
             <form.Field
               name="name"
@@ -348,40 +376,24 @@ function RouteComponent() {
               )}
             </form.Field>
 
-            {/* Active Status Checkbox */}
-            <form.Field name="isActive">
-              {(field) => (
-                <div className="flex flex-row items-start space-x-3 rounded-md border p-4">
-                  <Checkbox
-                    id="isActive"
-                    checked={field.state.value as boolean}
-                    onCheckedChange={(checked) => field.handleChange(checked === true)}
-                  />
-                  <div className="flex-1 space-y-1 leading-none">
-                    <FieldLabel htmlFor="isActive">Active Product</FieldLabel>
-                    <FieldDescription>
-                      Mark this product as active to make it available for sale immediately.
-                    </FieldDescription>
-                  </div>
+          {/* Active Status Checkbox */}
+          <form.Field name="isActive">
+            {(field) => (
+              <div className="flex flex-row items-start space-x-3 rounded-md border p-4">
+                <Checkbox
+                  id="isActive"
+                  checked={field.state.value as boolean}
+                  onCheckedChange={(checked) => field.handleChange(checked === true)}
+                />
+                <div className="flex-1 space-y-1 leading-none">
+                  <FieldLabel htmlFor="isActive">Active Product</FieldLabel>
+                  <FieldDescription>
+                    Mark this product as active to make it available for sale immediately.
+                  </FieldDescription>
                 </div>
-              )}
-            </form.Field>
-
-            {/* Form Actions */}
-            <div className="flex gap-4 pt-4">
-              <Button type="submit" className="w-full sm:w-auto">
-                Create Product
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => form.reset()}
-                className="w-full sm:w-auto"
-              >
-                Reset Form
-              </Button>
-            </div>
-          </form>
+              </div>
+            )}
+          </form.Field>
         </CardContent>
       </Card>
 
@@ -416,8 +428,13 @@ function RouteComponent() {
               {/* Selected Attributes Display */}
               {selectedAttributes.length > 0 && (
                 <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Selected Attributes</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Selected Attributes</h3>
+                      <Badge variant="default" className="text-xs">
+                        {calculateVariantCount()} {calculateVariantCount() === 1 ? 'variant' : 'variants'} will be generated
+                      </Badge>
+                    </div>
                     <div className="space-y-3">
                       {selectedAttributes.map((attr) => (
                         <div key={attr.id} className="border rounded-md p-4">
@@ -603,6 +620,45 @@ function RouteComponent() {
           )}
         </CardContent>
       </Card>
-    </div>
+
+      {/* Form Actions - Placed at the end of the entire form */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              onClick={() => form.handleSubmit()}
+              className="w-full sm:w-auto"
+              disabled={!form.state.canSubmit}
+            >
+              {createWithVariants && selectedAttributes.length > 0
+                ? `Create Product with ${calculateVariantCount()} Variants`
+                : 'Create Product'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                form.reset()
+                setSelectedAttributes([])
+                setDefaultQuantity(0)
+                setCreateWithVariants(false)
+                setNewAttributeName('')
+                setNewAttributeValues([''])
+                setIsAddingNewAttribute(false)
+              }}
+              className="w-full sm:w-auto"
+            >
+              Reset Form
+            </Button>
+          </div>
+          {createWithVariants && selectedAttributes.length === 0 && (
+            <p className="text-sm text-muted-foreground mt-3">
+              Add at least one attribute to generate variants, or uncheck "Create Product with Variants" to create a basic product.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </form>
   )
 }
