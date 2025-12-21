@@ -136,8 +136,129 @@ export const fetchCategories = createServerFn({ method: 'GET' }).handler(
     }
   },
 )
-export const categoriesQueryOptions = () => 
+export const categoriesQueryOptions = () =>
   queryOptions({
     queryKey: ['categories'],
     queryFn: () => fetchCategories(),
+  })
+
+// Attribute types
+export type AttributeValue = {
+  id: string
+  value: string
+  attributeId: string
+}
+
+export type Attribute = {
+  id: string
+  name: string
+  values?: AttributeValue[]
+}
+
+export type AttributeWithValues = {
+  attributeId: string
+  attributeName: string
+  values: { id: string; value: string }[]
+}
+
+// Fetch attributes with values
+export const fetchAttributes = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching attributes...')
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: Attribute[]
+      }>(`${API_BASE_URL}/products/attributes?withValues=true`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch attributes')
+    } catch (error) {
+      console.error('Error fetching attributes:', error)
+      throw error
+    }
+  },
+)
+
+export const attributesQueryOptions = () =>
+  queryOptions({
+    queryKey: ['attributes'],
+    queryFn: () => fetchAttributes(),
+  })
+
+// Create attribute
+export const createAttribute = createServerFn({ method: 'POST' })
+  .inputValidator((d: { name: string }) => d)
+  .handler(async ({ data }) => {
+    console.info('Creating attribute...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: Attribute }>(
+        `${API_BASE_URL}/products/attributes`,
+        data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to create attribute')
+    } catch (error) {
+      console.error('Error creating attribute:', error)
+      throw error
+    }
+  })
+
+// Add value to attribute
+export const addAttributeValue = createServerFn({ method: 'POST' })
+  .inputValidator((d: { attributeId: string; value: string }) => d)
+  .handler(async ({ data }) => {
+    console.info('Adding attribute value...', data)
+    try {
+      const response = await axios.post<{
+        success: boolean
+        data: AttributeValue
+      }>(`${API_BASE_URL}/products/attributes/${data.attributeId}/values`, {
+        value: data.value,
+      })
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to add attribute value')
+    } catch (error) {
+      console.error('Error adding attribute value:', error)
+      throw error
+    }
+  })
+
+// Create product with generated variants
+export const createProductWithVariants = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (d: {
+      product: Partial<Product>
+      attributes: AttributeWithValues[]
+      defaultQuantity: number
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    console.info('Creating product with variants...', data)
+    try {
+      const response = await axios.post<{
+        success: boolean
+        data: { product: Product; variantResult: any }
+      }>(`${API_BASE_URL}/products/generate-variants`, data)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to create product with variants')
+    } catch (error) {
+      console.error('Error creating product with variants:', error)
+      throw error
+    }
   })

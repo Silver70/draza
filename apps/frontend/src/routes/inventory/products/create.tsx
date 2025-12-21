@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { useState } from 'react'
+import { Plus, X, Trash2 } from 'lucide-react'
 import {
   Field,
   FieldLabel,
@@ -14,15 +16,30 @@ import { Textarea } from '~/components/ui/textarea'
 import { Checkbox } from '~/components/ui/checkbox'
 import { MultiSelect } from '~/components/ui/multi-select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { categoriesQueryOptions, createProduct } from '~/utils/products'
+import { Separator } from '~/components/ui/separator'
+import { Badge } from '~/components/ui/badge'
+import {
+  categoriesQueryOptions,
+  attributesQueryOptions,
+  createProduct,
+  createProductWithVariants,
+  createAttribute,
+  addAttributeValue,
+  type Attribute,
+  type AttributeWithValues,
+} from '~/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/inventory/products/create')({
-  loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(categoriesQueryOptions()),
+  loader: async ({ context: { queryClient } }) => {
+    await Promise.all([
+      queryClient.ensureQueryData(categoriesQueryOptions()),
+      queryClient.ensureQueryData(attributesQueryOptions()),
+    ])
+  },
   pendingComponent: PendingComponent,
   errorComponent: ErrorComponent,
   component: RouteComponent,
@@ -39,9 +56,30 @@ const productSchema = z.object({
 type ProductFormData = z.infer<typeof productSchema>
 
 
+// Selected attribute with values for variant generation
+type SelectedAttribute = {
+  id: string // Unique ID for this selection (could be existing attribute ID or temp ID)
+  attributeId: string // The actual attribute ID (existing or new)
+  attributeName: string
+  values: { id: string; value: string }[]
+  isNew: boolean // Whether this is a newly created attribute
+}
+
 function RouteComponent() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { data: categories } = useSuspenseQuery(categoriesQueryOptions())
+  const { data: attributes } = useSuspenseQuery(attributesQueryOptions())
+
+  // State for managing variant attributes
+  const [selectedAttributes, setSelectedAttributes] = useState<SelectedAttribute[]>([])
+  const [defaultQuantity, setDefaultQuantity] = useState<number>(0)
+  const [createWithVariants, setCreateWithVariants] = useState<boolean>(false)
+
+  // State for adding new attributes
+  const [newAttributeName, setNewAttributeName] = useState('')
+  const [newAttributeValues, setNewAttributeValues] = useState<string[]>([''])
+  const [isAddingNewAttribute, setIsAddingNewAttribute] = useState(false)
 
   // Transform categories to match MultiSelect expected format
   const categoryOptions = categories.map(category => ({
@@ -70,8 +108,7 @@ function RouteComponent() {
           description: `${newProduct.name} has been added to your inventory.`,
         })
 
-        // Navigate to products list
-        navigate({ to: '/inventory/products' })
+      
       } catch (error) {
         if (error instanceof z.ZodError) {
           toast.error('Validation failed', {
@@ -87,8 +124,112 @@ function RouteComponent() {
     },
   })
 
+  // Helper functions for managing attributes
+  const handleAddExistingAttribute = (attributeId: string) => {
+    const attribute = attributes.find(attr => attr.id === attributeId)
+    if (!attribute || !attribute.values) return
+
+    const newAttr: SelectedAttribute = {
+      id: attributeId,
+      attributeId: attributeId,
+      attributeName: attribute.name,
+      values: attribute.values.map(v => ({ id: v.id, value: v.value })),
+      isNew: false,
+    }
+    setSelectedAttributes([...selectedAttributes, newAttr])
+  }
+
+  const handleRemoveAttribute = (id: string) => {
+    setSelectedAttributes(selectedAttributes.filter(attr => attr.id !== id))
+  }
+
+  const handleToggleAttributeValue = (attrId: string, valueId: string) => {
+    setSelectedAttributes(selectedAttributes.map(attr => {
+      if (attr.id === attrId) {
+        const hasValue = attr.values.some(v => v.id === valueId)
+        const attributeObj = attributes.find(a => a.id === attr.attributeId)
+        const valueObj = attributeObj?.values?.find(v => v.id === valueId)
+
+        if (!valueObj) return attr
+
+        return {
+          ...attr,
+          values: hasValue
+            ? attr.values.filter(v => v.id !== valueId)
+            : [...attr.values, { id: valueObj.id, value: valueObj.value }]
+        }
+      }
+      return attr
+    }))
+  }
+
+  const handleAddNewAttribute = async () => {
+    if (!newAttributeName.trim()) {
+      toast.error('Please enter an attribute name')
+      return
+    }
+
+    const validValues = newAttributeValues.filter(v => v.trim().length > 0)
+    if (validValues.length === 0) {
+      toast.error('Please add at least one attribute value')
+      return
+    }
+
+    try {
+      // Create the attribute
+      const newAttr = await createAttribute({ data: { name: newAttributeName } })
+
+      // Add values to the attribute
+      const createdValues: { id: string; value: string }[] = []
+      for (const value of validValues) {
+        const newValue = await addAttributeValue({
+          data: { attributeId: newAttr.id, value },
+        })
+        createdValues.push({ id: newValue.id, value: newValue.value })
+      }
+
+      // Add to selected attributes
+      const selectedAttr: SelectedAttribute = {
+        id: newAttr.id,
+        attributeId: newAttr.id,
+        attributeName: newAttr.name,
+        values: createdValues,
+        isNew: true,
+      }
+      setSelectedAttributes([...selectedAttributes, selectedAttr])
+
+      // Reset form
+      setNewAttributeName('')
+      setNewAttributeValues([''])
+      setIsAddingNewAttribute(false)
+
+      // Invalidate attributes query to refetch
+      queryClient.invalidateQueries({ queryKey: ['attributes'] })
+
+      toast.success('Attribute created successfully!')
+    } catch (error) {
+      console.error('Error creating attribute:', error)
+      toast.error('Failed to create attribute')
+    }
+  }
+
+  const handleAddValueField = () => {
+    setNewAttributeValues([...newAttributeValues, ''])
+  }
+
+  const handleRemoveValueField = (index: number) => {
+    setNewAttributeValues(newAttributeValues.filter((_, i) => i !== index))
+  }
+
+  const handleValueChange = (index: number, value: string) => {
+    const newValues = [...newAttributeValues]
+    newValues[index] = value
+    setNewAttributeValues(newValues)
+  }
+
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4">
+    <div className="w-full max-w-4xl mx-auto py-8 px-4 space-y-6">
+      {/* Basic Product Information Card */}
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Create New Product</CardTitle>
@@ -241,6 +382,225 @@ function RouteComponent() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Product Variants Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Product Variants (Optional)</CardTitle>
+          <CardDescription>
+            Add attributes like size, color, or material to generate product variants automatically.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Toggle to enable variant creation */}
+          <div className="flex flex-row items-start space-x-3 rounded-md border p-4">
+            <Checkbox
+              id="createWithVariants"
+              checked={createWithVariants}
+              onCheckedChange={(checked) => setCreateWithVariants(checked === true)}
+            />
+            <div className="flex-1 space-y-1 leading-none">
+              <FieldLabel htmlFor="createWithVariants">Create Product with Variants</FieldLabel>
+              <FieldDescription>
+                Enable this to add attributes and automatically generate all variant combinations.
+              </FieldDescription>
+            </div>
+          </div>
+
+          {createWithVariants && (
+            <>
+              <Separator />
+
+              {/* Selected Attributes Display */}
+              {selectedAttributes.length > 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Selected Attributes</h3>
+                    <div className="space-y-3">
+                      {selectedAttributes.map((attr) => (
+                        <div key={attr.id} className="border rounded-md p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">{attr.attributeName}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAttribute(attr.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {attr.values.map((value) => (
+                              <Badge key={value.id} variant="secondary">
+                                {value.value}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Default Quantity Input */}
+                  <div className="space-y-2">
+                    <FieldLabel htmlFor="defaultQuantity">Default Stock Quantity</FieldLabel>
+                    <Input
+                      id="defaultQuantity"
+                      type="number"
+                      min="0"
+                      value={defaultQuantity}
+                      onChange={(e) => setDefaultQuantity(parseInt(e.target.value) || 0)}
+                      placeholder="0"
+                    />
+                    <FieldDescription>
+                      This quantity will be set for all generated variants.
+                    </FieldDescription>
+                  </div>
+
+                  <Separator />
+                </div>
+              )}
+
+              {/* Add Existing Attribute */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium">Add Existing Attribute</h3>
+                <div className="space-y-4">
+                  {attributes
+                    .filter(attr => !selectedAttributes.some(sa => sa.attributeId === attr.id))
+                    .map((attr) => (
+                      <div key={attr.id} className="border rounded-md p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{attr.name}</span>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleAddExistingAttribute(attr.id)}
+                            disabled={!attr.values || attr.values.length === 0}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                        </div>
+                        {attr.values && attr.values.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {attr.values.map((value) => (
+                              <Badge key={value.id} variant="outline">
+                                {value.value}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">No values available</p>
+                        )}
+                      </div>
+                    ))}
+
+                  {attributes.filter(attr => !selectedAttributes.some(sa => sa.attributeId === attr.id)).length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No more attributes available. Create a new one below.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Create New Attribute */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Create New Attribute</h3>
+                  {!isAddingNewAttribute && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsAddingNewAttribute(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      New Attribute
+                    </Button>
+                  )}
+                </div>
+
+                {isAddingNewAttribute && (
+                  <div className="border rounded-md p-4 space-y-4">
+                    {/* Attribute Name */}
+                    <div className="space-y-2">
+                      <FieldLabel htmlFor="newAttributeName">Attribute Name</FieldLabel>
+                      <Input
+                        id="newAttributeName"
+                        value={newAttributeName}
+                        onChange={(e) => setNewAttributeName(e.target.value)}
+                        placeholder="e.g., Size, Color, Material"
+                      />
+                    </div>
+
+                    {/* Attribute Values */}
+                    <div className="space-y-2">
+                      <FieldLabel>Attribute Values</FieldLabel>
+                      <div className="space-y-2">
+                        {newAttributeValues.map((value, index) => (
+                          <div key={index} className="flex gap-2">
+                            <Input
+                              value={value}
+                              onChange={(e) => handleValueChange(index, e.target.value)}
+                              placeholder={`Value ${index + 1}`}
+                            />
+                            {newAttributeValues.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveValueField(index)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddValueField}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add Value
+                      </Button>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        onClick={handleAddNewAttribute}
+                        size="sm"
+                      >
+                        Create Attribute
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIsAddingNewAttribute(false)
+                          setNewAttributeName('')
+                          setNewAttributeValues([''])
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
