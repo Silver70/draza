@@ -67,7 +67,7 @@ export const productsQueryOptions = () =>
     queryFn: () => fetchProducts(),
   })
 
-export const fetchProduct = createServerFn({ method: 'GET' })
+export const fetchSingleProduct = createServerFn({ method: 'GET' })
   .inputValidator((d: string) => d)
   .handler(async ({ data }) => {
     console.info(`Fetching product with id ${data}...`)
@@ -87,8 +87,57 @@ export const fetchProduct = createServerFn({ method: 'GET' })
     }
   })
 
+export const createProduct = createServerFn({ method: 'POST' })
+  .inputValidator((d: Partial<Product>) => d)
+  .handler(async ({ data }) => {
+    console.info('Creating product...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: Product }>(
+        `${API_BASE_URL}/products`,
+        data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to create product')
+    } catch (error) {
+      console.error('Error creating product:', error)
+      throw error
+    }
+  })
+
+
 export const productQueryOptions = (productId: string) =>
   queryOptions({
     queryKey: ['product', productId],
-    queryFn: () => fetchProduct({ data: productId }),
+    queryFn: () => fetchSingleProduct({ data: productId }),
+  })
+
+
+export const fetchCategories = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching categories...')
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: Category[]
+      }>(`${API_BASE_URL}/products/categories`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch categories')
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      throw error
+    }
+  },
+)
+export const categoriesQueryOptions = () => 
+  queryOptions({
+    queryKey: ['categories'],
+    queryFn: () => fetchCategories(),
   })

@@ -86,205 +86,8 @@ productsRoutes.get("/out-of-stock", async (c) => {
   }
 });
 
-/**
- * GET /products/:id
- * Get product by ID
- */
-productsRoutes.get("/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const product = await productsService.findById(id);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Product not found";
-    return c.json({ success: false, error: message }, 404);
-  }
-});
-
-/**
- * GET /products/:id/variants
- * Get product with its variants
- */
-productsRoutes.get("/:id/variants", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const product = await productsService.findByIdWithVariants(id);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Product not found";
-    return c.json({ success: false, error: message }, 404);
-  }
-});
-
-/**
- * GET /products/:id/availability
- * Check product availability
- */
-productsRoutes.get("/:id/availability", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const availability = await productsService.checkAvailability(id);
-    return c.json({ success: true, data: availability });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Product not found";
-    return c.json({ success: false, error: message }, 404);
-  }
-});
-
-/**
- * GET /products/slug/:slug
- * Get product by slug
- */
-productsRoutes.get("/slug/:slug", async (c) => {
-  try {
-    const slug = c.req.param("slug");
-    const product = await productsService.findBySlug(slug);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Product not found";
-    return c.json({ success: false, error: message }, 404);
-  }
-});
-
-/**
- * GET /products/slug/:slug/variants
- * Get product by slug with variants
- */
-productsRoutes.get("/slug/:slug/variants", async (c) => {
-  try {
-    const slug = c.req.param("slug");
-    const product = await productsService.findBySlugWithVariants(slug);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Product not found";
-    return c.json({ success: false, error: message }, 404);
-  }
-});
-
-/**
- * POST /products
- * Create a new product
- */
-productsRoutes.post("/", zValidator("json", createProductSchema), async (c) => {
-  try {
-    const data = c.req.valid("json");
-    const product = await productsService.create(data);
-    return c.json({ success: true, data: product }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * POST /products/with-variants
- * Create product with variants
- */
-productsRoutes.post("/with-variants", async (c) => {
-  try {
-    const data = await c.req.json();
-    const product = await productsService.createWithVariants(data);
-    return c.json({ success: true, data: product }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create product with variants";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * POST /products/generate-variants
- * Create product with auto-generated variants from attributes
- */
-productsRoutes.post("/generate-variants", async (c) => {
-  try {
-    const data = await c.req.json();
-    const result = await productsService.createProductWithGeneratedVariants(data);
-    return c.json({ success: true, data: result }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to generate variants";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * POST /products/:id/variants/generate
- * Generate and create variants for existing product
- */
-productsRoutes.post("/:id/variants/generate", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const { attributes, defaultQuantity } = await c.req.json();
-    const result = await productsService.generateAndCreateVariants(id, attributes, defaultQuantity);
-    return c.json({ success: true, data: result }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to generate variants";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * PUT /products/:id
- * Update a product
- */
-productsRoutes.put("/:id", zValidator("json", updateProductSchema), async (c) => {
-  try {
-    const id = c.req.param("id");
-    const data = c.req.valid("json");
-    const product = await productsService.update(id, data);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to update product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * PUT /products/:id/activate
- * Activate a product
- */
-productsRoutes.put("/:id/activate", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const product = await productsService.activate(id);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to activate product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * PUT /products/:id/deactivate
- * Deactivate a product
- */
-productsRoutes.put("/:id/deactivate", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const product = await productsService.deactivate(id);
-    return c.json({ success: true, data: product });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to deactivate product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * DELETE /products/:id
- * Delete a product
- */
-productsRoutes.delete("/:id", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const hard = c.req.query("hard") === "true";
-    await productsService.delete(id, hard);
-    return c.json({ success: true, message: "Product deleted successfully" });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to delete product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
 // ==================== CATEGORIES ROUTES ====================
+// NOTE: These must come BEFORE /products/:id to avoid route conflicts
 
 /**
  * GET /products/categories
@@ -473,6 +276,7 @@ productsRoutes.delete("/categories/:id", async (c) => {
 });
 
 // ==================== COLLECTIONS ROUTES ====================
+// NOTE: These must come BEFORE /products/:id to avoid route conflicts
 
 /**
  * GET /products/collections
@@ -672,6 +476,7 @@ productsRoutes.delete("/collections/:collectionId/products/:productId", async (c
 });
 
 // ==================== ATTRIBUTES ROUTES ====================
+// NOTE: These must come BEFORE /products/:id to avoid route conflicts
 
 /**
  * GET /products/attributes
@@ -915,6 +720,207 @@ productsRoutes.delete("/variants/:variantId/attributes/:valueId", async (c) => {
     return c.json({ success: true, message: "Attribute removed from variant" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to remove attribute from variant";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+// ==================== PRODUCTS BY ID ROUTES ====================
+// NOTE: These MUST come LAST to avoid catching specific routes above
+
+/**
+ * GET /products/:id
+ * Get product by ID
+ */
+productsRoutes.get("/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const product = await productsService.findById(id);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Product not found";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
+ * GET /products/:id/variants
+ * Get product with its variants
+ */
+productsRoutes.get("/:id/variants", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const product = await productsService.findByIdWithVariants(id);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Product not found";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
+ * GET /products/:id/availability
+ * Check product availability
+ */
+productsRoutes.get("/:id/availability", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const availability = await productsService.checkAvailability(id);
+    return c.json({ success: true, data: availability });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Product not found";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
+ * GET /products/slug/:slug
+ * Get product by slug
+ */
+productsRoutes.get("/slug/:slug", async (c) => {
+  try {
+    const slug = c.req.param("slug");
+    const product = await productsService.findBySlug(slug);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Product not found";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
+ * GET /products/slug/:slug/variants
+ * Get product by slug with variants
+ */
+productsRoutes.get("/slug/:slug/variants", async (c) => {
+  try {
+    const slug = c.req.param("slug");
+    const product = await productsService.findBySlugWithVariants(slug);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Product not found";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
+ * POST /products
+ * Create a new product
+ */
+productsRoutes.post("/", zValidator("json", createProductSchema), async (c) => {
+  try {
+    const data = c.req.valid("json");
+    const product = await productsService.create(data);
+    return c.json({ success: true, data: product }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create product";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * POST /products/with-variants
+ * Create product with variants
+ */
+productsRoutes.post("/with-variants", async (c) => {
+  try {
+    const data = await c.req.json();
+    const product = await productsService.createWithVariants(data);
+    return c.json({ success: true, data: product }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create product with variants";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * POST /products/generate-variants
+ * Create product with auto-generated variants from attributes
+ */
+productsRoutes.post("/generate-variants", async (c) => {
+  try {
+    const data = await c.req.json();
+    const result = await productsService.createProductWithGeneratedVariants(data);
+    return c.json({ success: true, data: result }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to generate variants";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * POST /products/:id/variants/generate
+ * Generate and create variants for existing product
+ */
+productsRoutes.post("/:id/variants/generate", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const { attributes, defaultQuantity } = await c.req.json();
+    const result = await productsService.generateAndCreateVariants(id, attributes, defaultQuantity);
+    return c.json({ success: true, data: result }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to generate variants";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/:id
+ * Update a product
+ */
+productsRoutes.put("/:id", zValidator("json", updateProductSchema), async (c) => {
+  try {
+    const id = c.req.param("id");
+    const data = c.req.valid("json");
+    const product = await productsService.update(id, data);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update product";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/:id/activate
+ * Activate a product
+ */
+productsRoutes.put("/:id/activate", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const product = await productsService.activate(id);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to activate product";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/:id/deactivate
+ * Deactivate a product
+ */
+productsRoutes.put("/:id/deactivate", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const product = await productsService.deactivate(id);
+    return c.json({ success: true, data: product });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to deactivate product";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * DELETE /products/:id
+ * Delete a product
+ */
+productsRoutes.delete("/:id", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const hard = c.req.query("hard") === "true";
+    await productsService.delete(id, hard);
+    return c.json({ success: true, message: "Product deleted successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete product";
     return c.json({ success: false, error: message }, 400);
   }
 });

@@ -4,6 +4,8 @@ import { DataTable } from '@/components/data-table'
 import { columns } from '@/components/products-columns'
 import { useNavigate } from '@tanstack/react-router'
 import { productsQueryOptions } from '@/utils/products'
+import { PendingComponent } from '~/components/Pending'
+import { ErrorComponent } from '~/components/Error'
 
 export const Route = createFileRoute('/inventory/products/')({
   component: RouteComponent,
@@ -14,41 +16,6 @@ export const Route = createFileRoute('/inventory/products/')({
   errorComponent: ErrorComponent,
 })
 
-function PendingComponent() {
-  return (
-    <>
-      <div className="space-y-2">
-        <div className="h-9 w-48 bg-muted animate-pulse rounded" />
-        <div className="h-5 w-64 bg-muted animate-pulse rounded" />
-      </div>
-      <div className="space-y-4">
-        <div className="h-10 w-full bg-muted animate-pulse rounded" />
-        <div className="h-96 w-full bg-muted animate-pulse rounded-lg" />
-      </div>
-    </>
-  )
-}
-
-function ErrorComponent({ error }: { error: Error }) {
-  return (
-    <>
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-        <p className="text-muted-foreground">
-          Manage your product inventory
-        </p>
-      </div>
-      <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-destructive/10 border-destructive/20">
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-semibold text-destructive">Error loading products</h3>
-          <p className="text-sm text-muted-foreground">
-            {error.message || 'Failed to fetch products. Please try again later.'}
-          </p>
-        </div>
-      </div>
-    </>
-  )
-}
 
 function RouteComponent() {
   const { data: products } = useSuspenseQuery(productsQueryOptions())
