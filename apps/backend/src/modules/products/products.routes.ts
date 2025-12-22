@@ -833,8 +833,44 @@ productsRoutes.post("/with-variants", async (c) => {
 });
 
 /**
+ * POST /products/preview-variants
+ * Preview variant combinations without creating them
+ */
+productsRoutes.post("/preview-variants", async (c) => {
+  try {
+    const { productSlug, attributes, defaultPrice, defaultQuantity } = await c.req.json();
+    const variants = await productsService.previewVariantCombinations(
+      productSlug,
+      attributes,
+      defaultPrice,
+      defaultQuantity
+    );
+    return c.json({ success: true, data: { variants } }, 200);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to preview variants";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * POST /products/with-variants
+ * Create product with pre-configured variants (after user edits in UI)
+ */
+productsRoutes.post("/with-variants", async (c) => {
+  try {
+    const data = await c.req.json();
+    const result = await productsService.createProductWithVariants(data);
+    return c.json({ success: true, data: result }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create product with variants";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
  * POST /products/generate-variants
  * Create product with auto-generated variants from attributes
+ * DEPRECATED: Use /products/with-variants for better control
  */
 productsRoutes.post("/generate-variants", async (c) => {
   try {

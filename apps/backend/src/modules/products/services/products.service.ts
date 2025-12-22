@@ -396,7 +396,21 @@ export const productsService = {
   },
 
   /**
+   * Preview variant combinations from attributes (without creating them)
+   * Used for showing user what variants will be created before saving
+   */
+  previewVariantCombinations: async (
+    productSlug: string,
+    attributes: AttributeWithValues[],
+    defaultPrice: number,
+    defaultQuantity: number = 0
+  ) => {
+    return generateVariantCombinations(productSlug, attributes, defaultPrice, defaultQuantity);
+  },
+
+  /**
    * Generate variant combinations from attributes (without creating them)
+   * For existing products
    */
   generateVariantCombinations: async (
     productId: string,
@@ -445,7 +459,55 @@ export const productsService = {
   },
 
   /**
+   * Create a product with pre-configured variants
+   * Used when user has edited variant prices/quantities in the UI
+   */
+  createProductWithVariants: async (data: {
+    product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });
+    variants: Array<{
+      sku: string;
+      price: number;
+      quantityInStock: number;
+      attributeValueIds: string[];
+    }>;
+  }) => {
+    // Validate category exists
+    const category = await categoriesRepo.getCategoryById(data.product.categoryId);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+
+    // Auto-generate slug if not provided
+    const slug = data.product.slug || generateSlug(data.product.name);
+
+    // Check if slug already exists
+    const products = await productsRepo.getAllProducts();
+    const existingProduct = products.find((p) => p.slug === slug);
+    if (existingProduct) {
+      throw new Error("Product with this slug already exists");
+    }
+
+    // Create the product
+    const product = await productsRepo.createProduct({ ...data.product, slug });
+
+    // Transform variants to include empty attributeDetails for bulkCreateVariants
+    const variantsWithDetails = data.variants.map(v => ({
+      ...v,
+      attributeDetails: [] as Array<{ attributeId: string; attributeName: string; value: string }>
+    }));
+
+    // Create variants with user-provided data
+    const variantResult = await bulkCreateVariants(product.id, variantsWithDetails);
+
+    return {
+      product,
+      variantResult,
+    };
+  },
+
+  /**
    * Create a product with auto-generated variants from attributes
+   * DEPRECATED: Use createProductWithVariants instead for better control
    */
   createProductWithGeneratedVariants: async (data: {
     product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });

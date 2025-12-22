@@ -23,6 +23,7 @@ import {
   attributesQueryOptions,
   createProduct,
   createProductWithVariants,
+  previewVariants,
   createAttribute,
   addAttributeValue,
   type AttributeWithValues,
@@ -61,6 +62,29 @@ type SelectedAttribute = {
   isNew: boolean // Whether this is a newly created attribute
 }
 
+// Generated variant from preview
+type PreviewVariant = {
+  sku: string
+  price: number
+  quantityInStock: number
+  attributeValueIds: string[]
+  attributeDetails: Array<{
+    attributeId: string
+    attributeName: string
+    value: string
+  }>
+}
+
+// Helper function to generate slug from product name
+const generateSlug = (name: string): string => {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function RouteComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -69,8 +93,13 @@ function RouteComponent() {
 
   // State for managing variant attributes
   const [selectedAttributes, setSelectedAttributes] = useState<SelectedAttribute[]>([])
+  const [defaultPrice, setDefaultPrice] = useState<number>(0)
   const [defaultQuantity, setDefaultQuantity] = useState<number>(0)
   const [createWithVariants, setCreateWithVariants] = useState<boolean>(false)
+
+  // State for variant preview
+  const [previewedVariants, setPreviewedVariants] = useState<PreviewVariant[]>([])
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
 
   // State for adding new attributes
   const [newAttributeName, setNewAttributeName] = useState('')
@@ -98,38 +127,24 @@ function RouteComponent() {
         console.log('Product data:', validatedData)
 
         // Check if we should create with variants
-        if (createWithVariants && selectedAttributes.length > 0) {
-          // Validate that each selected attribute has at least one value
-          const invalidAttributes = selectedAttributes.filter(
-            attr => attr.values.length === 0
-          )
-
-          if (invalidAttributes.length > 0) {
-            toast.error('Invalid attributes', {
-              description: `Please select at least one value for: ${invalidAttributes.map(a => a.attributeName).join(', ')}`,
-            })
-            return
-          }
-
-          // Transform selected attributes to the format expected by the API
-          const attributesForApi: AttributeWithValues[] = selectedAttributes.map(attr => ({
-            attributeId: attr.attributeId,
-            attributeName: attr.attributeName,
-            values: attr.values,
+        if (createWithVariants && previewedVariants.length > 0) {
+          // Create product with pre-configured variants
+          const variantsData = previewedVariants.map(v => ({
+            sku: v.sku,
+            price: v.price,
+            quantityInStock: v.quantityInStock,
+            attributeValueIds: v.attributeValueIds,
           }))
 
           console.log('Creating product with variants:', {
             product: validatedData,
-            attributes: attributesForApi,
-            defaultQuantity,
+            variants: variantsData,
           })
 
-          // Create product with variants
           const result = await createProductWithVariants({
             data: {
               product: validatedData,
-              attributes: attributesForApi,
-              defaultQuantity,
+              variants: variantsData,
             },
           })
 
@@ -254,6 +269,67 @@ function RouteComponent() {
     const newValues = [...newAttributeValues]
     newValues[index] = value
     setNewAttributeValues(newValues)
+  }
+
+  // Generate variant preview
+  const handleGeneratePreview = async () => {
+    // Validate form first
+    const productName = form.state.values.name
+    if (!productName || productName.trim().length < 3) {
+      toast.error('Please enter a valid product name first')
+      return
+    }
+
+    if (selectedAttributes.length === 0) {
+      toast.error('Please add at least one attribute')
+      return
+    }
+
+    if (defaultPrice <= 0) {
+      toast.error('Please enter a valid default price')
+      return
+    }
+
+    setIsLoadingPreview(true)
+    try {
+      const productSlug = generateSlug(productName)
+      const attributesForApi: AttributeWithValues[] = selectedAttributes.map(attr => ({
+        attributeId: attr.attributeId,
+        attributeName: attr.attributeName,
+        values: attr.values,
+      }))
+
+      const variants = await previewVariants({
+        data: {
+          productSlug,
+          attributes: attributesForApi,
+          defaultPrice,
+          defaultQuantity,
+        },
+      })
+
+      setPreviewedVariants(variants)
+      toast.success(`Generated ${variants.length} variant${variants.length === 1 ? '' : 's'}!`)
+    } catch (error) {
+      console.error('Error generating preview:', error)
+      toast.error('Failed to generate variant preview')
+    } finally {
+      setIsLoadingPreview(false)
+    }
+  }
+
+  // Update variant price
+  const handleVariantPriceChange = (index: number, newPrice: number) => {
+    const updated = [...previewedVariants]
+    updated[index]!.price = newPrice
+    setPreviewedVariants(updated)
+  }
+
+  // Update variant quantity
+  const handleVariantQuantityChange = (index: number, newQuantity: number) => {
+    const updated = [...previewedVariants]
+    updated[index]!.quantityInStock = newQuantity
+    setPreviewedVariants(updated)
   }
 
   return (
@@ -425,6 +501,41 @@ function RouteComponent() {
             <>
               <Separator />
 
+              {/* Default Price Input */}
+              <div className="space-y-2">
+                <FieldLabel htmlFor="defaultPrice">Default Price *</FieldLabel>
+                <Input
+                  id="defaultPrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={defaultPrice}
+                  onChange={(e) => setDefaultPrice(parseFloat(e.target.value) || 0)}
+                  placeholder="0.00"
+                />
+                <FieldDescription>
+                  This price will be applied to all variants by default. You can edit individual prices after preview.
+                </FieldDescription>
+              </div>
+
+              {/* Default Quantity Input */}
+              <div className="space-y-2">
+                <FieldLabel htmlFor="defaultQuantity">Default Stock Quantity</FieldLabel>
+                <Input
+                  id="defaultQuantity"
+                  type="number"
+                  min="0"
+                  value={defaultQuantity}
+                  onChange={(e) => setDefaultQuantity(parseInt(e.target.value) || 0)}
+                  placeholder="0"
+                />
+                <FieldDescription>
+                  This quantity will be set for all variants by default. You can edit individual quantities after preview.
+                </FieldDescription>
+              </div>
+
+              <Separator />
+
               {/* Selected Attributes Display */}
               {selectedAttributes.length > 0 && (
                 <div className="space-y-4">
@@ -461,20 +572,77 @@ function RouteComponent() {
                     </div>
                   </div>
 
-                  {/* Default Quantity Input */}
-                  <div className="space-y-2">
-                    <FieldLabel htmlFor="defaultQuantity">Default Stock Quantity</FieldLabel>
-                    <Input
-                      id="defaultQuantity"
-                      type="number"
-                      min="0"
-                      value={defaultQuantity}
-                      onChange={(e) => setDefaultQuantity(parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                    />
-                    <FieldDescription>
-                      This quantity will be set for all generated variants.
-                    </FieldDescription>
+                  {/* Generate Preview Button */}
+                  <Button
+                    type="button"
+                    onClick={handleGeneratePreview}
+                    disabled={isLoadingPreview}
+                    className="w-full"
+                  >
+                    {isLoadingPreview ? 'Generating Preview...' : 'Generate Variant Preview'}
+                  </Button>
+
+                  <Separator />
+                </div>
+              )}
+
+              {/* Variant Preview Table */}
+              {previewedVariants.length > 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Variant Preview - Edit Prices & Quantities</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="text-left p-3 text-sm font-medium">SKU</th>
+                              <th className="text-left p-3 text-sm font-medium">Attributes</th>
+                              <th className="text-left p-3 text-sm font-medium w-32">Price</th>
+                              <th className="text-left p-3 text-sm font-medium w-32">Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previewedVariants.map((variant, index) => (
+                              <tr key={variant.sku} className="border-t">
+                                <td className="p-3 text-sm font-mono">{variant.sku}</td>
+                                <td className="p-3">
+                                  <div className="flex flex-wrap gap-1">
+                                    {variant.attributeDetails.map((attr) => (
+                                      <Badge key={`${attr.attributeId}-${attr.value}`} variant="outline" className="text-xs">
+                                        {attr.attributeName}: {attr.value}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={variant.price}
+                                    onChange={(e) => handleVariantPriceChange(index, parseFloat(e.target.value) || 0)}
+                                    className="w-full"
+                                  />
+                                </td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={variant.quantityInStock}
+                                    onChange={(e) => handleVariantQuantityChange(index, parseInt(e.target.value) || 0)}
+                                    className="w-full"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {previewedVariants.length} variant{previewedVariants.length === 1 ? '' : 's'} ready to create. You can edit prices and quantities above.
+                    </p>
                   </div>
 
                   <Separator />
@@ -629,10 +797,10 @@ function RouteComponent() {
               type="button"
               onClick={() => form.handleSubmit()}
               className="w-full sm:w-auto"
-              disabled={!form.state.canSubmit}
+              disabled={!form.state.canSubmit || (createWithVariants && previewedVariants.length === 0)}
             >
-              {createWithVariants && selectedAttributes.length > 0
-                ? `Create Product with ${calculateVariantCount()} Variants`
+              {createWithVariants && previewedVariants.length > 0
+                ? `Create Product with ${previewedVariants.length} Variants`
                 : 'Create Product'}
             </Button>
             <Button
@@ -641,7 +809,9 @@ function RouteComponent() {
               onClick={() => {
                 form.reset()
                 setSelectedAttributes([])
+                setDefaultPrice(0)
                 setDefaultQuantity(0)
+                setPreviewedVariants([])
                 setCreateWithVariants(false)
                 setNewAttributeName('')
                 setNewAttributeValues([''])
@@ -652,9 +822,11 @@ function RouteComponent() {
               Reset Form
             </Button>
           </div>
-          {createWithVariants && selectedAttributes.length === 0 && (
+          {createWithVariants && previewedVariants.length === 0 && (
             <p className="text-sm text-muted-foreground mt-3">
-              Add at least one attribute to generate variants, or uncheck "Create Product with Variants" to create a basic product.
+              {selectedAttributes.length === 0
+                ? 'Add at least one attribute and generate a preview to create variants, or uncheck "Create Product with Variants" to create a basic product.'
+                : 'Click "Generate Variant Preview" to review and edit your variants before creating the product.'}
             </p>
           )}
         </CardContent>

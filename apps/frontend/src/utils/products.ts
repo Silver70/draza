@@ -235,13 +235,58 @@ export const addAttributeValue = createServerFn({ method: 'POST' })
     }
   })
 
-// Create product with generated variants
+// Preview variant combinations
+export const previewVariants = createServerFn({ method: 'POST' })
+  .inputValidator(
+    (d: {
+      productSlug: string
+      attributes: AttributeWithValues[]
+      defaultPrice: number
+      defaultQuantity: number
+    }) => d,
+  )
+  .handler(async ({ data }) => {
+    console.info('Previewing variants...', data)
+    try {
+      const response = await axios.post<{
+        success: boolean
+        data: {
+          variants: Array<{
+            sku: string
+            price: number
+            quantityInStock: number
+            attributeValueIds: string[]
+            attributeDetails: Array<{
+              attributeId: string
+              attributeName: string
+              value: string
+            }>
+          }>
+        }
+      }>(`${API_BASE_URL}/products/preview-variants`, data)
+
+      if (response.data.success) {
+        return response.data.data.variants
+      }
+
+      throw new Error('Failed to preview variants')
+    } catch (error) {
+      console.error('Error previewing variants:', error)
+      throw error
+    }
+  })
+
+// Create product with pre-configured variants
 export const createProductWithVariants = createServerFn({ method: 'POST' })
   .inputValidator(
     (d: {
       product: Partial<Product>
-      attributes: AttributeWithValues[]
-      defaultQuantity: number
+      variants: Array<{
+        sku: string
+        price: number
+        quantityInStock: number
+        attributeValueIds: string[]
+      }>
     }) => d,
   )
   .handler(async ({ data }) => {
@@ -250,7 +295,7 @@ export const createProductWithVariants = createServerFn({ method: 'POST' })
       const response = await axios.post<{
         success: boolean
         data: { product: Product; variantResult: any }
-      }>(`${API_BASE_URL}/products/generate-variants`, data)
+      }>(`${API_BASE_URL}/products/with-variants`, data)
 
       if (response.data.success) {
         return response.data.data
