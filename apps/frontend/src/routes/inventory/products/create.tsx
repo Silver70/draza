@@ -580,119 +580,6 @@ function RouteComponent() {
 
               <Separator />
 
-              {/* Selected Attributes Display */}
-              {selectedAttributes.length > 0 && (
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-medium">Selected Attributes</h3>
-                      <Badge variant="default" className="text-xs">
-                        {calculateVariantCount()} {calculateVariantCount() === 1 ? 'variant' : 'variants'} will be generated
-                      </Badge>
-                    </div>
-                    <div className="space-y-3">
-                      {selectedAttributes.map((attr) => (
-                        <div key={attr.id} className="border rounded-md p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">{attr.attributeName}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveAttribute(attr.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            {attr.values.map((value) => (
-                              <Badge key={value.id} variant="secondary">
-                                {value.value}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Generate Preview Button */}
-                  <Button
-                    type="button"
-                    onClick={handleGeneratePreview}
-                    disabled={isLoadingPreview}
-                    className="w-full"
-                  >
-                    {isLoadingPreview ? 'Generating Preview...' : 'Generate Variant Preview'}
-                  </Button>
-
-                  <Separator />
-                </div>
-              )}
-
-              {/* Variant Preview Table */}
-              {previewedVariants.length > 0 && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Variant Preview - Edit Prices & Quantities</h3>
-                    <div className="border rounded-md overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-muted">
-                            <tr>
-                              <th className="text-left p-3 text-sm font-medium">SKU</th>
-                              <th className="text-left p-3 text-sm font-medium">Attributes</th>
-                              <th className="text-left p-3 text-sm font-medium w-32">Price</th>
-                              <th className="text-left p-3 text-sm font-medium w-32">Stock</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {previewedVariants.map((variant, index) => (
-                              <tr key={variant.sku} className="border-t">
-                                <td className="p-3 text-sm font-mono">{variant.sku}</td>
-                                <td className="p-3">
-                                  <div className="flex flex-wrap gap-1">
-                                    {variant.attributeDetails.map((attr) => (
-                                      <Badge key={`${attr.attributeId}-${attr.value}`} variant="outline" className="text-xs">
-                                        {attr.attributeName}: {attr.value}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </td>
-                                <td className="p-3">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    value={variant.price}
-                                    onChange={(e) => handleVariantPriceChange(index, parseFloat(e.target.value) || 0)}
-                                    className="w-full"
-                                  />
-                                </td>
-                                <td className="p-3">
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={variant.quantityInStock}
-                                    onChange={(e) => handleVariantQuantityChange(index, parseInt(e.target.value) || 0)}
-                                    className="w-full"
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      {previewedVariants.length} variant{previewedVariants.length === 1 ? '' : 's'} ready to create. You can edit prices and quantities above.
-                    </p>
-                  </div>
-
-                  <Separator />
-                </div>
-              )}
-
               {/* Add Existing Attribute */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Add Existing Attribute</h3>
@@ -812,6 +699,121 @@ function RouteComponent() {
                   </div>
                 )}
               </div>
+
+              <Separator />
+
+              {/* Selected Attributes Display */}
+              {selectedAttributes.length > 0 && (
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Selected Attributes</h3>
+                      <Badge variant="default" className="text-xs">
+                        {calculateVariantCount()} {calculateVariantCount() === 1 ? 'variant' : 'variants'} will be generated
+                      </Badge>
+                    </div>
+                    <div className="space-y-3">
+                      {selectedAttributes.map((attr) => (
+                        <div key={attr.id} className="border rounded-md p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-medium">{attr.attributeName}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveAttribute(attr.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {attr.values.map((value) => (
+                              <Badge key={value.id} variant="secondary">
+                                {value.value}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Generate Preview Button */}
+                  <Button
+                    type="button"
+                    onClick={handleGeneratePreview}
+                    disabled={isLoadingPreview}
+                    className="w-full"
+                  >
+                    {isLoadingPreview ? 'Generating Preview...' : 'Generate Variant Preview'}
+                  </Button>
+
+                  <Separator />
+                </div>
+              )}
+
+              {/* Variant Preview Table */}
+              {previewedVariants.length > 0 && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Variant Preview - Edit Prices & Quantities</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="text-left p-3 text-sm font-medium">SKU</th>
+                              <th className="text-left p-3 text-sm font-medium">Attributes</th>
+                              <th className="text-left p-3 text-sm font-medium w-32">Price</th>
+                              <th className="text-left p-3 text-sm font-medium w-32">Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previewedVariants.map((variant, index) => (
+                              <tr key={variant.sku} className="border-t">
+                                <td className="p-3 text-sm font-mono">{variant.sku}</td>
+                                <td className="p-3">
+                                  <div className="flex flex-wrap gap-1">
+                                    {variant.attributeDetails.map((attr) => (
+                                      <Badge key={`${attr.attributeId}-${attr.value}`} variant="outline" className="text-xs">
+                                        {attr.attributeName}: {attr.value}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={variant.price}
+                                    onChange={(e) => handleVariantPriceChange(index, parseFloat(e.target.value) || 0)}
+                                    className="w-full"
+                                  />
+                                </td>
+                                <td className="p-3">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={variant.quantityInStock}
+                                    onChange={(e) => handleVariantQuantityChange(index, parseInt(e.target.value) || 0)}
+                                    className="w-full"
+                                  />
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {previewedVariants.length} variant{previewedVariants.length === 1 ? '' : 's'} ready to create. You can edit prices and quantities above.
+                    </p>
+                  </div>
+
+                  <Separator />
+                </div>
+              )}
             </>
           )}
         </CardContent>
