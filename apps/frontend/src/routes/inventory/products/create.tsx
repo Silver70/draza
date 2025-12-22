@@ -22,7 +22,6 @@ import { Combobox } from '~/components/ui/combobox'
 import {
   categoriesQueryOptions,
   attributesQueryOptions,
-  createProduct,
   createProductWithVariants,
   previewVariants,
   createAttribute,
@@ -192,17 +191,46 @@ function RouteComponent() {
             navigate({ to: '/inventory/products' })
           }, 100)
         } else {
-          // Create product without variants (basic product)
-          const newProduct = await createProduct({ data: validatedData })
+          // Create product with a single default variant (basic product)
+          // Validate price is set
+          if (defaultPrice <= 0) {
+            toast.error('Please enter a valid price')
+            return
+          }
 
-          console.log('Product created successfully:', newProduct)
+          // Generate slug for SKU
+          const productSlug = generateSlug(validatedData.name)
+
+          // Create a single default variant
+          const defaultVariant = {
+            sku: `${productSlug}-default`,
+            price: defaultPrice,
+            quantityInStock: defaultQuantity,
+            attributeValueIds: [] as string[],
+          }
+
+          console.log('Creating product with default variant:', {
+            product: validatedData,
+            variants: [defaultVariant],
+          })
+
+          const result = await createProductWithVariants({
+            data: {
+              product: validatedData,
+              variants: [defaultVariant],
+            },
+          })
+
+          console.log('Product created successfully:', result)
 
           toast.success('Product created successfully!', {
-            description: `${newProduct.name} has been added to your inventory.`,
+            description: `${validatedData.name} has been added to your inventory.`,
           })
 
           // Reset form state
           form.reset()
+          setDefaultPrice(0)
+          setDefaultQuantity(0)
 
           // Navigate to products list
           setTimeout(() => {
@@ -514,6 +542,42 @@ function RouteComponent() {
               </div>
             )}
           </form.Field>
+
+          {/* Price and Stock fields - Used for all products */}
+          <div className="space-y-2">
+            <FieldLabel htmlFor="price">Price *</FieldLabel>
+            <Input
+              id="price"
+              type="number"
+              min="0"
+              step="0.01"
+              value={defaultPrice}
+              onChange={(e) => setDefaultPrice(parseFloat(e.target.value) || 0)}
+              placeholder="0.00"
+            />
+            <FieldDescription>
+              {createWithVariants
+                ? 'Default price for all variants. You can customize individual prices after generating the preview.'
+                : 'Set the selling price for this product.'}
+            </FieldDescription>
+          </div>
+
+          <div className="space-y-2">
+            <FieldLabel htmlFor="quantity">Stock Quantity</FieldLabel>
+            <Input
+              id="quantity"
+              type="number"
+              min="0"
+              value={defaultQuantity}
+              onChange={(e) => setDefaultQuantity(parseInt(e.target.value) || 0)}
+              placeholder="0"
+            />
+            <FieldDescription>
+              {createWithVariants
+                ? 'Default stock quantity for all variants. You can customize individual quantities after generating the preview.'
+                : 'Set the initial stock quantity for this product.'}
+            </FieldDescription>
+          </div>
         </CardContent>
       </Card>
 
@@ -543,41 +607,6 @@ function RouteComponent() {
 
           {createWithVariants && (
             <>
-              <Separator />
-
-              {/* Default Price Input */}
-              <div className="space-y-2">
-                <FieldLabel htmlFor="defaultPrice">Default Price *</FieldLabel>
-                <Input
-                  id="defaultPrice"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={defaultPrice}
-                  onChange={(e) => setDefaultPrice(parseFloat(e.target.value) || 0)}
-                  placeholder="0.00"
-                />
-                <FieldDescription>
-                  This price will be applied to all variants by default. You can edit individual prices after preview.
-                </FieldDescription>
-              </div>
-
-              {/* Default Quantity Input */}
-              <div className="space-y-2">
-                <FieldLabel htmlFor="defaultQuantity">Default Stock Quantity</FieldLabel>
-                <Input
-                  id="defaultQuantity"
-                  type="number"
-                  min="0"
-                  value={defaultQuantity}
-                  onChange={(e) => setDefaultQuantity(parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                />
-                <FieldDescription>
-                  This quantity will be set for all variants by default. You can edit individual quantities after preview.
-                </FieldDescription>
-              </div>
-
               <Separator />
 
               {/* Add Existing Attribute */}
@@ -830,7 +859,11 @@ function RouteComponent() {
               type="button"
               onClick={() => form.handleSubmit()}
               className="w-full sm:w-auto"
-              disabled={!form.state.canSubmit || (createWithVariants && previewedVariants.length === 0)}
+              disabled={
+                !form.state.canSubmit ||
+                (createWithVariants && previewedVariants.length === 0) ||
+                (!createWithVariants && defaultPrice <= 0)
+              }
             >
               {createWithVariants && previewedVariants.length > 0
                 ? `Create Product with ${previewedVariants.length} Variants`
@@ -860,6 +893,11 @@ function RouteComponent() {
               {selectedAttributes.length === 0
                 ? 'Add at least one attribute and generate a preview to create variants, or uncheck "Create Product with Variants" to create a basic product.'
                 : 'Click "Generate Variant Preview" to review and edit your variants before creating the product.'}
+            </p>
+          )}
+          {!createWithVariants && defaultPrice <= 0 && (
+            <p className="text-sm text-muted-foreground mt-3">
+              Please set a price to create the product.
             </p>
           )}
         </CardContent>
