@@ -16,6 +16,7 @@ export interface AttributeWithValues {
 
 export interface GeneratedVariant {
   sku: string;
+  price: number;
   quantityInStock: number;
   attributeValueIds: string[];
   attributeDetails: Array<{
@@ -32,6 +33,7 @@ export interface GeneratedVariant {
 export const generateVariantCombinations = (
   productSlug: string,
   attributes: AttributeWithValues[],
+  defaultPrice: number,
   defaultQuantity: number = 0
 ): GeneratedVariant[] => {
   if (attributes.length === 0) {
@@ -70,6 +72,7 @@ export const generateVariantCombinations = (
 
     return {
       sku,
+      price: defaultPrice,
       quantityInStock: defaultQuantity,
       attributeValueIds,
       attributeDetails,
@@ -124,8 +127,9 @@ function cartesianProduct<T>(arrays: T[][]): T[][] {
  *   }
  * ];
  *
- * const variants = generateVariantCombinations('my-product', attributes, 10);
+ * const variants = generateVariantCombinations('my-product', attributes, 19.99, 10);
  * // This will generate 4 variants: Small-Red, Small-Blue, Large-Red, Large-Blue
+ * // Each with price 19.99 and quantity 10
  */
 
 
@@ -159,6 +163,7 @@ export const bulkCreateVariants = async (
         .values({
           productId,
           sku: variant.sku,
+          price: variant.price.toString(),
           quantityInStock: variant.quantityInStock,
         })
         .returning({

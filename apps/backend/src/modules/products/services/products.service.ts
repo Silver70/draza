@@ -401,6 +401,7 @@ export const productsService = {
   generateVariantCombinations: async (
     productId: string,
     attributes: AttributeWithValues[],
+    defaultPrice: number,
     defaultQuantity: number = 0
   ) => {
     const product = await productsRepo.getProductById(productId);
@@ -408,7 +409,7 @@ export const productsService = {
       throw new Error("Product not found");
     }
 
-    return generateVariantCombinations(product.slug, attributes, defaultQuantity);
+    return generateVariantCombinations(product.slug, attributes, defaultPrice, defaultQuantity);
   },
 
   /**
@@ -417,6 +418,7 @@ export const productsService = {
   generateAndCreateVariants: async (
     productId: string,
     attributes: AttributeWithValues[],
+    defaultPrice: number,
     defaultQuantity: number = 0
   ) => {
     const product = await productsRepo.getProductById(productId);
@@ -428,6 +430,7 @@ export const productsService = {
     const variantCombinations = generateVariantCombinations(
       product.slug,
       attributes,
+      defaultPrice,
       defaultQuantity
     );
 
@@ -447,6 +450,7 @@ export const productsService = {
   createProductWithGeneratedVariants: async (data: {
     product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });
     attributes: AttributeWithValues[];
+    defaultPrice: number;
     defaultQuantity?: number;
   }) => {
     // Validate category exists
@@ -472,6 +476,7 @@ export const productsService = {
     const variantCombinations = generateVariantCombinations(
       slug,
       data.attributes,
+      data.defaultPrice,
       data.defaultQuantity || 0
     );
 
@@ -506,6 +511,7 @@ export const productsService = {
       return await productVariantsRepo.createProductVariant({
         productId,
         sku: uniqueSKU,
+        price: data.price,
         quantityInStock: data.quantityInStock,
       });
     }
@@ -513,6 +519,7 @@ export const productsService = {
     return await productVariantsRepo.createProductVariant({
       productId,
       sku,
+      price: data.price,
       quantityInStock: data.quantityInStock,
     });
   },

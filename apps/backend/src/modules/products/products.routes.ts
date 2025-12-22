@@ -854,8 +854,8 @@ productsRoutes.post("/generate-variants", async (c) => {
 productsRoutes.post("/:id/variants/generate", async (c) => {
   try {
     const id = c.req.param("id");
-    const { attributes, defaultQuantity } = await c.req.json();
-    const result = await productsService.generateAndCreateVariants(id, attributes, defaultQuantity);
+    const { attributes, defaultPrice, defaultQuantity } = await c.req.json();
+    const result = await productsService.generateAndCreateVariants(id, attributes, defaultPrice, defaultQuantity);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to generate variants";

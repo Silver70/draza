@@ -127,11 +127,13 @@ export const updateProductSchema = z.object({
 export const createProductVariantSchema = z.object({
   productId: z.string().uuid("Invalid product ID"),
   sku: z.string().min(1, "SKU is required"),
+  price: z.number().min(0, "Price must be at least 0"),
   quantityInStock: z.number().int().min(0).default(0),
 });
 
 export const updateProductVariantSchema = z.object({
   sku: z.string().min(1).optional(),
+  price: z.number().min(0).optional(),
   quantityInStock: z.number().int().min(0).optional(),
 });
 
@@ -192,6 +194,7 @@ export const createProductWithVariantsSchema = z.object({
   variants: z.array(
     z.object({
       sku: z.string().min(1, "SKU is required"),
+      price: z.number().min(0, "Price must be at least 0"),
       quantityInStock: z.number().int().min(0).default(0),
       attributes: z.array(z.string().uuid()).optional(),
     })
