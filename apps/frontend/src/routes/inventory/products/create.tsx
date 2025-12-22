@@ -18,6 +18,7 @@ import { MultiSelect } from '~/components/ui/multi-select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Separator } from '~/components/ui/separator'
 import { Badge } from '~/components/ui/badge'
+import { Combobox } from '~/components/ui/combobox'
 import {
   categoriesQueryOptions,
   attributesQueryOptions,
@@ -695,44 +696,28 @@ function RouteComponent() {
               {/* Add Existing Attribute */}
               <div className="space-y-3">
                 <h3 className="text-sm font-medium">Add Existing Attribute</h3>
-                <div className="space-y-4">
-                  {attributes
+                <Combobox
+                  options={attributes
                     .filter(attr => !selectedAttributes.some(sa => sa.attributeId === attr.id))
-                    .map((attr) => (
-                      <div key={attr.id} className="border rounded-md p-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{attr.name}</span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleAddExistingAttribute(attr.id)}
-                            disabled={!attr.values || attr.values.length === 0}
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add
-                          </Button>
-                        </div>
-                        {attr.values && attr.values.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {attr.values.map((value) => (
-                              <Badge key={value.id} variant="outline">
-                                {value.value}
-                              </Badge>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">No values available</p>
-                        )}
-                      </div>
-                    ))}
-
-                  {attributes.filter(attr => !selectedAttributes.some(sa => sa.attributeId === attr.id)).length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">
-                      No more attributes available. Create a new one below.
-                    </p>
-                  )}
-                </div>
+                    .filter(attr => attr.values && attr.values.length > 0)
+                    .map(attr => ({
+                      value: attr.id,
+                      label: `${attr.name} (${attr.values?.length || 0} values)`,
+                      disabled: !attr.values || attr.values.length === 0
+                    }))}
+                  placeholder="Search and select an attribute..."
+                  searchPlaceholder="Type to search attributes..."
+                  emptyText="No attributes found. Create a new one below."
+                  onSelect={(selectedId) => {
+                    handleAddExistingAttribute(selectedId)
+                  }}
+                  triggerClassName="w-full"
+                />
+                {attributes.filter(attr => !selectedAttributes.some(sa => sa.attributeId === attr.id)).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No more attributes available. Create a new one below.
+                  </p>
+                )}
               </div>
 
               <Separator />
