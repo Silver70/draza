@@ -738,17 +738,20 @@ function RouteComponent() {
                     </div>
                   </div>
 
-                  {/* Generate Preview Button */}
-                  <Button
-                    type="button"
-                    onClick={handleGeneratePreview}
-                    disabled={isLoadingPreview}
-                    className="w-full"
-                  >
-                    {isLoadingPreview ? 'Generating Preview...' : 'Generate Variant Preview'}
-                  </Button>
-
-                  <Separator />
+                  {/* Generate Preview Button - Only show if variants haven't been generated yet */}
+                  {previewedVariants.length === 0 && (
+                    <>
+                      <Button
+                        type="button"
+                        onClick={handleGeneratePreview}
+                        disabled={isLoadingPreview}
+                        className="w-full"
+                      >
+                        {isLoadingPreview ? 'Generating Preview...' : 'Generate Variant Preview'}
+                      </Button>
+                      <Separator />
+                    </>
+                  )}
                 </div>
               )}
 
