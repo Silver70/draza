@@ -148,22 +148,65 @@ function RouteComponent() {
             },
           })
 
+          console.log('Product created successfully - full result:', result)
+          console.log('Result type:', typeof result)
+          console.log('Result keys:', Object.keys(result || {}))
+
+          // Handle different response structures
+          let productName = validatedData.name
+          let variantCount = variantsData.length
+
+          if (result && typeof result === 'object') {
+            // Check if result has nested product
+            if ('product' in result && result.product && typeof result.product === 'object' && 'name' in result.product) {
+              productName = (result.product.name as string) || validatedData.name
+            } else if ('name' in result && typeof result.name === 'string') {
+              // Result is the product directly
+              productName = result.name || validatedData.name
+            }
+
+            // Check for variant result
+            if ('variantResult' in result && result.variantResult && typeof result.variantResult === 'object' && 'createdCount' in result.variantResult) {
+              variantCount = (result.variantResult.createdCount as number) || variantsData.length
+            }
+          }
+
           toast.success('Product with variants created successfully!', {
-            description: `${result.product.name} has been created with ${result.variantResult.createdCount} variants.`,
+            description: `${productName} has been created with ${variantCount} variants.`,
           })
 
+          // Reset form state
+          form.reset()
+          setSelectedAttributes([])
+          setDefaultPrice(0)
+          setDefaultQuantity(0)
+          setPreviewedVariants([])
+          setCreateWithVariants(false)
+          setNewAttributeName('')
+          setNewAttributeValues([''])
+          setIsAddingNewAttribute(false)
+
           // Navigate to products list
-          navigate({ to: '/inventory/products' })
+          setTimeout(() => {
+            navigate({ to: '/inventory/products' })
+          }, 100)
         } else {
           // Create product without variants (basic product)
           const newProduct = await createProduct({ data: validatedData })
+
+          console.log('Product created successfully:', newProduct)
 
           toast.success('Product created successfully!', {
             description: `${newProduct.name} has been added to your inventory.`,
           })
 
+          // Reset form state
+          form.reset()
+
           // Navigate to products list
-          navigate({ to: '/inventory/products' })
+          setTimeout(() => {
+            navigate({ to: '/inventory/products' })
+          }, 100)
         }
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -173,7 +216,7 @@ function RouteComponent() {
         } else {
           console.error('Form submission error', error)
           toast.error('Failed to create product', {
-            description: 'Please try again later.',
+            description: error instanceof Error ? error.message : 'Please try again later.',
           })
         }
       }
