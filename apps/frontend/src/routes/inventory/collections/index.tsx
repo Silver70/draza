@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { columns } from '@/components/collections-columns'
 import { collectionsQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
+import { CreateCollectionModal } from '@/components/create-collection-modal'
 
 export const Route = createFileRoute('/inventory/collections/')({
   component: RouteComponent,
@@ -18,10 +20,10 @@ export const Route = createFileRoute('/inventory/collections/')({
 
 function RouteComponent() {
   const { data: collections } = useSuspenseQuery(collectionsQueryOptions())
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const handleAddCollection = () => {
-    // TODO: Implement collection creation modal
-    console.log('Add collection clicked - modal not yet implemented')
+    setIsCreateModalOpen(true)
   }
 
   return (
@@ -51,6 +53,11 @@ function RouteComponent() {
           addNewLabel="Add Collection"
         />
       )}
+
+      <CreateCollectionModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </>
   )
 }

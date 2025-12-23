@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -135,6 +136,11 @@ export const columns: ColumnDef<Collection>[] = [
               Copy collection ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/inventory/collections/$collectionId/add-products" params={{ collectionId: collection.id }}>
+                Add Products
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem>View details</DropdownMenuItem>
             <DropdownMenuItem>Edit collection</DropdownMenuItem>
           </DropdownMenuContent>

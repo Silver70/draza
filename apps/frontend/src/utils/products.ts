@@ -182,6 +182,27 @@ export const collectionsQueryOptions = () =>
     queryFn: () => fetchCollections(),
   })
 
+export const createCollection = createServerFn({ method: 'POST' })
+  .inputValidator((d: Partial<Collection>) => d)
+  .handler(async ({ data }) => {
+    console.info('Creating collection...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: Collection }>(
+        `${API_BASE_URL}/products/collections`,
+        data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to create collection')
+    } catch (error) {
+      console.error('Error creating collection:', error)
+      throw error
+    }
+  })
+
 // Attribute types
 export type AttributeValue = {
   id: string

@@ -14,6 +14,7 @@ import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/p
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
 import { Route as InventoryCategoriesIndexRouteImport } from './routes/inventory/categories/index'
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
+import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +43,12 @@ const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
   path: '/inventory/products/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InventoryCollectionsCollectionIdAddProductsRoute =
+  InventoryCollectionsCollectionIdAddProductsRouteImport.update({
+    id: '/inventory/collections/$collectionId/add-products',
+    path: '/inventory/collections/$collectionId/add-products',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -49,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
+  '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -56,6 +64,7 @@ export interface FileRoutesByTo {
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
+  '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -64,6 +73,7 @@ export interface FileRoutesById {
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
   '/inventory/collections/': typeof InventoryCollectionsIndexRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
+  '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -73,6 +83,7 @@ export interface FileRouteTypes {
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
+    | '/inventory/collections/$collectionId/add-products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -80,6 +91,7 @@ export interface FileRouteTypes {
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
+    | '/inventory/collections/$collectionId/add-products'
   id:
     | '__root__'
     | '/'
@@ -87,6 +99,7 @@ export interface FileRouteTypes {
     | '/inventory/categories/'
     | '/inventory/collections/'
     | '/inventory/products/'
+    | '/inventory/collections/$collectionId/add-products'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +108,7 @@ export interface RootRouteChildren {
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
+  InventoryCollectionsCollectionIdAddProductsRoute: typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +148,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryProductsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inventory/collections/$collectionId/add-products': {
+      id: '/inventory/collections/$collectionId/add-products'
+      path: '/inventory/collections/$collectionId/add-products'
+      fullPath: '/inventory/collections/$collectionId/add-products'
+      preLoaderRoute: typeof InventoryCollectionsCollectionIdAddProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -143,6 +164,8 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
   InventoryCollectionsIndexRoute: InventoryCollectionsIndexRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
+  InventoryCollectionsCollectionIdAddProductsRoute:
+    InventoryCollectionsCollectionIdAddProductsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
