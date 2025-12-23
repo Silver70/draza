@@ -1,10 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { columns } from '@/components/categories-columns'
 import { categoriesWithProductCountQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
+import { CreateCategoryModal } from '@/components/create-category-modal'
 
 export const Route = createFileRoute('/inventory/categories/')({
   component: RouteComponent,
@@ -18,12 +20,11 @@ export const Route = createFileRoute('/inventory/categories/')({
 
 function RouteComponent() {
   const { data: categories } = useSuspenseQuery(categoriesWithProductCountQueryOptions())
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
   const handleAddCategory = () => {
-    // TODO: Navigate to add category page or open modal
-    // navigate({ to: '/inventory/categories/create' })
-    console.log('Add category clicked - route not yet implemented')
+    setIsCreateModalOpen(true)
   }
-    console.log('Categories data:', categories)
 
   return (
     <>
@@ -52,6 +53,11 @@ function RouteComponent() {
           addNewLabel="Add Category"
         />
       )}
+
+      <CreateCategoryModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
+      />
     </>
   )
 }

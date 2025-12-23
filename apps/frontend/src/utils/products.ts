@@ -172,6 +172,27 @@ export const categoriesWithProductCountQueryOptions = () =>
     queryFn: () => fetchCategoriesWithProductCount(),
   })
 
+export const createCategory = createServerFn({ method: 'POST' })
+  .inputValidator((d: Partial<Category>) => d)
+  .handler(async ({ data }) => {
+    console.info('Creating category...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: Category }>(
+        `${API_BASE_URL}/products/categories`,
+        data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to create category')
+    } catch (error) {
+      console.error('Error creating category:', error)
+      throw error
+    }
+  })
+
 // Attribute types
 export type AttributeValue = {
   id: string
