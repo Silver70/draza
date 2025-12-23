@@ -3,7 +3,7 @@ import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
 import { columns } from '@/components/collections-columns'
-import { collectionsQueryOptions } from '@/utils/products'
+import { collectionsWithProductCountQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
 import { CreateCollectionModal } from '@/components/create-collection-modal'
@@ -12,14 +12,14 @@ export const Route = createFileRoute('/inventory/collections/')({
   component: RouteComponent,
 
   loader: ({ context: { queryClient } }) =>
-  queryClient.ensureQueryData(collectionsQueryOptions()),
+  queryClient.ensureQueryData(collectionsWithProductCountQueryOptions()),
   pendingComponent: PendingComponent,
   errorComponent: ErrorComponent,
 })
 
 
 function RouteComponent() {
-  const { data: collections } = useSuspenseQuery(collectionsQueryOptions())
+  const { data: collections } = useSuspenseQuery(collectionsWithProductCountQueryOptions())
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const handleAddCollection = () => {

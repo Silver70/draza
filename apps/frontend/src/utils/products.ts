@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import axios from 'redaxios'
-import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection} from '../types/productTypes'
+import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection, CollectionWithProductCount} from '../types/productTypes'
 
 // TODO: Update this to your actual API URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -180,6 +180,33 @@ export const collectionsQueryOptions = () =>
   queryOptions({
     queryKey: ['collections'],
     queryFn: () => fetchCollections(),
+  })
+
+export const fetchCollectionsWithProductCount = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching collections with product count...')
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: CollectionWithProductCount[]
+      }>(`${API_BASE_URL}/products/collections/with-counts`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch collections with product count')
+    } catch (error) {
+      console.error('Error fetching collections with product count:', error)
+      throw error
+    }
+  },
+)
+
+export const collectionsWithProductCountQueryOptions = () =>
+  queryOptions({
+    queryKey: ['collections', 'with-product-count'],
+    queryFn: () => fetchCollectionsWithProductCount(),
   })
 
 export const createCollection = createServerFn({ method: 'POST' })

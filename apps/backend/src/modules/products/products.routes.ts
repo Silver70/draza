@@ -324,6 +324,20 @@ productsRoutes.get("/collections/active", async (c) => {
 });
 
 /**
+ * GET /products/collections/with-counts
+ * Get all collections with product counts
+ */
+productsRoutes.get("/collections/with-counts", async (c) => {
+  try {
+    const collections = await collectionsService.findAllWithProductCounts();
+    return c.json({ success: true, data: collections });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch collections with counts";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
  * GET /products/collections/:id
  * Get collection by ID
  */

@@ -13,9 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Collection } from "@/types/productTypes"
+import type { CollectionWithProductCount } from "@/types/productTypes"
 
-export const columns: ColumnDef<Collection>[] = [
+export const columns: ColumnDef<CollectionWithProductCount>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -54,13 +54,23 @@ export const columns: ColumnDef<Collection>[] = [
     cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
   },
   {
-    accessorKey: "description",
-    header: "Description",
-    cell: ({ row }) => {
-      const description = row.getValue("description") as string | undefined
+    accessorKey: "productCount",
+    header: ({ column }) => {
       return (
-        <div className="text-sm max-w-md truncate">
-          {description || <span className="text-muted-foreground">No description</span>}
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Products
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
+    cell: ({ row }) => {
+      const count = row.getValue("productCount") as number
+      return (
+        <div className="text-sm font-medium">
+          {count} {count === 1 ? 'product' : 'products'}
         </div>
       )
     },

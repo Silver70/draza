@@ -52,6 +52,7 @@
 |--------|----------|-------------|--------------|
 | GET | `/collections` | Get all collections | - |
 | GET | `/collections/active` | Get active collections | - |
+| GET | `/collections/with-counts` | Get all collections with product counts | - |
 | GET | `/collections/:id` | Get collection by ID | - |
 | GET | `/collections/:id/products` | Get collection with products | - |
 | GET | `/collections/slug/:slug` | Get collection by slug | - |

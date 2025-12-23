@@ -49,3 +49,7 @@ export type Collection = {
   createdAt: string
   updatedAt: string
 }
+
+export type CollectionWithProductCount = Collection & {
+  productCount: number
+}
