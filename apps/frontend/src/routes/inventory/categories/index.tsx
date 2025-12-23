@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
@@ -33,6 +33,7 @@ function RouteComponent() {
         <p className="text-muted-foreground">
           Manage your product categories
         </p>
+      
       </div>
       {categories.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-muted/50">
