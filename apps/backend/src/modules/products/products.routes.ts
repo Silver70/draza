@@ -133,7 +133,7 @@ productsRoutes.get("/categories/root", async (c) => {
 
 /**
  * GET /products/categories/with-products
- * Get categories with product counts
+ * Get categories with product counts (filters out empty categories)
  */
 productsRoutes.get("/categories/with-products", async (c) => {
   try {
@@ -142,6 +142,23 @@ productsRoutes.get("/categories/with-products", async (c) => {
     return c.json({ success: true, data: categories });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch categories";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /products/categories/with-counts
+ * Get all categories with product counts (includes categories with 0 products)
+ */
+productsRoutes.get("/categories/with-counts", async (c) => {
+  try {
+    const activeOnly = c.req.query("activeOnly") === "true";
+    const categories = activeOnly
+      ? await categoriesService.findAllWithActiveProductCounts()
+      : await categoriesService.findAllWithProductCounts();
+    return c.json({ success: true, data: categories });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch categories with counts";
     return c.json({ success: false, error: message }, 500);
   }
 });

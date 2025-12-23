@@ -8,6 +8,10 @@ export type Category = {
   slug: string
 }
 
+export type CategoryWithProductCount = Category & {
+  productCount: number
+}
+
 export type Product = {
   id: string
   name: string
@@ -140,6 +144,32 @@ export const categoriesQueryOptions = () =>
   queryOptions({
     queryKey: ['categories'],
     queryFn: () => fetchCategories(),
+  })
+
+export const fetchCategoriesWithProductCount = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching categories with product count...')
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: CategoryWithProductCount[]
+      }>(`${API_BASE_URL}/products/categories/with-counts`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch categories with product count')
+    } catch (error) {
+      console.error('Error fetching categories with product count:', error)
+      throw error
+    }
+  },
+)
+export const categoriesWithProductCountQueryOptions = () =>
+  queryOptions({
+    queryKey: ['categories', 'with-product-count'],
+    queryFn: () => fetchCategoriesWithProductCount(),
   })
 
 // Attribute types

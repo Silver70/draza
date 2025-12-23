@@ -33,7 +33,8 @@
 | GET | `/categories` | Get all categories | - |
 | GET | `/categories/tree` | Get hierarchical category tree | - |
 | GET | `/categories/root` | Get root categories (no parent) | - |
-| GET | `/categories/with-products` | Get categories with product counts | `?activeOnly=true/false` |
+| GET | `/categories/with-products` | Get categories with product counts (excludes empty categories) | `?activeOnly=true/false` |
+| GET | `/categories/with-counts` | Get all categories with product counts (includes categories with 0 products) | `?activeOnly=true/false` |
 | GET | `/categories/:id` | Get category by ID | - |
 | GET | `/categories/:id/children` | Get category with its children | - |
 | GET | `/categories/:id/breadcrumb` | Get category breadcrumb path | - |

@@ -63,8 +63,8 @@ const data = {
           url: "/inventory/products",
         },
         {
-          title: "Caetegories",
-          url: "#",
+          title: "Categories",
+          url: "/inventory/categories",
         },
         {
           title: "Collections",

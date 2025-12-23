@@ -25,6 +25,7 @@ function RouteComponent() {
     navigate({ to: '/inventory/products/create' })
   }
 
+
   return (
     <>
       <div className="space-y-2">
