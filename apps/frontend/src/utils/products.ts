@@ -203,6 +203,27 @@ export const createCollection = createServerFn({ method: 'POST' })
     }
   })
 
+export const addProductsToCollection = createServerFn({ method: 'POST' })
+  .inputValidator((d: { collectionId: string; productIds: string[] }) => d)
+  .handler(async ({ data }) => {
+    console.info('Adding products to collection...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: any }>(
+        `${API_BASE_URL}/products/collections/${data.collectionId}/products/bulk`,
+        { productIds: data.productIds },
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to add products to collection')
+    } catch (error) {
+      console.error('Error adding products to collection:', error)
+      throw error
+    }
+  })
+
 // Attribute types
 export type AttributeValue = {
   id: string

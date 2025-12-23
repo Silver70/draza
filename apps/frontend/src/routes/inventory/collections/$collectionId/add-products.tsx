@@ -1,7 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { productsQueryOptions } from '@/utils/products'
+import { toast } from 'sonner'
+import { productsQueryOptions, addProductsToCollection } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
 import { Button } from '@/components/ui/button'
@@ -25,9 +26,11 @@ export const Route = createFileRoute('/inventory/collections/$collectionId/add-p
 function RouteComponent() {
   const { collectionId } = Route.useParams()
   const { data: products } = useSuspenseQuery(productsQueryOptions())
+  const navigate = useNavigate()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set())
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Filter products based on search query
   const filteredProducts = products.filter((product) => {
@@ -58,11 +61,38 @@ function RouteComponent() {
   }
 
   const handleAddProducts = async () => {
-    // TODO: Implement API call to add products to collection
-    console.log('Adding products to collection:', {
-      collectionId,
-      productIds: Array.from(selectedProducts),
-    })
+    if (selectedProducts.size === 0) {
+      toast.error('Please select at least one product')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+
+      const productIds = Array.from(selectedProducts)
+      await addProductsToCollection({
+        data: {
+          collectionId,
+          productIds,
+        },
+      })
+
+      toast.success('Products added successfully!', {
+        description: `${productIds.length} product${productIds.length === 1 ? '' : 's'} added to the collection.`,
+      })
+
+      // Navigate back to collections page
+      setTimeout(() => {
+        navigate({ to: '/inventory/collections' })
+      }, 500)
+    } catch (error) {
+      console.error('Error adding products to collection:', error)
+      toast.error('Failed to add products', {
+        description: error instanceof Error ? error.message : 'Please try again later.',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -103,6 +133,7 @@ function RouteComponent() {
             <Button
               variant="outline"
               onClick={handleSelectAll}
+              disabled={isSubmitting}
             >
               {selectedProducts.size === filteredProducts.length ? 'Deselect All' : 'Select All'}
             </Button>
@@ -113,9 +144,9 @@ function RouteComponent() {
               <div className="text-sm">
                 <span className="font-medium">{selectedProducts.size}</span> product{selectedProducts.size === 1 ? '' : 's'} selected
               </div>
-              <Button onClick={handleAddProducts}>
+              <Button onClick={handleAddProducts} disabled={isSubmitting}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Selected Products
+                {isSubmitting ? 'Adding...' : 'Add Selected Products'}
               </Button>
             </div>
           )}
@@ -179,9 +210,9 @@ function RouteComponent() {
       {/* Bottom action bar for mobile */}
       {selectedProducts.size > 0 && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t md:hidden">
-          <Button onClick={handleAddProducts} className="w-full">
+          <Button onClick={handleAddProducts} className="w-full" disabled={isSubmitting}>
             <Plus className="h-4 w-4 mr-2" />
-            Add {selectedProducts.size} Product{selectedProducts.size === 1 ? '' : 's'}
+            {isSubmitting ? 'Adding...' : `Add ${selectedProducts.size} Product${selectedProducts.size === 1 ? '' : 's'}`}
           </Button>
         </div>
       )}
