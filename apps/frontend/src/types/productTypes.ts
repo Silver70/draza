@@ -39,3 +39,13 @@ export type ProductsResponse = {
   success: boolean
   data: Product[]
 }
+
+export type Collection = {
+  id: string
+  name: string
+  slug: string
+  description?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}

@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import axios from 'redaxios'
-import { Category, CategoryWithProductCount, Product, ProductsResponse} from '../types/productTypes'
+import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection} from '../types/productTypes'
 
 // TODO: Update this to your actual API URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -152,6 +152,34 @@ export const createCategory = createServerFn({ method: 'POST' })
       console.error('Error creating category:', error)
       throw error
     }
+  })
+
+// Collections
+export const fetchCollections = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching collections...')
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: Collection[]
+      }>(`${API_BASE_URL}/products/collections`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch collections')
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+      throw error
+    }
+  },
+)
+
+export const collectionsQueryOptions = () =>
+  queryOptions({
+    queryKey: ['collections'],
+    queryFn: () => fetchCollections(),
   })
 
 // Attribute types
