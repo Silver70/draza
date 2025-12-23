@@ -68,7 +68,7 @@ const data = {
         },
         {
           title: "Collections",
-          url: "#",
+          url: "/inventory/collections",
         },
       ],
     },

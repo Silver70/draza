@@ -1,46 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import axios from 'redaxios'
-
-export type Category = {
-  id: string
-  name: string
-  slug: string
-}
-
-export type CategoryWithProductCount = Category & {
-  productCount: number
-}
-
-export type Product = {
-  id: string
-  name: string
-  slug: string
-  description?: string
-  categoryId?: string
-  category?: Category | null
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-}
-
-export type ProductVariant = {
-  id: string
-  productId: string
-  sku: string
-  price: number
-  quantity: number
-  isActive: boolean
-}
-
-export type ProductWithVariants = Product & {
-  variants?: ProductVariant[]
-}
-
-type ProductsResponse = {
-  success: boolean
-  data: Product[]
-}
+import { Category, CategoryWithProductCount, Product, ProductsResponse} from '../types/productTypes'
 
 // TODO: Update this to your actual API URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
