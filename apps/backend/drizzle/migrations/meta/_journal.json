@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766077574153,
-      "tag": "0000_yellow_proudstar",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1766117452276,
-      "tag": "0001_real_mentor",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1766338244160,
-      "tag": "0002_silent_iron_man",
+      "when": 1766592116919,
+      "tag": "0000_daffy_johnny_storm",
       "breakpoints": true
     }
   ]

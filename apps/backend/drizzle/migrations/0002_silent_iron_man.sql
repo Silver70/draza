@@ -1,1 +1,0 @@
-ALTER TABLE "product_variants" ADD COLUMN "price" numeric(10, 2) NOT NULL;

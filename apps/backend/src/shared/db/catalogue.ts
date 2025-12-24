@@ -9,6 +9,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { orderItemsTable } from "./order";
 //@ts-ignore
 export const categoriesTable = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -142,6 +143,7 @@ export const productVariantsRelations = relations(
       references: [productsTable.id],
     }),
     attributes: many(productVariantAttributesTable),
+    orderItems: many(orderItemsTable),
   })
 );
 
