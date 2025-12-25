@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { productsQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
+import { Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/inventory/products/')({
   component: RouteComponent,
@@ -41,6 +42,12 @@ function RouteComponent() {
             <p className="text-sm text-muted-foreground">
               Get started by creating your first product.
             </p>
+            <Link
+              to="/inventory/products/create"
+              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
+            >
+              Add Product
+            </Link>
           </div>
         </div>
       ) : (

@@ -42,6 +42,12 @@ function RouteComponent() {
             <p className="text-sm text-muted-foreground">
               Get started by creating your first category.
             </p>
+            <button
+              onClick={handleAddCategory}
+              className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
+            >
+              Add Category
+            </button>
           </div>
         </div>
       ) : (
