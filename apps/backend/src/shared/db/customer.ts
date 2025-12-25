@@ -26,3 +26,6 @@ export const customersRelations = relations(customersTable, ({ one, many }) => (
   addresses: many(addressesTable),
   orders: many(ordersTable),
 }));
+
+export type InsertCustomer = typeof customersTable.$inferInsert;
+export type SelectCustomer = typeof customersTable.$inferSelect;
