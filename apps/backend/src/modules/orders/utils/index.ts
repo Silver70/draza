@@ -1,5 +1,3 @@
-
-
 /**
  * Calculate order totals from items
  */
