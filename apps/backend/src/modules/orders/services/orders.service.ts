@@ -205,8 +205,7 @@ export const ordersService = {
     if (!data.items || data.items.length === 0) {
       throw new Error("Order must contain at least one item");
     }
-    //@ts-ignore
-    await this.validateOrderItems(data.items);
+    await ordersService.validateOrderItems(data.items);
 
     // Prepare order items with prices
     const orderItems: Array<{
@@ -324,24 +323,21 @@ export const ordersService = {
    * Mark order as processing (admin accepted the order)
    */
   markAsProcessing: async (id: string): Promise<any> => {
-       //@ts-ignore
-    return await this.updateStatus(id, "processing");
+    return await ordersService.updateStatus(id, "processing");
   },
 
   /**
    * Mark order as shipped
    */
   markAsShipped: async (id: string): Promise<any> => {
-       //@ts-ignore
-    return await this.updateStatus(id, "shipped");
+    return await ordersService.updateStatus(id, "shipped");
   },
 
   /**
    * Mark order as delivered
    */
   markAsDelivered: async (id: string): Promise<any> => {
-       //@ts-ignore
-    return await this.updateStatus(id, "delivered");
+    return await ordersService.updateStatus(id, "delivered");
   },
 
   /**
@@ -359,8 +355,7 @@ export const ordersService = {
     }
 
     // Update status to cancelled (inventory will be restored in updateStatus)
-       //@ts-ignore
-    await this.updateStatus(id, "cancelled");
+    await ordersService.updateStatus(id, "cancelled");
 
     // Optionally add cancellation reason to notes
     if (reason) {
