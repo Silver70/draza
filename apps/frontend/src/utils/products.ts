@@ -416,3 +416,31 @@ export const createProductWithVariants = createServerFn({ method: 'POST' })
       throw error
     }
   })
+
+// Fetch product with variants
+export const fetchProductWithVariants = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data }) => {
+    console.info(`Fetching product ${data} with variants...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: Product & { variants: Array<{ id: string; sku: string; price: number; quantity: number }> }
+      }>(`${API_BASE_URL}/products/${data}/variants`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Product not found')
+    } catch (error) {
+      console.error('Error fetching product with variants:', error)
+      throw error
+    }
+  })
+
+export const productWithVariantsQueryOptions = (productId: string) =>
+  queryOptions({
+    queryKey: ['product', productId, 'variants'],
+    queryFn: () => fetchProductWithVariants({ data: productId }),
+  })

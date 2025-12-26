@@ -22,7 +22,7 @@ function RouteComponent() {
   const navigate = useNavigate()
 
   const handleCreateOrder = () => {
-    console.log('Navigating to create order page...')
+    navigate({ to: '/orders/create' })
   }
 
   return (
