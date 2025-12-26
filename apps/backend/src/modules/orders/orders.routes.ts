@@ -180,8 +180,25 @@ ordersRoutes.get("/:id/stats", async (c) => {
 });
 
 /**
+ * POST /orders/shipping-options
+ * Get available shipping options for cart items
+ * Used before creating an order to display shipping options
+ */
+ordersRoutes.post("/shipping-options", async (c) => {
+  try {
+    const data = await c.req.json();
+    const options = await ordersService.getAvailableShippingOptions(data);
+    return c.json({ success: true, data: options });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get shipping options";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
  * POST /orders
  * Create a new order
+ * Tax and shipping are calculated automatically
  */
 ordersRoutes.post("/", async (c) => {
   try {

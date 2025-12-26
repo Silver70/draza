@@ -3,6 +3,8 @@ import { relations } from 'drizzle-orm';
 import { customersTable } from './customer';
 import { addressesTable } from './address';
 import { productVariantsTable } from './catalogue';
+import { taxJurisdictionsTable } from './tax';
+import { shippingMethodsTable } from './shipping';
 
 export const orderStatusEnum = pgEnum('order_status', [
   'pending',
@@ -26,10 +28,24 @@ export const ordersTable = pgTable('orders', {
     .notNull()
     .references(() => addressesTable.id),
   status: orderStatusEnum('status').notNull().default('pending'),
+
+  // Order amounts
   subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
   tax: numeric('tax', { precision: 10, scale: 2 }).notNull().default('0'),
   shippingCost: numeric('shipping_cost', { precision: 10, scale: 2 }).notNull().default('0'),
   total: numeric('total', { precision: 10, scale: 2 }).notNull(),
+
+  // Tax snapshot - captured at order time
+  taxJurisdictionId: uuid('tax_jurisdiction_id').references(() => taxJurisdictionsTable.id), // Reference for lookup
+  taxJurisdictionName: text('tax_jurisdiction_name'), // Snapshot: "California" or "CA-Los Angeles County"
+  taxRate: numeric('tax_rate', { precision: 5, scale: 4 }), // Snapshot: e.g., 0.0725 for 7.25%
+
+  // Shipping snapshot - captured at order time
+  shippingMethodId: uuid('shipping_method_id').references(() => shippingMethodsTable.id), // Reference for lookup
+  shippingMethodName: text('shipping_method_name'), // Snapshot: "Standard Shipping"
+  shippingCarrier: text('shipping_carrier'), // Snapshot: "USPS", "FedEx", etc.
+  estimatedDeliveryDate: timestamp('estimated_delivery_date'), // Calculated at order time
+
   notes: text('notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
@@ -67,6 +83,14 @@ export const ordersRelations = relations(ordersTable, ({ one, many }) => ({
     fields: [ordersTable.billingAddressId],
     references: [addressesTable.id],
     relationName: 'billing_address',
+  }),
+  taxJurisdiction: one(taxJurisdictionsTable, {
+    fields: [ordersTable.taxJurisdictionId],
+    references: [taxJurisdictionsTable.id],
+  }),
+  shippingMethod: one(shippingMethodsTable, {
+    fields: [ordersTable.shippingMethodId],
+    references: [shippingMethodsTable.id],
   }),
   items: many(orderItemsTable),
 }));

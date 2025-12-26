@@ -3,7 +3,9 @@ import { customersRepo } from "../../customers/repo/customers.repo";
 import { addressesRepo } from "../../customers/repo/addresses.repo";
 import { productVariantsRepo } from "../../products/repo/products.repo";
 import { NewOrder } from "../orders.types";
-import { calculateOrderTotals, generateOrderNumber } from "../utils/index";
+import { generateOrderNumber } from "../utils/index";
+import { calculateOrderTax } from "./tax.service";
+import { calculateShippingOptions, getShippingMethod, calculateEstimatedDeliveryDate } from "./shipping.service";
 
 export const ordersService = {
   /**
@@ -123,6 +125,39 @@ export const ordersService = {
   },
 
   /**
+   * Get available shipping options for cart
+   * Used by frontend to display shipping options before order creation
+   */
+  getAvailableShippingOptions: async (data: {
+    items: Array<{
+      productVariantId: string;
+      quantity: number;
+    }>;
+  }) => {
+    // Calculate cart subtotal
+    let subtotal = 0;
+    let totalWeight = 0; // TODO: Add weight to product variants
+
+    for (const item of data.items) {
+      const variant = await productVariantsRepo.getProductVariantById(item.productVariantId);
+      if (!variant) {
+        throw new Error(`Product variant ${item.productVariantId} not found`);
+      }
+
+      const itemTotal = parseFloat(variant.price) * item.quantity;
+      subtotal += itemTotal;
+    }
+
+    // Get all available shipping options
+    const shippingOptions = await calculateShippingOptions({
+      subtotal,
+      totalWeight,
+    });
+
+    return shippingOptions;
+  },
+
+  /**
    * Validate order items before creating order
    */
   validateOrderItems: async (items: Array<{ productVariantId: string; quantity: number }>): Promise<Array<{
@@ -164,6 +199,7 @@ export const ordersService = {
 
   /**
    * Create a new order with items
+   * Tax and shipping are calculated automatically based on address and shipping method
    */
   create: async (data: {
     customerId: string;
@@ -173,8 +209,7 @@ export const ordersService = {
       productVariantId: string;
       quantity: number;
     }>;
-    taxRate?: number;
-    shippingCost?: string;
+    shippingMethodId: string; // Selected shipping method
     notes?: string;
   }) => {
     // Validate customer exists
@@ -207,13 +242,20 @@ export const ordersService = {
     }
     await ordersService.validateOrderItems(data.items);
 
-    // Prepare order items with prices
+    // Prepare order items with prices and get product IDs for tax calculation
     const orderItems: Array<{
       productVariantId: string;
       quantity: number;
       unitPrice: string;
       totalPrice: string;
     }> = [];
+
+    const itemsForTaxCalculation: Array<{
+      productId: string;
+      subtotal: number;
+    }> = [];
+
+    let subtotal = 0;
 
     for (const item of data.items) {
       const variant = await productVariantsRepo.getProductVariantById(item.productVariantId);
@@ -222,7 +264,8 @@ export const ordersService = {
       }
 
       const unitPrice = variant.price;
-      const totalPrice = (parseFloat(unitPrice) * item.quantity).toFixed(2);
+      const itemTotal = parseFloat(unitPrice) * item.quantity;
+      const totalPrice = itemTotal.toFixed(2);
 
       orderItems.push({
         productVariantId: item.productVariantId,
@@ -230,29 +273,76 @@ export const ordersService = {
         unitPrice,
         totalPrice,
       });
+
+      subtotal += itemTotal;
+
+      // Get product ID for tax calculation
+      itemsForTaxCalculation.push({
+        productId: variant.productId,
+        subtotal: itemTotal,
+      });
     }
 
-    // Calculate totals
-    const totals = calculateOrderTotals(
-      orderItems,
-      data.taxRate || 0,
-      data.shippingCost || "0"
+    // Calculate tax based on shipping address
+    const taxCalculation = await calculateOrderTax({
+      shippingState: shippingAddress.state,
+      shippingCountry: shippingAddress.country,
+      items: itemsForTaxCalculation,
+    });
+
+    // Calculate shipping cost based on selected method
+    const shippingMethod = await getShippingMethod(data.shippingMethodId);
+    if (!shippingMethod) {
+      throw new Error("Shipping method not found");
+    }
+
+    const shippingOptions = await calculateShippingOptions({
+      subtotal,
+      totalWeight: 0, // TODO: Add weight to product variants
+    });
+
+    const selectedShipping = shippingOptions.find(
+      (option) => option.methodId === data.shippingMethodId
     );
+
+    if (!selectedShipping) {
+      throw new Error("Selected shipping method is not available");
+    }
+
+    // Calculate estimated delivery date
+    const estimatedDeliveryDate = calculateEstimatedDeliveryDate(
+      selectedShipping.estimatedDaysMin,
+      selectedShipping.estimatedDaysMax
+    );
+
+    // Calculate final total
+    const shippingCost = selectedShipping.cost;
+    const tax = taxCalculation.taxAmount;
+    const total = subtotal + tax + shippingCost;
 
     // Generate unique order number
     const orderNumber = generateOrderNumber();
 
-    // Create order data
+    // Create order data with snapshotted tax and shipping info
     const orderData: NewOrder = {
       orderNumber,
       customerId: data.customerId,
       shippingAddressId: data.shippingAddressId,
       billingAddressId: data.billingAddressId,
       status: "pending",
-      subtotal: totals.subtotal,
-      tax: totals.tax,
-      shippingCost: totals.shippingCost,
-      total: totals.total,
+      subtotal: subtotal.toFixed(2),
+      tax: tax.toFixed(2),
+      shippingCost: shippingCost.toFixed(2),
+      total: total.toFixed(2),
+      // Tax snapshot
+      taxJurisdictionId: taxCalculation.taxJurisdictionId,
+      taxJurisdictionName: taxCalculation.taxJurisdictionName,
+      taxRate: taxCalculation.taxRate.toString(),
+      // Shipping snapshot
+      shippingMethodId: data.shippingMethodId,
+      shippingMethodName: shippingMethod.name,
+      shippingCarrier: shippingMethod.carrier,
+      estimatedDeliveryDate: estimatedDeliveryDate,
       notes: data.notes || null,
     };
 

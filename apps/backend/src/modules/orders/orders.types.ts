@@ -54,16 +54,16 @@ export const createOrderItemSchema = z.object({
   totalPrice: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format"),
 });
 
-// Order schemas
+// Order schemas - updated for automatic tax/shipping calculation
 export const createOrderSchema = z.object({
   customerId: z.string().uuid("Invalid customer ID"),
   shippingAddressId: z.string().uuid("Invalid shipping address ID"),
   billingAddressId: z.string().uuid("Invalid billing address ID"),
-  items: z.array(createOrderItemSchema).min(1, "Order must have at least one item"),
-  subtotal: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid subtotal format"),
-  tax: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid tax format").default("0"),
-  shippingCost: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid shipping cost format").default("0"),
-  total: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid total format"),
+  items: z.array(z.object({
+    productVariantId: z.string().uuid("Invalid product variant ID"),
+    quantity: z.number().int().positive("Quantity must be positive"),
+  })).min(1, "Order must have at least one item"),
+  shippingMethodId: z.string().uuid("Invalid shipping method ID"),
   notes: z.string().optional().nullable(),
 });
 
