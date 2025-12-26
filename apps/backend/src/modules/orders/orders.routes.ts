@@ -105,6 +105,21 @@ ordersRoutes.get("/customer/:customerId/stats", async (c) => {
 });
 
 /**
+ * GET /orders/shipping-methods
+ * Get all active shipping methods
+ * Used in admin settings to select default shipping method
+ */
+ordersRoutes.get("/shipping-methods", async (c) => {
+  try {
+    const methods = await ordersService.getAllShippingMethods();
+    return c.json({ success: true, data: methods });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to get shipping methods";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
  * GET /orders/number/:orderNumber
  * Get order by order number
  */

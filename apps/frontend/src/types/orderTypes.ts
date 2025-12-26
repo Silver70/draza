@@ -117,8 +117,7 @@ export type CreateOrderInput = {
   shippingAddressId: string
   billingAddressId: string
   items: CreateOrderItemInput[]
-  taxRate?: number
-  shippingCost?: string
+  shippingMethodId: string // Selected shipping method - tax and shipping calculated by backend
   notes?: string
 }
 

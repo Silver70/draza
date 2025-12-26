@@ -320,6 +320,41 @@ export const orderStatsQueryOptions = (orderId: string) =>
     queryFn: () => fetchOrderStats({ data: orderId }),
   })
 
+// Shipping option type
+export type ShippingOption = {
+  methodId: string
+  name: string
+  displayName: string
+  description: string | null
+  carrier: string
+  cost: number
+  estimatedDaysMin: number | null
+  estimatedDaysMax: number | null
+  isFree: boolean
+}
+
+// Get available shipping options for cart
+export const getShippingOptions = createServerFn({ method: 'POST' })
+  .inputValidator((d: { items: Array<{ productVariantId: string; quantity: number }> }) => d)
+  .handler(async ({ data }) => {
+    console.info('Fetching shipping options...', data)
+    try {
+      const response = await axios.post<{ success: boolean; data: ShippingOption[] }>(
+        `${API_BASE_URL}/orders/shipping-options`,
+        data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch shipping options')
+    } catch (error) {
+      console.error('Error fetching shipping options:', error)
+      throw error
+    }
+  })
+
 // Create a new order
 export const createOrder = createServerFn({ method: 'POST' })
   .inputValidator((d: CreateOrderInput) => d)
@@ -534,4 +569,46 @@ export const deleteOrder = createServerFn({ method: 'POST' })
       console.error('Error deleting order:', error)
       throw error
     }
+  })
+
+// Shipping method type
+export type ShippingMethod = {
+  id: string
+  name: string
+  displayName: string
+  description: string | null
+  carrier: string
+  calculationType: string
+  baseRate: string
+  freeShippingThreshold: string | null
+  estimatedDaysMin: number | null
+  estimatedDaysMax: number | null
+  isActive: boolean
+  displayOrder: number
+}
+
+// Fetch all active shipping methods
+export const fetchShippingMethods = createServerFn({ method: 'GET' })
+  .handler(async () => {
+    console.info('Fetching shipping methods...')
+    try {
+      const response = await axios.get<{ success: boolean; data: ShippingMethod[] }>(
+        `${API_BASE_URL}/orders/shipping-methods`,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch shipping methods')
+    } catch (error) {
+      console.error('Error fetching shipping methods:', error)
+      throw error
+    }
+  })
+
+export const shippingMethodsQueryOptions = () =>
+  queryOptions({
+    queryKey: ['shipping-methods'],
+    queryFn: () => fetchShippingMethods(),
   })

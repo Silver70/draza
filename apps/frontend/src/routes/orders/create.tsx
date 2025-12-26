@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react'
 import { X, Search, User, Package } from 'lucide-react'
 import {
   FieldLabel,
-  FieldDescription,
 } from '~/components/ui/field'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -27,13 +26,26 @@ import {
 } from '~/utils/customers'
 import {
   productsQueryOptions,
-  fetchProductWithVariants,
 } from '~/utils/products'
-import { createOrder } from '~/utils/orders'
+import { createOrder, shippingMethodsQueryOptions, type ShippingMethod } from '~/utils/orders'
+import { getOrderSettings } from '~/utils/orderSettings'
+
+// Type for product variant with product info
+type ProductVariantOption = {
+  id: string
+  sku: string
+  price: number | string
+  quantityInStock: number
+  productId: string
+  productName: string
+}
 
 export const Route = createFileRoute('/orders/create')({
   loader: async ({ context: { queryClient } }) => {
-    await queryClient.ensureQueryData(productsQueryOptions())
+    await Promise.all([
+      queryClient.ensureQueryData(productsQueryOptions()),
+      queryClient.ensureQueryData(shippingMethodsQueryOptions()),
+    ])
   },
   pendingComponent: PendingComponent,
   errorComponent: ErrorComponent,
@@ -49,8 +61,7 @@ const orderSchema = z.object({
     productVariantId: z.string().uuid(),
     quantity: z.number().int().positive(),
   })).min(1, 'Please add at least one item'),
-  taxRate: z.number().min(0).max(1).optional(),
-  shippingCost: z.string().regex(/^\d+(\.\d{1,2})?$/).optional(),
+  shippingMethodId: z.string().uuid('Please select a shipping method'),
   notes: z.string().optional(),
 })
 
@@ -74,6 +85,7 @@ const parsePrice = (price: number | string): number => {
 function RouteComponent() {
   const navigate = useNavigate()
   const { data: products } = useSuspenseQuery(productsQueryOptions())
+  const { data: shippingMethods } = useSuspenseQuery(shippingMethodsQueryOptions())
 
   // Customer & Address State
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
@@ -87,12 +99,71 @@ function RouteComponent() {
 
   // Order Items State
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
-  const [selectedProductId, setSelectedProductId] = useState<string>('')
+  const [allVariants, setAllVariants] = useState<ProductVariantOption[]>([])
+  const [isLoadingVariants, setIsLoadingVariants] = useState(true)
+
+  // Shipping State
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState<string>('')
 
   // Order Details State
-  const [taxRate, setTaxRate] = useState<number>(0)
-  const [shippingCost, setShippingCost] = useState<string>('0.00')
   const [orderNotes, setOrderNotes] = useState<string>('')
+
+  // Load default shipping method from settings on mount
+  useEffect(() => {
+    const settings = getOrderSettings()
+    if (settings.defaultShippingMethodId) {
+      // Verify the default method still exists
+      const methodExists = shippingMethods.find(m => m.id === settings.defaultShippingMethodId)
+      if (methodExists) {
+        setSelectedShippingMethod(settings.defaultShippingMethodId)
+      } else if (shippingMethods.length > 0) {
+        // Fallback to first method if default not found
+        setSelectedShippingMethod(shippingMethods[0].id)
+      }
+    } else if (shippingMethods.length > 0) {
+      // No default set, use first method
+      setSelectedShippingMethod(shippingMethods[0].id)
+    }
+  }, [shippingMethods])
+
+  // Load all product variants on mount
+  useEffect(() => {
+    const loadVariants = async () => {
+      setIsLoadingVariants(true)
+      try {
+        // Import fetchProductWithVariants dynamically
+        const { fetchProductWithVariants } = await import('~/utils/products')
+
+        const variantsPromises = products.map(async (product) => {
+          try {
+            const productData = await fetchProductWithVariants({ data: product.id })
+            return productData.variants.map((variant: any) => ({
+              id: variant.id,
+              sku: variant.sku,
+              price: variant.price,
+              quantityInStock: variant.quantityInStock,
+              productId: product.id,
+              productName: product.name,
+            }))
+          } catch (error) {
+            console.error(`Failed to load variants for ${product.name}:`, error)
+            return []
+          }
+        })
+
+        const variantsArrays = await Promise.all(variantsPromises)
+        const flatVariants = variantsArrays.flat()
+        setAllVariants(flatVariants)
+      } catch (error) {
+        console.error('Error loading variants:', error)
+        toast.error('Failed to load product variants')
+      } finally {
+        setIsLoadingVariants(false)
+      }
+    }
+
+    loadVariants()
+  }, [products])
 
   const form = useForm({
     defaultValues: {
@@ -100,8 +171,7 @@ function RouteComponent() {
       shippingAddressId: '',
       billingAddressId: '',
       items: [] as Array<{ productVariantId: string; quantity: number }>,
-      taxRate: 0,
-      shippingCost: '0.00',
+      shippingMethodId: '',
       notes: '',
     },
     onSubmit: async ({ value }) => {
@@ -188,24 +258,22 @@ function RouteComponent() {
     }
   }, [selectedShippingAddress, sameBillingAsShipping])
 
-  // Calculate order totals
-  const calculateTotals = () => {
-    const subtotal = orderItems.reduce((sum, item) => {
+  // Update form when shipping method changes
+  useEffect(() => {
+    if (selectedShippingMethod) {
+      form.setFieldValue('shippingMethodId', selectedShippingMethod)
+    }
+  }, [selectedShippingMethod])
+
+  // Calculate order subtotal for display
+  const calculateSubtotal = () => {
+    return orderItems.reduce((sum, item) => {
       return sum + (parsePrice(item.unitPrice) * item.quantity)
     }, 0)
-    const tax = subtotal * taxRate
-    const shipping = parseFloat(shippingCost) || 0
-    const total = subtotal + tax + shipping
-
-    return {
-      subtotal: subtotal.toFixed(2),
-      tax: tax.toFixed(2),
-      shipping: shipping.toFixed(2),
-      total: total.toFixed(2),
-    }
   }
 
-  const totals = calculateTotals()
+  const subtotal = calculateSubtotal()
+  const selectedShippingMethodData = shippingMethods.find(m => m.id === selectedShippingMethod)
 
   // Handle customer selection
   const handleSelectCustomer = (customerId: string) => {
@@ -229,54 +297,44 @@ function RouteComponent() {
     form.setFieldValue('billingAddressId', '')
   }
 
-  // Handle adding product to order
-  const handleAddProduct = async (productId: string) => {
-    try {
-      const productData = await fetchProductWithVariants({ data: productId })
-
-      if (!productData.variants || productData.variants.length === 0) {
-        toast.error('This product has no available variants')
-        return
-      }
-
-      // For now, add the first variant (in a real app, we'd show a variant selector)
-      const variant = productData.variants[0]!
-
-      // Check if already in order
-      const existingItem = orderItems.find(item => item.productVariantId === variant.id)
-      if (existingItem) {
-        toast.info('Product already in order', {
-          description: 'Please update the quantity of the existing item.',
-        })
-        return
-      }
-
-      const newItem: OrderItem = {
-        id: crypto.randomUUID(),
-        productVariantId: variant.id,
-        productName: productData.name,
-        variantSku: variant.sku,
-        variantDetails: '', // Would show attribute details here
-        unitPrice: parsePrice(variant.price),
-        quantity: 1,
-        availableStock: typeof variant.quantity === 'number' ? variant.quantity : parseInt(String(variant.quantity)),
-      }
-
-      const updatedItems = [...orderItems, newItem]
-      setOrderItems(updatedItems)
-
-      // Update form value
-      form.setFieldValue('items', updatedItems.map(item => ({
-        productVariantId: item.productVariantId,
-        quantity: item.quantity,
-      })))
-
-      toast.success('Product added to order')
-      setSelectedProductId('')
-    } catch (error) {
-      console.error('Error adding product:', error)
-      toast.error('Failed to add product')
+  // Handle adding variant to order directly
+  const handleAddVariant = (variantId: string) => {
+    const variant = allVariants.find(v => v.id === variantId)
+    if (!variant) {
+      toast.error('Variant not found')
+      return
     }
+
+    // Check if already in order
+    const existingItem = orderItems.find(item => item.productVariantId === variant.id)
+    if (existingItem) {
+      toast.info('This variant is already in the order', {
+        description: 'Please update the quantity of the existing item.',
+      })
+      return
+    }
+
+    const newItem: OrderItem = {
+      id: crypto.randomUUID(),
+      productVariantId: variant.id,
+      productName: variant.productName,
+      variantSku: variant.sku,
+      variantDetails: '',
+      unitPrice: parsePrice(variant.price),
+      quantity: 1,
+      availableStock: typeof variant.quantityInStock === 'number' ? variant.quantityInStock : parseInt(String(variant.quantityInStock)),
+    }
+
+    const updatedItems = [...orderItems, newItem]
+    setOrderItems(updatedItems)
+
+    // Update form value
+    form.setFieldValue('items', updatedItems.map(item => ({
+      productVariantId: item.productVariantId,
+      quantity: item.quantity,
+    })))
+
+    toast.success('Variant added to order')
   }
 
   // Handle removing item from order
@@ -314,15 +372,7 @@ function RouteComponent() {
     })))
   }
 
-  // Update form values when state changes
-  useEffect(() => {
-    form.setFieldValue('taxRate', taxRate)
-  }, [taxRate])
-
-  useEffect(() => {
-    form.setFieldValue('shippingCost', shippingCost)
-  }, [shippingCost])
-
+  // Update form values when notes change
   useEffect(() => {
     form.setFieldValue('notes', orderNotes)
   }, [orderNotes])
@@ -334,15 +384,20 @@ function RouteComponent() {
         e.stopPropagation()
         form.handleSubmit()
       }}
-      className="w-full max-w-5xl mx-auto py-8 px-4 space-y-6"
+      className="w-full max-w-7xl mx-auto py-8 px-4"
     >
       {/* Header */}
-      <div className="space-y-2">
+      <div className="space-y-2 mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Create New Order</h1>
         <p className="text-muted-foreground">
           Fill out the form below to create a new order for a customer.
         </p>
       </div>
+
+      {/* Two Column Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column - Main Form */}
+        <div className="lg:col-span-2 space-y-6">
 
       {/* 1. Customer Information */}
       <Card>
@@ -430,73 +485,83 @@ function RouteComponent() {
       </Card>
 
       {/* 2. Shipping & Billing Addresses */}
-      {selectedCustomer && customerAddresses.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Shipping & Billing Addresses</CardTitle>
-            <CardDescription>
-              Select the addresses for shipping and billing.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Shipping Address */}
-            <div className="space-y-2">
-              <FieldLabel htmlFor="shipping-address">Shipping Address *</FieldLabel>
-              <Combobox
-                options={customerAddresses.map(addr => ({
-                  value: addr.id,
-                  label: `${addr.streetAddress}${addr.apartment ? `, ${addr.apartment}` : ''}, ${addr.city}, ${addr.state} ${addr.postalCode}${addr.isDefault ? ' (Default)' : ''}`,
-                }))}
-                value={selectedShippingAddress}
-                onSelect={(value) => {
-                  setSelectedShippingAddress(value)
-                  form.setFieldValue('shippingAddressId', value)
-                }}
-                placeholder="Select shipping address..."
-                searchPlaceholder="Search addresses..."
-                emptyText="No addresses found."
-                triggerClassName="w-full"
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle>Shipping & Billing Addresses</CardTitle>
+          <CardDescription>
+            Select the addresses for shipping and billing.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!selectedCustomer ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Please select a customer first
             </div>
-
-            {/* Same as Shipping Checkbox */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="same-billing"
-                checked={sameBillingAsShipping}
-                onChange={(e) => setSameBillingAsShipping(e.target.checked)}
-                className="rounded"
-              />
-              <FieldLabel htmlFor="same-billing" className="cursor-pointer">
-                Billing address same as shipping
-              </FieldLabel>
+          ) : customerAddresses.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              This customer has no saved addresses
             </div>
-
-            {/* Billing Address */}
-            {!sameBillingAsShipping && (
+          ) : (
+            <>
+              {/* Shipping Address */}
               <div className="space-y-2">
-                <FieldLabel htmlFor="billing-address">Billing Address *</FieldLabel>
+                <FieldLabel htmlFor="shipping-address">Shipping Address *</FieldLabel>
                 <Combobox
                   options={customerAddresses.map(addr => ({
                     value: addr.id,
                     label: `${addr.streetAddress}${addr.apartment ? `, ${addr.apartment}` : ''}, ${addr.city}, ${addr.state} ${addr.postalCode}${addr.isDefault ? ' (Default)' : ''}`,
                   }))}
-                  value={selectedBillingAddress}
+                  value={selectedShippingAddress}
                   onSelect={(value) => {
-                    setSelectedBillingAddress(value)
-                    form.setFieldValue('billingAddressId', value)
+                    setSelectedShippingAddress(value)
+                    form.setFieldValue('shippingAddressId', value)
                   }}
-                  placeholder="Select billing address..."
+                  placeholder="Select shipping address..."
                   searchPlaceholder="Search addresses..."
                   emptyText="No addresses found."
                   triggerClassName="w-full"
                 />
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+
+              {/* Same as Shipping Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="same-billing"
+                  checked={sameBillingAsShipping}
+                  onChange={(e) => setSameBillingAsShipping(e.target.checked)}
+                  className="rounded"
+                />
+                <FieldLabel htmlFor="same-billing" className="cursor-pointer">
+                  Billing address same as shipping
+                </FieldLabel>
+              </div>
+
+              {/* Billing Address */}
+              {!sameBillingAsShipping && (
+                <div className="space-y-2">
+                  <FieldLabel htmlFor="billing-address">Billing Address *</FieldLabel>
+                  <Combobox
+                    options={customerAddresses.map(addr => ({
+                      value: addr.id,
+                      label: `${addr.streetAddress}${addr.apartment ? `, ${addr.apartment}` : ''}, ${addr.city}, ${addr.state} ${addr.postalCode}${addr.isDefault ? ' (Default)' : ''}`,
+                    }))}
+                    value={selectedBillingAddress}
+                    onSelect={(value) => {
+                      setSelectedBillingAddress(value)
+                      form.setFieldValue('billingAddressId', value)
+                    }}
+                    placeholder="Select billing address..."
+                    searchPlaceholder="Search addresses..."
+                    emptyText="No addresses found."
+                    triggerClassName="w-full"
+                  />
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* 3. Order Items */}
       <Card>
@@ -510,25 +575,27 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Product Search */}
+          {/* Variant Search */}
           <div className="space-y-2">
-            <FieldLabel htmlFor="product-search">Add Product</FieldLabel>
-            <div className="flex gap-2">
+            <FieldLabel htmlFor="variant-search">Add Product Variant</FieldLabel>
+            {isLoadingVariants ? (
+              <div className="text-sm text-muted-foreground">Loading variants...</div>
+            ) : (
               <Combobox
-                options={products.map(product => ({
-                  value: product.id,
-                  label: product.name,
+                options={allVariants.map(variant => ({
+                  value: variant.id,
+                  label: `${variant.productName} - ${variant.sku} ($${parsePrice(variant.price).toFixed(2)}, ${variant.quantityInStock} in stock)`,
                 }))}
-                value={selectedProductId}
+                value=""
                 onSelect={(value) => {
-                  handleAddProduct(value)
+                  handleAddVariant(value)
                 }}
-                placeholder="Search products..."
+                placeholder="Search product variants..."
                 searchPlaceholder="Type to search..."
-                emptyText="No products found."
-                triggerClassName="flex-1"
+                emptyText="No variants found."
+                triggerClassName="w-full"
               />
-            </div>
+            )}
           </div>
 
           <Separator />
@@ -547,8 +614,8 @@ function RouteComponent() {
                 <div key={item.id} className="border rounded-lg p-4 bg-card">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium">{item.productName}</div>
-                      <div className="text-sm text-muted-foreground font-mono">{item.variantSku}</div>
+                      <div className="font-medium font-mono">{item.variantSku}</div>
+                      <div className="text-sm text-muted-foreground">{item.productName}</div>
                       <div className="text-sm text-muted-foreground mt-1">
                         ${parsePrice(item.unitPrice).toFixed(2)} each
                         {item.availableStock < 10 && (
@@ -592,63 +659,79 @@ function RouteComponent() {
         </CardContent>
       </Card>
 
-      {/* 4. Order Details */}
+        </div>
+
+        {/* Right Column - Sidebar */}
+        <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6 lg:self-start">
+
+      {/* 4. Shipping Method */}
       <Card>
         <CardHeader>
-          <CardTitle>Order Details</CardTitle>
+          <CardTitle>Shipping Method</CardTitle>
           <CardDescription>
-            Configure tax, shipping, and add notes.
+            Select a shipping method for this order. Tax will be calculated automatically based on the shipping address.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Tax Rate */}
-            <div className="space-y-2">
-              <FieldLabel htmlFor="tax-rate">Tax Rate (%)</FieldLabel>
-              <Input
-                id="tax-rate"
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={taxRate * 100}
-                onChange={(e) => setTaxRate((parseFloat(e.target.value) || 0) / 100)}
-                placeholder="0.00"
-              />
-              <FieldDescription>
-                Enter tax rate as a percentage (e.g., 8 for 8%)
-              </FieldDescription>
-            </div>
-
-            {/* Shipping Cost */}
-            <div className="space-y-2">
-              <FieldLabel htmlFor="shipping-cost">Shipping Cost ($)</FieldLabel>
-              <Input
-                id="shipping-cost"
-                type="number"
-                min="0"
-                step="0.01"
-                value={shippingCost}
-                onChange={(e) => setShippingCost(e.target.value)}
-                placeholder="0.00"
-              />
-              <FieldDescription>
-                Enter shipping cost in dollars
-              </FieldDescription>
-            </div>
-          </div>
-
-          {/* Notes */}
           <div className="space-y-2">
-            <FieldLabel htmlFor="notes">Order Notes (Optional)</FieldLabel>
-            <Textarea
-              id="notes"
-              placeholder="Add any special instructions or notes..."
-              rows={3}
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
+            <FieldLabel htmlFor="shipping-method">Shipping Method *</FieldLabel>
+            <Combobox
+              options={shippingMethods.map(method => ({
+                value: method.id,
+                label: `${method.displayName} - ${method.carrier} ($${parseFloat(method.baseRate).toFixed(2)})`,
+              }))}
+              value={selectedShippingMethod}
+              onSelect={(value) => setSelectedShippingMethod(value)}
+              placeholder="Select shipping method..."
+              searchPlaceholder="Search shipping methods..."
+              emptyText="No shipping methods found."
+              triggerClassName="w-full"
             />
           </div>
+
+          {selectedShippingMethodData && (
+            <div className="border rounded-lg p-4 bg-muted/50">
+              <div className="space-y-1">
+                <div className="font-medium">{selectedShippingMethodData.displayName}</div>
+                {selectedShippingMethodData.description && (
+                  <div className="text-sm text-muted-foreground">
+                    {selectedShippingMethodData.description}
+                  </div>
+                )}
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Carrier:</span> {selectedShippingMethodData.carrier}
+                </div>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Base Rate:</span> ${parseFloat(selectedShippingMethodData.baseRate).toFixed(2)}
+                </div>
+                {selectedShippingMethodData.estimatedDaysMin && selectedShippingMethodData.estimatedDaysMax && (
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Estimated Delivery:</span>{' '}
+                    {selectedShippingMethodData.estimatedDaysMin}-{selectedShippingMethodData.estimatedDaysMax} business days
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 5. Order Notes */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Order Notes</CardTitle>
+          <CardDescription>
+            Add any special instructions or notes for this order (optional).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            id="notes"
+            placeholder="Add any special instructions or notes..."
+            rows={3}
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+          />
         </CardContent>
       </Card>
 
@@ -658,25 +741,38 @@ function RouteComponent() {
           <CardTitle>Order Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium">${totals.subtotal}</span>
+          {orderItems.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              No items added yet
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Tax ({(taxRate * 100).toFixed(2)}%):</span>
-              <span className="font-medium">${totals.tax}</span>
+          ) : (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal:</span>
+                <span className="font-medium">${subtotal.toFixed(2)}</span>
+              </div>
+              {selectedShippingMethodData && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Shipping ({selectedShippingMethodData.displayName}):</span>
+                  <span className="font-medium">
+                    ${parseFloat(selectedShippingMethodData.baseRate).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <Separator className="my-2" />
+              <div className="flex justify-between text-sm font-semibold">
+                <span>Estimated Total:</span>
+                <span>
+                  ${selectedShippingMethodData
+                    ? (subtotal + parseFloat(selectedShippingMethodData.baseRate)).toFixed(2)
+                    : subtotal.toFixed(2)}
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground mt-2">
+                Tax and final shipping cost will be calculated automatically when the order is created
+              </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Shipping:</span>
-              <span className="font-medium">${totals.shipping}</span>
-            </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between text-lg font-bold">
-              <span>Total:</span>
-              <span>${totals.total}</span>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
@@ -691,7 +787,8 @@ function RouteComponent() {
                 !selectedCustomer ||
                 !selectedShippingAddress ||
                 !selectedBillingAddress ||
-                orderItems.length === 0
+                orderItems.length === 0 ||
+                !selectedShippingMethod
               }
             >
               Create Order
@@ -704,13 +801,19 @@ function RouteComponent() {
               Cancel
             </Button>
           </div>
-          {(!selectedCustomer || !selectedShippingAddress || orderItems.length === 0) && (
+          {(!selectedCustomer || !selectedShippingAddress || orderItems.length === 0 || !selectedShippingMethod) && (
             <p className="text-sm text-muted-foreground mt-3 text-center">
-              Please complete all required fields to create the order.
+              {!selectedCustomer && 'Please select a customer. '}
+              {!selectedShippingAddress && 'Please select shipping address. '}
+              {orderItems.length === 0 && 'Please add at least one item. '}
+              {!selectedShippingMethod && 'Please select a shipping method.'}
             </p>
           )}
         </CardContent>
       </Card>
+
+        </div>
+      </div>
     </form>
   )
 }

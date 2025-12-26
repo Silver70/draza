@@ -158,6 +158,15 @@ export const ordersService = {
   },
 
   /**
+   * Get all active shipping methods
+   * Used by admin settings to select default shipping method
+   */
+  getAllShippingMethods: async () => {
+    const { getAllActiveShippingMethods } = await import('./shipping.service');
+    return await getAllActiveShippingMethods();
+  },
+
+  /**
    * Validate order items before creating order
    */
   validateOrderItems: async (items: Array<{ productVariantId: string; quantity: number }>): Promise<Array<{
