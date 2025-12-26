@@ -3,21 +3,17 @@
 import * as React from "react"
 import {
   AudioWaveform,
-  BookOpen,
-  Bot,
   Box,
   Command,
-  Frame,
   GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  FileText
+  FileText,
+  FolderTree,
+  LayoutGrid,
+  Users,
+  RotateCcw,
 } from "lucide-react"
 
-import { NavMain } from "~/components/nav-main"
-import { NavProjects } from "~/components/nav-projects"
+import { NavFlat } from "~/components/nav-flat"
 import { NavUser } from "~/components/nav-user"
 import { TeamSwitcher } from "~/components/team-switcher"
 import {
@@ -27,7 +23,6 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "~/components/ui/sidebar"
-import { file } from "zod"
 
 // This is sample data.
 const data = {
@@ -55,44 +50,36 @@ const data = {
   ],
   navMain: [
     {
-      title: "Inventory",
-      url: "#",
+      title: "Products",
+      url: "/inventory/products",
       icon: Box,
-      isActive: true,
-      items: [
-        {
-          title: "Products",
-          url: "/inventory/products",
-        },
-        {
-          title: "Categories",
-          url: "/inventory/categories",
-        },
-        {
-          title: "Collections",
-          url: "/inventory/collections",
-        },
-      ],
+    },
+    {
+      title: "Categories",
+      url: "/inventory/categories",
+      icon: FolderTree,
+    },
+    {
+      title: "Collections",
+      url: "/inventory/collections",
+      icon: LayoutGrid,
+    },
+    {
+      title: "Customers",
+      url: "/customers",
+      icon: Users,
     },
     {
       title: "Orders",
-      url: "#",
+      url: "/orders",
       icon: FileText,
-      items: [
-        {
-          title: "Orders",
-          url: "/orders",
-        },
-        {
-          title: "Returns",
-          url: "/orders/returns",
-        },
-      ],
     },
-   
-   
+    {
+      title: "Returns",
+      url: "/orders/returns",
+      icon: RotateCcw,
+    },
   ],
- 
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -102,8 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-   
+        <NavFlat items={data.navMain} label="Platform" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
