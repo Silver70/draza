@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteRouteImport } from './routes/settings/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
@@ -19,6 +20,11 @@ import { Route as InventoryCategoriesIndexRouteImport } from './routes/inventory
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
 import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
+const SettingsRouteRoute = SettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -35,9 +41,9 @@ const OrdersCreateRoute = OrdersCreateRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsOrdersIndexRoute = SettingsOrdersIndexRouteImport.update({
-  id: '/settings/orders/',
-  path: '/settings/orders/',
-  getParentRoute: () => rootRouteImport,
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const InventoryProductsIndexRoute = InventoryProductsIndexRouteImport.update({
   id: '/inventory/products/',
@@ -70,6 +76,7 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
   '/orders/create': typeof OrdersCreateRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
   '/orders/create': typeof OrdersCreateRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
@@ -93,6 +101,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
   '/orders/create': typeof OrdersCreateRoute
   '/orders/': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/settings'
     | '/orders/create'
     | '/orders'
     | '/inventory/products/create'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/settings'
     | '/orders/create'
     | '/orders'
     | '/inventory/products/create'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/settings'
     | '/orders/create'
     | '/orders/'
     | '/inventory/products/create'
@@ -140,18 +152,25 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
   OrdersCreateRoute: typeof OrdersCreateRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
-  SettingsOrdersIndexRoute: typeof SettingsOrdersIndexRoute
   InventoryCollectionsCollectionIdAddProductsRoute: typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -175,10 +194,10 @@ declare module '@tanstack/react-router' {
     }
     '/settings/orders/': {
       id: '/settings/orders/'
-      path: '/settings/orders'
+      path: '/orders'
       fullPath: '/settings/orders'
       preLoaderRoute: typeof SettingsOrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SettingsRouteRoute
     }
     '/inventory/products/': {
       id: '/inventory/products/'
@@ -218,15 +237,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SettingsRouteRouteChildren {
+  SettingsOrdersIndexRoute: typeof SettingsOrdersIndexRoute
+}
+
+const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
+  SettingsOrdersIndexRoute: SettingsOrdersIndexRoute,
+}
+
+const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
+  SettingsRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsRouteRoute: SettingsRouteRouteWithChildren,
   OrdersCreateRoute: OrdersCreateRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
   InventoryCollectionsIndexRoute: InventoryCollectionsIndexRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
-  SettingsOrdersIndexRoute: SettingsOrdersIndexRoute,
   InventoryCollectionsCollectionIdAddProductsRoute:
     InventoryCollectionsCollectionIdAddProductsRoute,
 }
