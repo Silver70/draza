@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteRouteImport } from './routes/settings/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as CustomersIndexRouteImport } from './routes/customers/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
+import { Route as CustomersCreateRouteImport } from './routes/customers/create'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
@@ -35,9 +37,19 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomersIndexRoute = CustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersCreateRoute = OrdersCreateRouteImport.update({
   id: '/orders/create',
   path: '/orders/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersCreateRoute = CustomersCreateRouteImport.update({
+  id: '/customers/create',
+  path: '/customers/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsOrdersIndexRoute = SettingsOrdersIndexRouteImport.update({
@@ -77,7 +89,9 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/customers': typeof CustomersIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
@@ -89,7 +103,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/customers': typeof CustomersIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
@@ -102,7 +118,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/customers/': typeof CustomersIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
@@ -116,7 +134,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/customers/create'
     | '/orders/create'
+    | '/customers'
     | '/orders'
     | '/inventory/products/create'
     | '/inventory/categories'
@@ -128,7 +148,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/customers/create'
     | '/orders/create'
+    | '/customers'
     | '/orders'
     | '/inventory/products/create'
     | '/inventory/categories'
@@ -140,7 +162,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/customers/create'
     | '/orders/create'
+    | '/customers/'
     | '/orders/'
     | '/inventory/products/create'
     | '/inventory/categories/'
@@ -153,7 +177,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  CustomersCreateRoute: typeof CustomersCreateRoute
   OrdersCreateRoute: typeof OrdersCreateRoute
+  CustomersIndexRoute: typeof CustomersIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
@@ -185,11 +211,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customers/': {
+      id: '/customers/'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/create': {
       id: '/orders/create'
       path: '/orders/create'
       fullPath: '/orders/create'
       preLoaderRoute: typeof OrdersCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers/create': {
+      id: '/customers/create'
+      path: '/customers/create'
+      fullPath: '/customers/create'
+      preLoaderRoute: typeof CustomersCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/orders/': {
@@ -252,7 +292,9 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  CustomersCreateRoute: CustomersCreateRoute,
   OrdersCreateRoute: OrdersCreateRoute,
+  CustomersIndexRoute: CustomersIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
