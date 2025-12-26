@@ -10,7 +10,7 @@ import {
   FolderTree,
   LayoutGrid,
   Users,
-  RotateCcw,
+  Cog
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
@@ -75,9 +75,9 @@ const data = {
       icon: FileText,
     },
     {
-      title: "Returns",
-      url: "/orders/returns",
-      icon: RotateCcw,
+      title: "Settings",
+      url: "/settings",
+      icon: Cog,
     },
   ],
 }
