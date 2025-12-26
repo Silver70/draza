@@ -12,7 +12,7 @@ import { ErrorComponent } from '~/components/Error'
 import { shippingMethodsQueryOptions } from '~/utils/orders'
 import { getOrderSettings, saveOrderSettings } from '~/utils/orderSettings'
 
-export const Route = createFileRoute('/settings/orders')({
+export const Route = createFileRoute('/settings/orders/')({
     loader: async ({ context: { queryClient } }) => {
     await queryClient.ensureQueryData(shippingMethodsQueryOptions())
   },
