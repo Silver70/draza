@@ -13,6 +13,7 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  FileText
 } from "lucide-react"
 
 import { NavMain } from "~/components/nav-main"
@@ -26,6 +27,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "~/components/ui/sidebar"
+import { file } from "zod"
 
 // This is sample data.
 const data = {
@@ -72,6 +74,22 @@ const data = {
         },
       ],
     },
+    {
+      title: "Orders",
+      url: "#",
+      icon: FileText,
+      items: [
+        {
+          title: "Orders",
+          url: "/orders",
+        },
+        {
+          title: "Returns",
+          url: "/orders/returns",
+        },
+      ],
+    },
+   
    
   ],
  
