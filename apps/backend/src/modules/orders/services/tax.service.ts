@@ -177,3 +177,177 @@ export async function getAllActiveTaxJurisdictions() {
     )
     .orderBy(taxJurisdictionsTable.name);
 }
+
+/**
+ * Get all tax jurisdictions (including inactive)
+ */
+export async function getAllTaxJurisdictions() {
+  return await db
+    .select()
+    .from(taxJurisdictionsTable)
+    .orderBy(taxJurisdictionsTable.name);
+}
+
+/**
+ * Get tax jurisdictions by type
+ */
+export async function getTaxJurisdictionsByType(type: 'country' | 'state' | 'county' | 'city') {
+  return await db
+    .select()
+    .from(taxJurisdictionsTable)
+    .where(eq(taxJurisdictionsTable.type, type))
+    .orderBy(taxJurisdictionsTable.name);
+}
+
+/**
+ * Get tax jurisdiction by ID
+ */
+export async function getTaxJurisdictionById(id: string) {
+  const results = await db
+    .select()
+    .from(taxJurisdictionsTable)
+    .where(eq(taxJurisdictionsTable.id, id))
+    .limit(1);
+
+  if (results.length === 0) {
+    throw new Error("Tax jurisdiction not found");
+  }
+
+  return results[0];
+}
+
+/**
+ * Create a new tax jurisdiction
+ */
+export async function createTaxJurisdiction(data: {
+  name: string;
+  type: 'country' | 'state' | 'county' | 'city';
+  country?: string;
+  stateCode?: string;
+  countyName?: string;
+  cityName?: string;
+  rate: number;
+  effectiveFrom?: Date;
+  effectiveTo?: Date | null;
+  isActive?: boolean;
+  description?: string;
+}) {
+  const results = await db
+    .insert(taxJurisdictionsTable)
+    .values({
+      name: data.name,
+      type: data.type,
+      country: data.country || "USA",
+      stateCode: data.stateCode,
+      countyName: data.countyName,
+      cityName: data.cityName,
+      rate: data.rate.toString(),
+      effectiveFrom: data.effectiveFrom || new Date(),
+      effectiveTo: data.effectiveTo || null,
+      isActive: data.isActive ?? true,
+      description: data.description,
+    })
+    .returning();
+
+  return results[0];
+}
+
+/**
+ * Update a tax jurisdiction
+ */
+export async function updateTaxJurisdiction(
+  id: string,
+  data: {
+    name?: string;
+    type?: 'country' | 'state' | 'county' | 'city';
+    country?: string;
+    stateCode?: string;
+    countyName?: string;
+    cityName?: string;
+    rate?: number;
+    effectiveFrom?: Date;
+    effectiveTo?: Date | null;
+    isActive?: boolean;
+    description?: string;
+  }
+) {
+  const updateData: Record<string, any> = {};
+
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.type !== undefined) updateData.type = data.type;
+  if (data.country !== undefined) updateData.country = data.country;
+  if (data.stateCode !== undefined) updateData.stateCode = data.stateCode;
+  if (data.countyName !== undefined) updateData.countyName = data.countyName;
+  if (data.cityName !== undefined) updateData.cityName = data.cityName;
+  if (data.rate !== undefined) updateData.rate = data.rate.toString();
+  if (data.effectiveFrom !== undefined) updateData.effectiveFrom = data.effectiveFrom;
+  if (data.effectiveTo !== undefined) updateData.effectiveTo = data.effectiveTo;
+  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+  if (data.description !== undefined) updateData.description = data.description;
+
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("No fields to update");
+  }
+
+  const results = await db
+    .update(taxJurisdictionsTable)
+    .set(updateData)
+    .where(eq(taxJurisdictionsTable.id, id))
+    .returning();
+
+  if (results.length === 0) {
+    throw new Error("Tax jurisdiction not found");
+  }
+
+  return results[0];
+}
+
+/**
+ * Deactivate a tax jurisdiction
+ */
+export async function deactivateTaxJurisdiction(id: string) {
+  const results = await db
+    .update(taxJurisdictionsTable)
+    .set({ isActive: false })
+    .where(eq(taxJurisdictionsTable.id, id))
+    .returning();
+
+  if (results.length === 0) {
+    throw new Error("Tax jurisdiction not found");
+  }
+
+  return results[0];
+}
+
+/**
+ * Activate a tax jurisdiction
+ */
+export async function activateTaxJurisdiction(id: string) {
+  const results = await db
+    .update(taxJurisdictionsTable)
+    .set({ isActive: true })
+    .where(eq(taxJurisdictionsTable.id, id))
+    .returning();
+
+  if (results.length === 0) {
+    throw new Error("Tax jurisdiction not found");
+  }
+
+  return results[0];
+}
+
+/**
+ * Delete a tax jurisdiction
+ */
+export async function deleteTaxJurisdiction(id: string) {
+  const results = await db
+    .delete(taxJurisdictionsTable)
+    .where(eq(taxJurisdictionsTable.id, id))
+    .returning();
+
+  if (results.length === 0) {
+    throw new Error("Tax jurisdiction not found");
+  }
+
+  return results[0];
+}

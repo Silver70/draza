@@ -15,6 +15,7 @@ import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as CustomersIndexRouteImport } from './routes/customers/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
 import { Route as CustomersCreateRouteImport } from './routes/customers/create'
+import { Route as SettingsTaxIndexRouteImport } from './routes/settings/tax/index'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
@@ -51,6 +52,11 @@ const CustomersCreateRoute = CustomersCreateRouteImport.update({
   id: '/customers/create',
   path: '/customers/create',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsTaxIndexRoute = SettingsTaxIndexRouteImport.update({
+  id: '/tax/',
+  path: '/tax/',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const SettingsOrdersIndexRoute = SettingsOrdersIndexRouteImport.update({
   id: '/orders/',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
+  '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesByTo {
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
+  '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesById {
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/inventory/collections/': typeof InventoryCollectionsIndexRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
   '/settings/orders/': typeof SettingsOrdersIndexRoute
+  '/settings/tax/': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRouteTypes {
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
+    | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
+    | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
   id:
     | '__root__'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/inventory/collections/'
     | '/inventory/products/'
     | '/settings/orders/'
+    | '/settings/tax/'
     | '/inventory/collections/$collectionId/add-products'
   fileRoutesById: FileRoutesById
 }
@@ -232,6 +244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CustomersCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/tax/': {
+      id: '/settings/tax/'
+      path: '/tax'
+      fullPath: '/settings/tax'
+      preLoaderRoute: typeof SettingsTaxIndexRouteImport
+      parentRoute: typeof SettingsRouteRoute
+    }
     '/settings/orders/': {
       id: '/settings/orders/'
       path: '/orders'
@@ -279,10 +298,12 @@ declare module '@tanstack/react-router' {
 
 interface SettingsRouteRouteChildren {
   SettingsOrdersIndexRoute: typeof SettingsOrdersIndexRoute
+  SettingsTaxIndexRoute: typeof SettingsTaxIndexRoute
 }
 
 const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
   SettingsOrdersIndexRoute: SettingsOrdersIndexRoute,
+  SettingsTaxIndexRoute: SettingsTaxIndexRoute,
 }
 
 const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(

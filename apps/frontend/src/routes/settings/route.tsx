@@ -7,6 +7,7 @@ export const Route = createFileRoute('/settings')({
 function SettingsLayout() {
   const matchRoute = useMatchRoute()
   const isOrdersActive = matchRoute({ to: '/settings/orders', fuzzy: true })
+  const isTaxActive = matchRoute({ to: '/settings/tax', fuzzy: true })
 
   return (
     <div className="w-full max-w-6xl mx-auto py-8 px-4">
@@ -31,7 +32,16 @@ function SettingsLayout() {
           >
             Orders
           </Link>
-          {/* Add more tabs here as you create more settings pages */}
+           <Link
+            to="/settings/tax"
+            className={
+              isTaxActive
+                ? 'px-4 py-2 border-b-2 border-primary font-medium text-foreground'
+                : 'px-4 py-2 border-b-2 border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300 transition-colors'
+            }
+          >
+            Tax
+          </Link>
         </nav>
       </div>
 
