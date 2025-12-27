@@ -17,6 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~
 import { Badge } from '~/components/ui/badge'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
+import { ConfirmDeleteDialog } from '~/components/ConfirmDeleteDialog'
 import {
   allTaxJurisdictionsQueryOptions,
   createTaxJurisdiction,
@@ -50,6 +51,10 @@ function RouteComponent() {
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingJurisdiction, setEditingJurisdiction] = useState<TaxJurisdiction | null>(null)
+
+  // Delete Dialog State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [jurisdictionToDelete, setJurisdictionToDelete] = useState<TaxJurisdiction | null>(null)
 
   // Load settings from localStorage
   useEffect(() => {
@@ -116,6 +121,8 @@ function RouteComponent() {
     mutationFn: deleteTaxJurisdiction,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tax-jurisdictions'] })
+      setIsDeleteDialogOpen(false)
+      setJurisdictionToDelete(null)
       toast.success('Tax jurisdiction deleted successfully')
     },
     onError: (error) => {
@@ -151,8 +158,13 @@ function RouteComponent() {
   }
 
   const handleDelete = (jurisdiction: TaxJurisdiction) => {
-    if (confirm(`Are you sure you want to delete "${jurisdiction.name}"? This action cannot be undone.`)) {
-      deleteMutation.mutate({ data: jurisdiction.id })
+    setJurisdictionToDelete(jurisdiction)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (jurisdictionToDelete) {
+      deleteMutation.mutate({ data: jurisdictionToDelete.id })
     }
   }
 
@@ -352,6 +364,16 @@ function RouteComponent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDeleteDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete Tax Jurisdiction"
+        itemName={jurisdictionToDelete?.name}
+        isDeleting={deleteMutation.isPending}
+      />
     </div>
   )
 }
