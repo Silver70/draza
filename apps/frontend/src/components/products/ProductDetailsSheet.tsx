@@ -72,10 +72,18 @@ export function ProductDetailsSheet({ product, open, onOpenChange }: ProductDeta
         </SheetHeader>
 
         <div className="space-y-6 p-6">
+          {/* Image Placeholder */}
+          <div className="aspect-video w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50">
+            <div className="text-center">
+              <Package className="h-12 w-12 mx-auto text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground mt-2">Product Image</p>
+            </div>
+          </div>
+
           {/* Product Info */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Status</span>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Status:</span>
               <div
                 className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                   product.isActive
@@ -86,23 +94,15 @@ export function ProductDetailsSheet({ product, open, onOpenChange }: ProductDeta
                 {product.isActive ? 'Active' : 'Inactive'}
               </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Category</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Category:</span>
               <span className="text-sm font-medium">
                 {product.category?.name || 'Uncategorized'}
               </span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Slug</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Slug:</span>
               <span className="text-sm font-mono text-muted-foreground">{product.slug}</span>
-            </div>
-          </div>
-
-          {/* Image Placeholder */}
-          <div className="aspect-video w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50">
-            <div className="text-center">
-              <Package className="h-12 w-12 mx-auto text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground mt-2">Product Image</p>
             </div>
           </div>
 
