@@ -2,7 +2,7 @@ import { eq, sql, desc, and, gte, lte } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import { ordersTable, orderItemsTable } from "../../../shared/db/order";
 import { customersTable } from "../../../shared/db/customer";
-import { productsTable, productVariantsTable } from "../../../shared/db/product";
+import { productsTable, productVariantsTable } from "../../../shared/db/catalogue";
 import { addressesTable } from "../../../shared/db/address";
 
 export const analyticsRepo = {
@@ -86,11 +86,11 @@ export const analyticsRepo = {
   async getCustomerBreakdown() {
     const result = await db
       .select({
-        isGuest: customersTable.isGuest,
+        isGuest: customersTable.is_guest,
         count: sql<number>`COUNT(*)::int`,
       })
       .from(customersTable)
-      .groupBy(customersTable.isGuest);
+      .groupBy(customersTable.is_guest);
 
     return result;
   },
@@ -196,8 +196,8 @@ export const analyticsRepo = {
       .select({
         id: ordersTable.id,
         orderNumber: ordersTable.orderNumber,
-        customerFirstName: customersTable.firstName,
-        customerLastName: customersTable.lastName,
+        customerFirstName: customersTable.first_name,
+        customerLastName: customersTable.last_name,
         total: ordersTable.total,
         status: ordersTable.status,
         createdAt: ordersTable.createdAt,
@@ -234,15 +234,15 @@ export const analyticsRepo = {
     const result = await db
       .select({
         id: customersTable.id,
-        firstName: customersTable.firstName,
-        lastName: customersTable.lastName,
+        firstName: customersTable.first_name,
+        lastName: customersTable.last_name,
         email: customersTable.email,
         totalOrders: sql<number>`COUNT(${ordersTable.id})::int`,
         totalSpent: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
       })
       .from(customersTable)
       .innerJoin(ordersTable, eq(customersTable.id, ordersTable.customerId))
-      .groupBy(customersTable.id, customersTable.firstName, customersTable.lastName, customersTable.email)
+      .groupBy(customersTable.id, customersTable.first_name, customersTable.last_name, customersTable.email)
       .orderBy(desc(sql`SUM(CAST(${ordersTable.total} AS DECIMAL))`))
       .limit(limit);
 
