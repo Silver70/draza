@@ -46,11 +46,6 @@ export function SalesTrendChart({ data, period }: SalesTrendChartProps) {
     }))
   }, [data, period])
 
-  // Calculate total revenue
-  const totalRevenue = useMemo(() => {
-    return data.reduce((sum, item) => sum + parseFloat(item.revenue), 0).toFixed(2)
-  }, [data])
-
   // Empty state
   if (!data || data.length === 0) {
     return (
@@ -69,13 +64,13 @@ export function SalesTrendChart({ data, period }: SalesTrendChartProps) {
   }
 
   return (
-    <Card className="col-span-full">
+    <Card>
       <CardHeader>
-        <CardTitle>Sales Trend</CardTitle>
-        <CardDescription>Revenue over time - Total: ${totalRevenue}</CardDescription>
+        <CardTitle>Sales Overview</CardTitle>
+        <CardDescription>Your sales statistic report</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer config={chartConfig} className="h-[250px] w-full">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="fillRevenue" x1="0" y1="0" x2="0" y2="1">

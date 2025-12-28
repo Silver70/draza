@@ -7,8 +7,9 @@ import {
 } from '~/utils/analytics'
 import { MetricCard } from '~/components/dashboard/MetricCard'
 import { SalesTrendChart } from '~/components/dashboard/SalesTrendChart'
+import { CustomerGrowthChart } from '~/components/dashboard/CustomerGrowthChart'
 import { RecentOrdersTable } from '~/components/dashboard/RecentOrdersTable'
-import { DollarSign, ShoppingCart, Users, TrendingUp } from 'lucide-react'
+import { DollarSign, ShoppingCart, Users } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -30,42 +31,47 @@ function Home() {
 
   // Calculate formatted values
   const formattedRevenue = `$${parseFloat(overview.totalRevenue).toLocaleString()}`
-  const formattedAOV = `$${parseFloat(overview.averageOrderValue).toFixed(2)}`
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics - 3 Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <MetricCard
+          title="Total Customer"
+          value={overview.totalCustomers.toLocaleString()}
+          icon={Users}
+          trend={{
+            value: 3.1,
+            label: 'From last month'
+          }}
+        />
         <MetricCard
           title="Total Revenue"
           value={formattedRevenue}
           icon={DollarSign}
-          description={`$${overview.taxCollected} in tax, $${overview.shippingCollected} shipping`}
+          trend={{
+            value: 7.5,
+            label: 'From last month'
+          }}
         />
         <MetricCard
           title="Total Orders"
-          value={overview.totalOrders}
+          value={overview.totalOrders.toLocaleString()}
           icon={ShoppingCart}
-          description={`${overview.ordersByStatus.delivered} delivered, ${overview.ordersByStatus.processing} processing`}
-        />
-        <MetricCard
-          title="Total Customers"
-          value={overview.totalCustomers}
-          icon={Users}
-          description={`${overview.customerBreakdown.registered} registered, ${overview.customerBreakdown.guest} guest`}
-        />
-        <MetricCard
-          title="Average Order Value"
-          value={formattedAOV}
-          icon={TrendingUp}
-          description="Per order average"
+          trend={{
+            value: 1.3,
+            label: 'From last month'
+          }}
         />
       </div>
 
-      {/* Sales Trend Chart */}
-      <SalesTrendChart data={revenueTrend} period="week" />
+      {/* Charts - Two Column Layout */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <SalesTrendChart data={revenueTrend} period="week" />
+        <CustomerGrowthChart />
+      </div>
 
-      {/* Recent Orders */}
+      {/* Recent Orders - Full Width */}
       <RecentOrdersTable orders={recentOrders} />
     </div>
   )

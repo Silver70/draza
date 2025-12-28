@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
 import { LucideIcon } from 'lucide-react'
+import { cn } from '~/lib/utils'
 
 type MetricCardProps = {
   title: string
@@ -12,7 +13,13 @@ type MetricCardProps = {
   }
 }
 
-export function MetricCard({ title, value, icon: Icon, description, trend }: MetricCardProps) {
+export function MetricCard({
+  title,
+  value,
+  icon: Icon,
+  description,
+  trend
+}: MetricCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -20,27 +27,30 @@ export function MetricCard({ title, value, icon: Icon, description, trend }: Met
           <CardTitle className="text-sm font-medium text-muted-foreground">
             {title}
           </CardTitle>
-          <Icon className="h-4 w-4 text-primary" />
+          <div className="rounded-lg bg-primary/10 p-2">
+            <Icon className="h-5 w-5 text-primary" />
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-1">
-          <div className="text-2xl font-bold">{value}</div>
-          {description && (
-            <p className="text-xs text-muted-foreground">{description}</p>
-          )}
+        <div className="space-y-2">
+          <div className="text-3xl font-bold">{value}</div>
           {trend && (
-            <div className="flex items-center text-xs">
+            <div className="flex items-center gap-2 text-sm">
               <span
-                className={
+                className={cn(
+                  'font-medium',
                   trend.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                }
+                )}
               >
                 {trend.value >= 0 ? '+' : ''}
                 {trend.value}%
               </span>
-              <span className="ml-1 text-muted-foreground">{trend.label}</span>
+              <span className="text-muted-foreground">{trend.label}</span>
             </div>
+          )}
+          {description && !trend && (
+            <p className="text-xs text-muted-foreground">{description}</p>
           )}
         </div>
       </CardContent>
