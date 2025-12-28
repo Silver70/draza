@@ -1,4 +1,4 @@
-import { eq, sql, desc, and, gte, lte } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import { ordersTable, orderItemsTable } from "../../../shared/db/order";
 import { customersTable } from "../../../shared/db/customer";
@@ -152,13 +152,13 @@ export const analyticsRepo = {
 
     const result = await db
       .select({
-        date: sql<string>`TO_CHAR(${ordersTable.createdAt}, ${dateFormat})`,
+        date: sql<string>`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)})`,
         revenue: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
         orderCount: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
-      .groupBy(sql`TO_CHAR(${ordersTable.createdAt}, ${dateFormat})`)
-      .orderBy(sql`TO_CHAR(${ordersTable.createdAt}, ${dateFormat}) DESC`)
+      .groupBy(sql`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)})`)
+      .orderBy(sql`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)}) DESC`)
       .limit(limit);
 
     return result;
