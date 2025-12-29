@@ -26,9 +26,10 @@ export type ProductVariant = {
   id: string
   productId: string
   sku: string
-  price: number
-  quantity: number
-  isActive: boolean
+  price: string
+  quantityInStock: number
+  createdAt: string
+  updatedAt: string
 }
 
 export type ProductWithVariants = Product & {

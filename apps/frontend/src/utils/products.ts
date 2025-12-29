@@ -1,7 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
 import axios from 'redaxios'
-import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection, CollectionWithProductCount} from '../types/productTypes'
+import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection, CollectionWithProductCount, ProductWithVariants, ProductVariant} from '../types/productTypes'
 
 // TODO: Update this to your actual API URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -425,7 +425,7 @@ export const fetchProductWithVariants = createServerFn({ method: 'GET' })
     try {
       const response = await axios.get<{
         success: boolean
-        data: Product & { variants: Array<{ id: string; sku: string; price: number; quantity: number }> }
+        data: ProductWithVariants
       }>(`${API_BASE_URL}/products/${data}/variants`)
 
       if (response.data.success) {
