@@ -10,7 +10,8 @@ import {
   FolderTree,
   LayoutGrid,
   Users,
-  Cog
+  Cog,
+  BoltIcon
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
@@ -49,6 +50,11 @@ const data = {
     },
   ],
   navMain: [
+     {
+      title: "overview",
+      url: "/",
+      icon: BoltIcon,
+    },
     {
       title: "Products",
       url: "/inventory/products",

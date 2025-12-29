@@ -108,7 +108,7 @@ function ProductDetailsContent({ productId }: { productId: string }) {
           <CardDescription>Monthly units sold (last 6 months)</CardDescription>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={chartConfig} className="h-[200px] w-full">
+          <ChartContainer config={chartConfig} className="h-50 w-full">
             <LineChart data={salesData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
