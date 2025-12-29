@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteRouteImport } from './routes/settings/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as DiscountsIndexRouteImport } from './routes/discounts/index'
 import { Route as CustomersIndexRouteImport } from './routes/customers/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
 import { Route as CustomersCreateRouteImport } from './routes/customers/create'
@@ -36,6 +37,11 @@ const IndexRoute = IndexRouteImport.update({
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
   id: '/orders/',
   path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscountsIndexRoute = DiscountsIndexRouteImport.update({
+  id: '/discounts/',
+  path: '/discounts/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomersIndexRoute = CustomersIndexRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers': typeof CustomersIndexRoute
+  '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
@@ -113,6 +120,7 @@ export interface FileRoutesByTo {
   '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers': typeof CustomersIndexRoute
+  '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
@@ -129,6 +137,7 @@ export interface FileRoutesById {
   '/customers/create': typeof CustomersCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers/': typeof CustomersIndexRoute
+  '/discounts/': typeof DiscountsIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/customers/create'
     | '/orders/create'
     | '/customers'
+    | '/discounts'
     | '/orders'
     | '/inventory/products/create'
     | '/inventory/categories'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
     | '/customers/create'
     | '/orders/create'
     | '/customers'
+    | '/discounts'
     | '/orders'
     | '/inventory/products/create'
     | '/inventory/categories'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/customers/create'
     | '/orders/create'
     | '/customers/'
+    | '/discounts/'
     | '/orders/'
     | '/inventory/products/create'
     | '/inventory/categories/'
@@ -192,6 +204,7 @@ export interface RootRouteChildren {
   CustomersCreateRoute: typeof CustomersCreateRoute
   OrdersCreateRoute: typeof OrdersCreateRoute
   CustomersIndexRoute: typeof CustomersIndexRoute
+  DiscountsIndexRoute: typeof DiscountsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discounts/': {
+      id: '/discounts/'
+      path: '/discounts'
+      fullPath: '/discounts'
+      preLoaderRoute: typeof DiscountsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/customers/': {
@@ -316,6 +336,7 @@ const rootRouteChildren: RootRouteChildren = {
   CustomersCreateRoute: CustomersCreateRoute,
   OrdersCreateRoute: OrdersCreateRoute,
   CustomersIndexRoute: CustomersIndexRoute,
+  DiscountsIndexRoute: DiscountsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,

@@ -11,7 +11,8 @@ import {
   LayoutGrid,
   Users,
   Cog,
-  BoltIcon
+  BoltIcon,
+  TicketPercentIcon
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
@@ -69,6 +70,11 @@ const data = {
       title: "Collections",
       url: "/inventory/collections",
       icon: LayoutGrid,
+    },
+     {
+      title: "Discounts",
+      url: "/discounts",
+      icon: TicketPercentIcon,
     },
     {
       title: "Customers",
