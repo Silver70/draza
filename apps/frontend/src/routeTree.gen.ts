@@ -15,6 +15,7 @@ import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as DiscountsIndexRouteImport } from './routes/discounts/index'
 import { Route as CustomersIndexRouteImport } from './routes/customers/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
+import { Route as DiscountsCreateRouteImport } from './routes/discounts/create'
 import { Route as CustomersCreateRouteImport } from './routes/customers/create'
 import { Route as SettingsTaxIndexRouteImport } from './routes/settings/tax/index'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
@@ -52,6 +53,11 @@ const CustomersIndexRoute = CustomersIndexRouteImport.update({
 const OrdersCreateRoute = OrdersCreateRouteImport.update({
   id: '/orders/create',
   path: '/orders/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscountsCreateRoute = DiscountsCreateRouteImport.update({
+  id: '/discounts/create',
+  path: '/discounts/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CustomersCreateRoute = CustomersCreateRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers': typeof CustomersIndexRoute
   '/discounts': typeof DiscountsIndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers': typeof CustomersIndexRoute
   '/discounts': typeof DiscountsIndexRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
   '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
   '/customers/': typeof CustomersIndexRoute
   '/discounts/': typeof DiscountsIndexRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
     | '/customers'
     | '/discounts'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
     | '/customers'
     | '/discounts'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/'
     | '/settings'
     | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
     | '/customers/'
     | '/discounts/'
@@ -202,6 +214,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
   CustomersCreateRoute: typeof CustomersCreateRoute
+  DiscountsCreateRoute: typeof DiscountsCreateRoute
   OrdersCreateRoute: typeof OrdersCreateRoute
   CustomersIndexRoute: typeof CustomersIndexRoute
   DiscountsIndexRoute: typeof DiscountsIndexRoute
@@ -255,6 +268,13 @@ declare module '@tanstack/react-router' {
       path: '/orders/create'
       fullPath: '/orders/create'
       preLoaderRoute: typeof OrdersCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discounts/create': {
+      id: '/discounts/create'
+      path: '/discounts/create'
+      fullPath: '/discounts/create'
+      preLoaderRoute: typeof DiscountsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/customers/create': {
@@ -334,6 +354,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
   CustomersCreateRoute: CustomersCreateRoute,
+  DiscountsCreateRoute: DiscountsCreateRoute,
   OrdersCreateRoute: OrdersCreateRoute,
   CustomersIndexRoute: CustomersIndexRoute,
   DiscountsIndexRoute: DiscountsIndexRoute,

@@ -84,7 +84,7 @@ function RouteComponent() {
   })
 
   const handleCreateDiscount = () => {
-    navigate({ to: '/discounts' })
+    navigate({ to: '/discounts/create' })
   }
 
   const handleEdit = (discount: Discount) => {
@@ -137,7 +137,7 @@ function RouteComponent() {
               Get started by creating your first discount or promotion.
             </p>
             <Link
-              to="/discounts"
+              to="/discounts/create"
               className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
             >
               Create Discount
