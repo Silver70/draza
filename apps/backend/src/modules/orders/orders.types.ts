@@ -64,6 +64,7 @@ export const createOrderSchema = z.object({
     quantity: z.number().int().positive("Quantity must be positive"),
   })).min(1, "Order must have at least one item"),
   shippingMethodId: z.string().uuid("Invalid shipping method ID"),
+  discountCode: z.string().optional(),
   notes: z.string().optional().nullable(),
 });
 

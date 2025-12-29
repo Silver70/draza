@@ -195,6 +195,21 @@ ordersRoutes.get("/:id/stats", async (c) => {
 });
 
 /**
+ * GET /orders/:id/discounts
+ * Get applied discounts for an order
+ */
+ordersRoutes.get("/:id/discounts", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const discounts = await ordersService.getOrderDiscounts(id);
+    return c.json({ success: true, data: discounts });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch order discounts";
+    return c.json({ success: false, error: message }, 404);
+  }
+});
+
+/**
  * POST /orders/shipping-options
  * Get available shipping options for cart items
  * Used before creating an order to display shipping options
