@@ -5,6 +5,7 @@ import {
   discountCodesTable,
   discountProductsTable,
   discountCollectionsTable,
+  discountVariantsTable,
   orderDiscountsTable,
 } from "../../shared/db/discount";
 
@@ -33,6 +34,10 @@ export type DiscountCollection = InferSelectModel<
 export type NewDiscountCollection = InferInsertModel<
   typeof discountCollectionsTable
 >;
+
+// Discount Variants (junction table)
+export type DiscountVariant = InferSelectModel<typeof discountVariantsTable>;
+export type NewDiscountVariant = InferInsertModel<typeof discountVariantsTable>;
 
 // Order Discounts
 export type OrderDiscount = InferSelectModel<typeof orderDiscountsTable>;
@@ -63,6 +68,17 @@ export type DiscountWithCollections = Discount & {
   })[];
 };
 
+export type DiscountWithVariants = Discount & {
+  discountVariants: (DiscountVariant & {
+    variant: {
+      id: string;
+      sku: string;
+      price: string;
+      productId: string;
+    };
+  })[];
+};
+
 export type DiscountWithDetails = Discount & {
   codes: DiscountCode[];
   discountProducts: (DiscountProduct & {
@@ -79,6 +95,14 @@ export type DiscountWithDetails = Discount & {
       slug: string;
     };
   })[];
+  discountVariants: (DiscountVariant & {
+    variant: {
+      id: string;
+      sku: string;
+      price: string;
+      productId: string;
+    };
+  })[];
 };
 
 // Zod validation schemas
@@ -89,7 +113,7 @@ export const createDiscountSchema = z.object({
   description: z.string().optional().nullable(),
   discountType: z.enum(["percentage", "fixed_amount"]),
   value: z.number().positive("Value must be positive"),
-  scope: z.enum(["store_wide", "collection", "product", "code"]),
+  scope: z.enum(["store_wide", "collection", "product", "variant", "code"]),
   isActive: z.boolean().default(true),
   priority: z.number().int().default(10),
   startsAt: z.string().datetime().optional(),
@@ -101,7 +125,7 @@ export const updateDiscountSchema = z.object({
   description: z.string().optional().nullable(),
   discountType: z.enum(["percentage", "fixed_amount"]).optional(),
   value: z.number().positive().optional(),
-  scope: z.enum(["store_wide", "collection", "product", "code"]).optional(),
+  scope: z.enum(["store_wide", "collection", "product", "variant", "code"]).optional(),
   isActive: z.boolean().optional(),
   priority: z.number().int().optional(),
   startsAt: z.string().datetime().optional(),
@@ -145,6 +169,12 @@ export const createDiscountCollectionSchema = z.object({
   collectionId: z.string().uuid("Invalid collection ID"),
 });
 
+// Discount Variant schemas
+export const createDiscountVariantSchema = z.object({
+  discountId: z.string().uuid("Invalid discount ID"),
+  variantId: z.string().uuid("Invalid variant ID"),
+});
+
 // Validate discount code schema (for customers)
 export const validateDiscountCodeSchema = z.object({
   code: z.string().min(1, "Code is required"),
@@ -153,7 +183,7 @@ export const validateDiscountCodeSchema = z.object({
 
 // Query parameter schemas
 export const discountQuerySchema = z.object({
-  scope: z.enum(["store_wide", "collection", "product", "code"]).optional(),
+  scope: z.enum(["store_wide", "collection", "product", "variant", "code"]).optional(),
   isActive: z.boolean().optional(),
   search: z.string().optional(),
   page: z.number().int().min(1).default(1),

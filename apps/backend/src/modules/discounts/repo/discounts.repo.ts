@@ -5,11 +5,13 @@ import {
   discountCodesTable,
   discountProductsTable,
   discountCollectionsTable,
+  discountVariantsTable,
   orderDiscountsTable,
 } from "../../../shared/db/discount";
 import {
   productsTable,
   collectionsTable,
+  productVariantsTable,
 } from "../../../shared/db/catalogue";
 import {
   NewDiscount,
@@ -59,7 +61,7 @@ export const discountsRepo = {
     return discounts;
   },
 
-  async getDiscountsByScope(scope: "store_wide" | "collection" | "product" | "code") {
+  async getDiscountsByScope(scope: "store_wide" | "collection" | "product" | "variant" | "code") {
     const discounts = await db
       .select()
       .from(discountsTable)
@@ -128,11 +130,30 @@ export const discountsRepo = {
       )
       .where(eq(discountCollectionsTable.discountId, id));
 
+    const discountVariants = await db
+      .select({
+        discountId: discountVariantsTable.discountId,
+        variantId: discountVariantsTable.variantId,
+        variant: {
+          id: productVariantsTable.id,
+          sku: productVariantsTable.sku,
+          price: productVariantsTable.price,
+          productId: productVariantsTable.productId,
+        },
+      })
+      .from(discountVariantsTable)
+      .leftJoin(
+        productVariantsTable,
+        eq(discountVariantsTable.variantId, productVariantsTable.id)
+      )
+      .where(eq(discountVariantsTable.discountId, id));
+
     return {
       ...discount[0],
       codes,
       discountProducts,
       discountCollections,
+      discountVariants,
     };
   },
 };
@@ -296,6 +317,57 @@ export const discountCollectionsRepo = {
         eq(discountCollectionsTable.discountId, discountsTable.id)
       )
       .where(eq(discountCollectionsTable.collectionId, collectionId));
+    return discounts;
+  },
+};
+
+export const discountVariantsRepo = {
+  async addVariantToDiscount(data: { discountId: string; variantId: string }) {
+    const [newDiscountVariant] = await db
+      .insert(discountVariantsTable)
+      .values(data)
+      .returning();
+    return newDiscountVariant;
+  },
+
+  async removeVariantFromDiscount(discountId: string, variantId: string) {
+    await db
+      .delete(discountVariantsTable)
+      .where(
+        and(
+          eq(discountVariantsTable.discountId, discountId),
+          eq(discountVariantsTable.variantId, variantId)
+        )
+      );
+  },
+
+  async getVariantsByDiscountId(discountId: string) {
+    const variants = await db
+      .select({
+        discountId: discountVariantsTable.discountId,
+        variantId: discountVariantsTable.variantId,
+        variant: productVariantsTable,
+      })
+      .from(discountVariantsTable)
+      .leftJoin(
+        productVariantsTable,
+        eq(discountVariantsTable.variantId, productVariantsTable.id)
+      )
+      .where(eq(discountVariantsTable.discountId, discountId));
+    return variants;
+  },
+
+  async getDiscountsByVariantId(variantId: string) {
+    const discounts = await db
+      .select({
+        discount: discountsTable,
+      })
+      .from(discountVariantsTable)
+      .leftJoin(
+        discountsTable,
+        eq(discountVariantsTable.discountId, discountsTable.id)
+      )
+      .where(eq(discountVariantsTable.variantId, variantId));
     return discounts;
   },
 };

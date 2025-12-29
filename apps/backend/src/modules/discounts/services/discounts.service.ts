@@ -2,6 +2,7 @@ import {
   discountsRepo,
   discountProductsRepo,
   discountCollectionsRepo,
+  discountVariantsRepo,
 } from "../repo";
 import { NewDiscount, UpdateDiscount } from "../discounts.types";
 
@@ -214,6 +215,43 @@ export const discountsService = {
     await discountCollectionsRepo.removeCollectionFromDiscount(
       discountId,
       collectionId
+    );
+  },
+
+  /**
+   * Add product variants to a discount
+   */
+  addVariants: async (discountId: string, variantIds: string[]) => {
+    const discount = await discountsRepo.getDiscountById(discountId);
+    if (!discount) {
+      throw new Error("Discount not found");
+    }
+
+    if (discount.scope !== "variant") {
+      throw new Error(
+        "Can only add variants to variant-scoped discounts"
+      );
+    }
+
+    const results = [];
+    for (const variantId of variantIds) {
+      const result = await discountVariantsRepo.addVariantToDiscount({
+        discountId,
+        variantId,
+      });
+      results.push(result);
+    }
+
+    return results;
+  },
+
+  /**
+   * Remove variant from a discount
+   */
+  removeVariant: async (discountId: string, variantId: string) => {
+    await discountVariantsRepo.removeVariantFromDiscount(
+      discountId,
+      variantId
     );
   },
 

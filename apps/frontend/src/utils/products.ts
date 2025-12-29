@@ -444,3 +444,54 @@ export const productWithVariantsQueryOptions = (productId: string) =>
     queryKey: ['product', productId, 'variants'],
     queryFn: () => fetchProductWithVariants({ data: productId }),
   })
+
+// Fetch all products with their variants
+export const fetchAllProductsWithVariants = createServerFn({ method: 'GET' }).handler(
+  async () => {
+    console.info('Fetching all products with variants...')
+    try {
+      // First fetch all products
+      const productsResponse = await axios.get<ProductsResponse>(
+        `${API_BASE_URL}/products`,
+      )
+
+      if (!productsResponse.data.success) {
+        throw new Error('Failed to fetch products')
+      }
+
+      const products = productsResponse.data.data
+
+      // Then fetch variants for each product in parallel
+      const productsWithVariants = await Promise.all(
+        products.map(async (product) => {
+          try {
+            const variantsResponse = await axios.get<{
+              success: boolean
+              data: ProductWithVariants
+            }>(`${API_BASE_URL}/products/${product.id}/variants`)
+
+            if (variantsResponse.data.success) {
+              return variantsResponse.data.data
+            }
+            // If variants fetch fails, return product without variants
+            return { ...product, variants: [] }
+          } catch (error) {
+            console.warn(`Failed to fetch variants for product ${product.id}:`, error)
+            return { ...product, variants: [] }
+          }
+        })
+      )
+
+      return productsWithVariants
+    } catch (error) {
+      console.error('Error fetching products with variants:', error)
+      throw error
+    }
+  },
+)
+
+export const allProductsWithVariantsQueryOptions = () =>
+  queryOptions({
+    queryKey: ['products', 'with-variants'],
+    queryFn: () => fetchAllProductsWithVariants(),
+  })

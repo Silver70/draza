@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Percent, DollarSign, Tag, Store, Package, Layers } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, Percent, DollarSign, Tag, Store, Package, Layers, Boxes } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -29,6 +29,7 @@ const scopeIcons = {
   store_wide: Store,
   collection: Layers,
   product: Package,
+  variant: Boxes,
   code: Tag,
 }
 
@@ -37,6 +38,7 @@ const scopeColors = {
   store_wide: "bg-blue-100 text-blue-800",
   collection: "bg-purple-100 text-purple-800",
   product: "bg-green-100 text-green-800",
+  variant: "bg-teal-100 text-teal-800",
   code: "bg-orange-100 text-orange-800",
 }
 
@@ -129,6 +131,7 @@ export const createColumns = (actions: ColumnActions): ColumnDef<Discount>[] => 
         store_wide: "Store-wide",
         collection: "Collection",
         product: "Product",
+        variant: "Variant",
         code: "Code",
       }
 

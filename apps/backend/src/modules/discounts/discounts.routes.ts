@@ -265,6 +265,58 @@ discountsRoutes.delete("/:id/collections/:collectionId", async (c) => {
   }
 });
 
+// ==================== DISCOUNT VARIANTS ROUTES ====================
+
+/**
+ * POST /discounts/:id/variants
+ * Add product variants to a discount
+ */
+discountsRoutes.post(
+  "/:id/variants",
+  zValidator(
+    "json",
+    z.object({
+      variantIds: z.array(z.string().uuid()).min(1, "At least one variant ID required"),
+    })
+  ),
+  async (c) => {
+    try {
+      const id = c.req.param("id");
+      const { variantIds } = c.req.valid("json");
+      const result = await discountsService.addVariants(id, variantIds);
+      return c.json({ success: true, data: result }, 201);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Failed to add variants to discount";
+      return c.json({ success: false, error: message }, 500);
+    }
+  }
+);
+
+/**
+ * DELETE /discounts/:id/variants/:variantId
+ * Remove a product variant from a discount
+ */
+discountsRoutes.delete("/:id/variants/:variantId", async (c) => {
+  try {
+    const id = c.req.param("id");
+    const variantId = c.req.param("variantId");
+    await discountsService.removeVariant(id, variantId);
+    return c.json({
+      success: true,
+      message: "Variant removed from discount successfully",
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to remove variant from discount";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
 // ==================== DISCOUNT CODES ROUTES ====================
 
 /**

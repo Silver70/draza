@@ -10,7 +10,7 @@ import {
   primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { productsTable, collectionsTable } from "./catalogue";
+import { productsTable, collectionsTable, productVariantsTable } from "./catalogue";
 import { ordersTable } from "./order";
 
 export const discountTypeEnum = pgEnum("discount_type", [
@@ -22,6 +22,7 @@ export const discountScopeEnum = pgEnum("discount_scope", [
   "store_wide",
   "collection",
   "product",
+  "variant",
   "code",
 ]);
 
@@ -97,6 +98,22 @@ export const discountCollectionsTable = pgTable(
   })
 );
 
+// Junction table: Discounts <-> Product Variants
+export const discountVariantsTable = pgTable(
+  "discount_variants",
+  {
+    discountId: uuid("discount_id")
+      .notNull()
+      .references(() => discountsTable.id, { onDelete: "cascade" }),
+    variantId: uuid("variant_id")
+      .notNull()
+      .references(() => productVariantsTable.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.discountId, table.variantId] }),
+  })
+);
+
 // Track applied discounts in orders
 export const orderDiscountsTable = pgTable("order_discounts", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -118,6 +135,7 @@ export const discountsRelations = relations(discountsTable, ({ many }) => ({
   codes: many(discountCodesTable),
   discountProducts: many(discountProductsTable),
   discountCollections: many(discountCollectionsTable),
+  discountVariants: many(discountVariantsTable),
   orderDiscounts: many(orderDiscountsTable),
 }));
 
@@ -155,6 +173,20 @@ export const discountCollectionsRelations = relations(
     collection: one(collectionsTable, {
       fields: [discountCollectionsTable.collectionId],
       references: [collectionsTable.id],
+    }),
+  })
+);
+
+export const discountVariantsRelations = relations(
+  discountVariantsTable,
+  ({ one }) => ({
+    discount: one(discountsTable, {
+      fields: [discountVariantsTable.discountId],
+      references: [discountsTable.id],
+    }),
+    variant: one(productVariantsTable, {
+      fields: [discountVariantsTable.variantId],
+      references: [productVariantsTable.id],
     }),
   })
 );

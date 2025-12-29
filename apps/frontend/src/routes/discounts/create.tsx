@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useState, useEffect } from 'react'
-import { Percent, DollarSign, Store, Layers, Package, Tag } from 'lucide-react'
+import { Percent, DollarSign, Store, Layers, Package, Tag, Boxes } from 'lucide-react'
 import { FieldLabel } from '~/components/ui/field'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -30,7 +30,7 @@ const discountSchema = z.object({
   description: z.string().optional(),
   discountType: z.enum(['percentage', 'fixed_amount']),
   value: z.number().positive('Value must be greater than 0'),
-  scope: z.enum(['store_wide', 'collection', 'product', 'code']),
+  scope: z.enum(['store_wide', 'collection', 'product', 'variant', 'code']),
   isActive: z.boolean().optional(),
   priority: z.number().int().min(1).max(999).optional(),
   startsAt: z.string().optional(),
@@ -51,7 +51,7 @@ function RouteComponent() {
 
   // Form state
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed_amount'>('percentage')
-  const [scope, setScope] = useState<'store_wide' | 'collection' | 'product' | 'code'>('store_wide')
+  const [scope, setScope] = useState<'store_wide' | 'collection' | 'product' | 'variant' | 'code'>('store_wide')
   const [isActive, setIsActive] = useState(true)
   const [hasEndDate, setHasEndDate] = useState(false)
 
@@ -61,7 +61,7 @@ function RouteComponent() {
       description: '',
       discountType: 'percentage' as 'percentage' | 'fixed_amount',
       value: 10,
-      scope: 'store_wide' as 'store_wide' | 'collection' | 'product' | 'code',
+      scope: 'store_wide' as 'store_wide' | 'collection' | 'product' | 'variant' | 'code',
       isActive: true,
       priority: 10,
       startsAt: new Date().toISOString().slice(0, 16), // Default to now in datetime-local format
@@ -121,6 +121,8 @@ function RouteComponent() {
   // Get suggested priority based on scope
   const getSuggestedPriority = (selectedScope: typeof scope) => {
     switch (selectedScope) {
+      case 'variant':
+        return 150
       case 'product':
         return 100
       case 'collection':
@@ -321,7 +323,20 @@ function RouteComponent() {
                     <div>
                       <div className="font-medium">Product</div>
                       <div className="text-xs text-muted-foreground">
-                        Apply to specific products (select after creating)
+                        Apply to all variants of specific products
+                      </div>
+                    </div>
+                  </FieldLabel>
+                </div>
+
+                <div className="flex items-center space-x-3 border rounded-lg p-4 hover:bg-muted/50 transition-colors">
+                  <RadioGroupItem value="variant" id="scope-variant" />
+                  <FieldLabel htmlFor="scope-variant" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Boxes className="h-4 w-4 text-teal-600" />
+                    <div>
+                      <div className="font-medium">Product Variant</div>
+                      <div className="text-xs text-muted-foreground">
+                        Apply to specific product variants (e.g., size, color)
                       </div>
                     </div>
                   </FieldLabel>
@@ -341,7 +356,7 @@ function RouteComponent() {
                 </div>
               </RadioGroup>
 
-              {(scope === 'collection' || scope === 'product' || scope === 'code') && (
+              {(scope === 'collection' || scope === 'product' || scope === 'variant' || scope === 'code') && (
                 <div className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20 p-4 rounded-r-lg">
                   <p className="text-sm text-blue-900 dark:text-blue-100">
                     {scope === 'code' && (
@@ -357,6 +372,11 @@ function RouteComponent() {
                     {scope === 'product' && (
                       <>
                         <strong>Note:</strong> After creating this discount, you'll be able to select which products this discount applies to.
+                      </>
+                    )}
+                    {scope === 'variant' && (
+                      <>
+                        <strong>Note:</strong> After creating this discount, you'll be able to select which product variants this discount applies to.
                       </>
                     )}
                   </p>

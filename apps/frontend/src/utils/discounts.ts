@@ -16,6 +16,7 @@ import {
   UpdateDiscountCodeInput,
   AddProductsToDiscountInput,
   AddCollectionsToDiscountInput,
+  AddVariantsToDiscountInput,
   ValidateDiscountCodeInput,
   ValidateCodeResponse,
   OrderDiscountsResponse,
@@ -416,6 +417,55 @@ export const removeCollectionFromDiscount = createServerFn({ method: 'POST' })
     }
   })
 
+// ==================== VARIANTS ====================
+
+/**
+ * Add variants to a discount
+ */
+export const addVariantsToDiscount = createServerFn({ method: 'POST' })
+  .inputValidator((input: { discountId: string; data: AddVariantsToDiscountInput }) => input)
+  .handler(async ({ data }) => {
+    console.info(`Adding variants to discount ${data.discountId}...`, data.data)
+    try {
+      const response = await axios.post<{ success: boolean; data: any }>(
+        `${API_BASE_URL}/discounts/${data.discountId}/variants`,
+        data.data,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to add variants to discount')
+    } catch (error) {
+      console.error('Error adding variants to discount:', error)
+      throw error
+    }
+  })
+
+/**
+ * Remove a variant from a discount
+ */
+export const removeVariantFromDiscount = createServerFn({ method: 'POST' })
+  .inputValidator((input: { discountId: string; variantId: string }) => input)
+  .handler(async ({ data }) => {
+    console.info(`Removing variant ${data.variantId} from discount ${data.discountId}...`)
+    try {
+      const response = await axios.delete<{ success: boolean; message: string }>(
+        `${API_BASE_URL}/discounts/${data.discountId}/variants/${data.variantId}`,
+      )
+
+      if (response.data.success) {
+        return response.data
+      }
+
+      throw new Error('Failed to remove variant from discount')
+    } catch (error) {
+      console.error('Error removing variant from discount:', error)
+      throw error
+    }
+  })
+
 // ==================== VALIDATION ====================
 
 /**
@@ -556,6 +606,7 @@ export const getDiscountScopeLabel = (scope: string): string => {
     store_wide: 'Store-wide',
     collection: 'Collection',
     product: 'Product',
+    variant: 'Variant',
     code: 'Discount Code',
   }
   return labels[scope] || scope

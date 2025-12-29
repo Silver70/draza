@@ -1,6 +1,6 @@
 // Discount Types and Scopes
 export type DiscountType = 'percentage' | 'fixed_amount'
-export type DiscountScope = 'store_wide' | 'collection' | 'product' | 'code'
+export type DiscountScope = 'store_wide' | 'collection' | 'product' | 'variant' | 'code'
 
 // Base Discount
 export type Discount = {
@@ -53,6 +53,18 @@ export type DiscountCollection = {
   }
 }
 
+// Variant info for discount
+export type DiscountVariant = {
+  discountId: string
+  variantId: string
+  variant: {
+    id: string
+    sku: string
+    price: string
+    productId: string
+  }
+}
+
 // Discount with codes
 export type DiscountWithCodes = Discount & {
   codes: DiscountCode[]
@@ -68,11 +80,17 @@ export type DiscountWithCollections = Discount & {
   discountCollections: DiscountCollection[]
 }
 
+// Discount with variants
+export type DiscountWithVariants = Discount & {
+  discountVariants: DiscountVariant[]
+}
+
 // Discount with full details
 export type DiscountWithDetails = Discount & {
   codes: DiscountCode[]
   discountProducts: DiscountProduct[]
   discountCollections: DiscountCollection[]
+  discountVariants: DiscountVariant[]
 }
 
 // Order Discount (applied discount in an order)
@@ -138,6 +156,11 @@ export type AddProductsToDiscountInput = {
 // Add Collections to Discount
 export type AddCollectionsToDiscountInput = {
   collectionIds: string[]
+}
+
+// Add Variants to Discount
+export type AddVariantsToDiscountInput = {
+  variantIds: string[]
 }
 
 // Validate Discount Code Input

@@ -3,5 +3,6 @@ export {
   discountCodesRepo,
   discountProductsRepo,
   discountCollectionsRepo,
+  discountVariantsRepo,
   orderDiscountsRepo,
 } from "./discounts.repo";
