@@ -18,6 +18,7 @@ import { Route as CampaignsIndexRouteImport } from './routes/campaigns/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
 import { Route as DiscountsCreateRouteImport } from './routes/discounts/create'
 import { Route as CustomersCreateRouteImport } from './routes/customers/create'
+import { Route as CampaignsCreateRouteImport } from './routes/campaigns/create'
 import { Route as SettingsTaxIndexRouteImport } from './routes/settings/tax/index'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
@@ -73,6 +74,11 @@ const CustomersCreateRoute = CustomersCreateRouteImport.update({
   path: '/customers/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CampaignsCreateRoute = CampaignsCreateRouteImport.update({
+  id: '/campaigns/create',
+  path: '/campaigns/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsTaxIndexRoute = SettingsTaxIndexRouteImport.update({
   id: '/tax/',
   path: '/tax/',
@@ -126,6 +132,7 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
@@ -167,6 +175,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
     | '/orders/create'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
     | '/orders/create'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
     | '/orders/create'
@@ -250,6 +262,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  CampaignsCreateRoute: typeof CampaignsCreateRoute
   CustomersCreateRoute: typeof CustomersCreateRoute
   DiscountsCreateRoute: typeof DiscountsCreateRoute
   OrdersCreateRoute: typeof OrdersCreateRoute
@@ -329,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/customers/create'
       fullPath: '/customers/create'
       preLoaderRoute: typeof CustomersCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaigns/create': {
+      id: '/campaigns/create'
+      path: '/campaigns/create'
+      fullPath: '/campaigns/create'
+      preLoaderRoute: typeof CampaignsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/tax/': {
@@ -414,6 +434,7 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  CampaignsCreateRoute: CampaignsCreateRoute,
   CustomersCreateRoute: CustomersCreateRoute,
   DiscountsCreateRoute: DiscountsCreateRoute,
   OrdersCreateRoute: OrdersCreateRoute,
