@@ -1,5 +1,15 @@
 import { Hono } from "hono";
-import { analyticsService } from "./services";
+import { zValidator } from '@hono/zod-validator';
+import { analyticsService, campaignsService } from "./services";
+import {
+  createCampaignSchema,
+  updateCampaignSchema,
+  trackVisitSchema,
+  updateActivitySchema,
+  campaignAnalyticsQuerySchema,
+  campaignListQuerySchema,
+  campaignLeaderboardQuerySchema,
+} from "./analytics.types";
 
 export const analyticsRoutes = new Hono();
 
@@ -280,6 +290,290 @@ analyticsRoutes.get("/shipping", async (c) => {
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch shipping analytics";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ==================== CAMPAIGN MANAGEMENT ROUTES ====================
+
+/**
+ * POST /analytics/campaigns
+ * Create a new campaign
+ */
+analyticsRoutes.post("/campaigns", zValidator('json', createCampaignSchema), async (c) => {
+  try {
+    const data = c.req.valid('json');
+    const result = await campaignsService.createCampaign(data);
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to create campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns
+ * List all campaigns with optional filters
+ * Query params: platform, isActive, parentCampaignId, search
+ */
+analyticsRoutes.get("/campaigns", async (c) => {
+  try {
+    const { platform, isActive, parentCampaignId, search } = c.req.query();
+
+    const filters: any = {};
+    if (platform) filters.platform = platform;
+    if (isActive !== undefined) filters.isActive = isActive === 'true';
+    if (parentCampaignId !== undefined) filters.parentCampaignId = parentCampaignId;
+    if (search) filters.search = search;
+
+    const campaigns = await campaignsService.listCampaigns(filters);
+    return c.json({ success: true, data: campaigns });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to list campaigns";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/:id
+ * Get campaign by ID
+ */
+analyticsRoutes.get("/campaigns/:id", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const campaign = await campaignsService.getCampaignById(id);
+
+    if (!campaign) {
+      return c.json({ success: false, error: "Campaign not found" }, 404);
+    }
+
+    return c.json({ success: true, data: campaign });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/:id/children
+ * Get child campaigns
+ */
+analyticsRoutes.get("/campaigns/:id/children", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const children = await campaignsService.getChildCampaigns(id);
+    return c.json({ success: true, data: children });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch child campaigns";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * PUT /analytics/campaigns/:id
+ * Update campaign
+ */
+analyticsRoutes.put("/campaigns/:id", zValidator('json', updateCampaignSchema), async (c) => {
+  try {
+    const id = c.req.param('id');
+    const data = c.req.valid('json');
+    const campaign = await campaignsService.updateCampaign(id, data);
+    return c.json({ success: true, data: campaign });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * DELETE /analytics/campaigns/:id
+ * Delete campaign
+ */
+analyticsRoutes.delete("/campaigns/:id", async (c) => {
+  try {
+    const id = c.req.param('id');
+    await campaignsService.deleteCampaign(id);
+    return c.json({ success: true, data: { message: "Campaign deleted successfully" } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * PUT /analytics/campaigns/:id/activate
+ * Activate campaign
+ */
+analyticsRoutes.put("/campaigns/:id/activate", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const campaign = await campaignsService.activateCampaign(id);
+    return c.json({ success: true, data: campaign });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to activate campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * PUT /analytics/campaigns/:id/deactivate
+ * Deactivate campaign
+ */
+analyticsRoutes.put("/campaigns/:id/deactivate", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const campaign = await campaignsService.deactivateCampaign(id);
+    return c.json({ success: true, data: campaign });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to deactivate campaign";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ==================== VISIT TRACKING ROUTES ====================
+
+/**
+ * POST /analytics/campaigns/track-visit
+ * Track a campaign visit (called by frontend)
+ */
+analyticsRoutes.post("/campaigns/track-visit", zValidator('json', trackVisitSchema), async (c) => {
+  try {
+    const data = c.req.valid('json');
+    const result = await campaignsService.trackVisit(data);
+    return c.json({ success: true, data: result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to track visit";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * POST /analytics/campaigns/update-activity
+ * Update visit activity (extend expiration)
+ */
+analyticsRoutes.post("/campaigns/update-activity", zValidator('json', updateActivitySchema), async (c) => {
+  try {
+    const { sessionId } = c.req.valid('json');
+    await campaignsService.updateVisitActivity(sessionId);
+    return c.json({ success: true, data: { message: "Activity updated" } });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update activity";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/:id/visits
+ * Get all visits for a campaign
+ */
+analyticsRoutes.get("/campaigns/:id/visits", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const visits = await campaignsService.getVisitsForCampaign(id);
+    return c.json({ success: true, data: visits });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch visits";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ==================== CAMPAIGN ANALYTICS ROUTES ====================
+
+/**
+ * GET /analytics/campaigns/:id/analytics
+ * Get comprehensive campaign analytics
+ * Query params: startDate, endDate, includeTimeline, includeProducts, includeDeviceBreakdown, includeGeographic
+ */
+analyticsRoutes.get("/campaigns/:id/analytics", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const {
+      startDate,
+      endDate,
+      includeTimeline,
+      includeProducts,
+      includeDeviceBreakdown,
+      includeGeographic,
+    } = c.req.query();
+
+    const analytics = await campaignsService.getCampaignAnalytics(id, {
+      startDate,
+      endDate,
+      includeTimeline: includeTimeline === 'true',
+      includeProducts: includeProducts === 'true',
+      includeDeviceBreakdown: includeDeviceBreakdown === 'true',
+      includeGeographic: includeGeographic === 'true',
+    });
+
+    return c.json({ success: true, data: analytics });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaign analytics";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/:id/conversions
+ * Get all conversions for a campaign
+ */
+analyticsRoutes.get("/campaigns/:id/conversions", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const conversions = await campaignsService.getConversionsForCampaign(id);
+    return c.json({ success: true, data: conversions });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch conversions";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/:id/parent-analytics
+ * Get parent campaign analytics with children aggregation
+ */
+analyticsRoutes.get("/campaigns/:id/parent-analytics", async (c) => {
+  try {
+    const id = c.req.param('id');
+    const analytics = await campaignsService.getParentCampaignAnalytics(id);
+    return c.json({ success: true, data: analytics });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch parent campaign analytics";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/leaderboard
+ * Get campaign leaderboard
+ * Query params: metric (roi|revenue|conversions|visits), limit
+ */
+analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
+  try {
+    const { metric, limit } = c.req.query();
+
+    const metricValue = (metric === 'roi' || metric === 'revenue' || metric === 'conversions' || metric === 'visits')
+      ? metric
+      : 'roi';
+    const limitValue = limit ? parseInt(limit, 10) : 10;
+
+    const leaderboard = await campaignsService.getCampaignLeaderboard(metricValue, limitValue);
+    return c.json({ success: true, data: leaderboard });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaign leaderboard";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/overview
+ * Get overview of all campaigns
+ */
+analyticsRoutes.get("/campaigns/overview", async (c) => {
+  try {
+    const overview = await campaignsService.getCampaignsOverview();
+    return c.json({ success: true, data: overview });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaigns overview";
     return c.json({ success: false, error: message }, 500);
   }
 });

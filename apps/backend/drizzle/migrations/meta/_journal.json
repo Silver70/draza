@@ -29,6 +29,13 @@
       "when": 1767028498183,
       "tag": "0003_thick_morbius",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1767196036699,
+      "tag": "0004_burly_namor",
+      "breakpoints": true
     }
   ]
 }

@@ -47,6 +47,10 @@ export const ordersTable = pgTable('orders', {
   shippingCarrier: text('shipping_carrier'), // Snapshot: "USPS", "FedEx", etc.
   estimatedDeliveryDate: timestamp('estimated_delivery_date'), // Calculated at order time
 
+  // Campaign tracking - for attribution
+  campaignId: uuid('campaign_id'),
+  visitId: uuid('visit_id'),
+
   notes: text('notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')

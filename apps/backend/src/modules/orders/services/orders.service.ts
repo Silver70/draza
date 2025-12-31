@@ -8,6 +8,7 @@ import { calculateOrderTax } from "./tax.service";
 import { calculateShippingOptions, getShippingMethod, calculateEstimatedDeliveryDate } from "./shipping.service";
 import { discountCodesService } from "../../discounts/services";
 import { orderDiscountsRepo } from "../../discounts/repo";
+import { campaignsService } from "../../analytics/services";
 
 export const ordersService = {
   /**
@@ -212,6 +213,7 @@ export const ordersService = {
    * Create a new order with items
    * Tax and shipping are calculated automatically based on address and shipping method
    * Discounts are applied before tax calculation
+   * Campaign attribution is handled automatically if sessionId is provided
    */
   create: async (data: {
     customerId: string;
@@ -223,6 +225,7 @@ export const ordersService = {
     }>;
     shippingMethodId: string; // Selected shipping method
     discountCode?: string; // Optional discount code
+    sessionId?: string; // Optional session ID for campaign attribution
     notes?: string;
   }) => {
     // Validate customer exists
@@ -420,6 +423,21 @@ export const ordersService = {
       await productVariantsRepo.updateProductVariant(item.productVariantId, {
         quantityInStock: variant.quantityInStock - item.quantity,
       });
+    }
+
+    // Handle campaign attribution if sessionId is provided
+    if (data.sessionId) {
+      try {
+        await campaignsService.attributeOrder(
+          data.sessionId,
+          order.id,
+          data.customerId,
+          order.total
+        );
+      } catch (error) {
+        // Log error but don't fail the order
+        console.error('Campaign attribution error:', error);
+      }
     }
 
     return order;
