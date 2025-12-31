@@ -335,6 +335,42 @@ analyticsRoutes.get("/campaigns", async (c) => {
 });
 
 /**
+ * GET /analytics/campaigns/leaderboard
+ * Get campaign leaderboard
+ * Query params: metric (roi|revenue|conversions|visits), limit
+ */
+analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
+  try {
+    const { metric, limit } = c.req.query();
+
+    const metricValue = (metric === 'roi' || metric === 'revenue' || metric === 'conversions' || metric === 'visits')
+      ? metric
+      : 'roi';
+    const limitValue = limit ? parseInt(limit, 10) : 10;
+
+    const leaderboard = await campaignsService.getCampaignLeaderboard(metricValue, limitValue);
+    return c.json({ success: true, data: leaderboard });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaign leaderboard";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /analytics/campaigns/overview
+ * Get overview of all campaigns
+ */
+analyticsRoutes.get("/campaigns/overview", async (c) => {
+  try {
+    const overview = await campaignsService.getCampaignsOverview();
+    return c.json({ success: true, data: overview });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch campaigns overview";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
  * GET /analytics/campaigns/:id
  * Get campaign by ID
  */
@@ -538,42 +574,6 @@ analyticsRoutes.get("/campaigns/:id/parent-analytics", async (c) => {
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch parent campaign analytics";
-    return c.json({ success: false, error: message }, 500);
-  }
-});
-
-/**
- * GET /analytics/campaigns/leaderboard
- * Get campaign leaderboard
- * Query params: metric (roi|revenue|conversions|visits), limit
- */
-analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
-  try {
-    const { metric, limit } = c.req.query();
-
-    const metricValue = (metric === 'roi' || metric === 'revenue' || metric === 'conversions' || metric === 'visits')
-      ? metric
-      : 'roi';
-    const limitValue = limit ? parseInt(limit, 10) : 10;
-
-    const leaderboard = await campaignsService.getCampaignLeaderboard(metricValue, limitValue);
-    return c.json({ success: true, data: leaderboard });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch campaign leaderboard";
-    return c.json({ success: false, error: message }, 500);
-  }
-});
-
-/**
- * GET /analytics/campaigns/overview
- * Get overview of all campaigns
- */
-analyticsRoutes.get("/campaigns/overview", async (c) => {
-  try {
-    const overview = await campaignsService.getCampaignsOverview();
-    return c.json({ success: true, data: overview });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to fetch campaigns overview";
     return c.json({ success: false, error: message }, 500);
   }
 });
