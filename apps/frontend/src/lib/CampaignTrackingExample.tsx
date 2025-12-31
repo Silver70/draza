@@ -5,7 +5,7 @@
  * Copy the relevant parts to your actual components.
  */
 
-import { useCampaignTracking, useCampaignSessionId } from './useCampaignTracking';
+import { useCampaignTracking, useCampaignSessionId } from '../hooks/useCampaignTracking';
 import { useState } from 'react';
 
 /**
@@ -184,22 +184,23 @@ export function ExampleCampaignDebugPanel() {
 /**
  * Full Example App Structure
  */
-export function ExampleApp() {
-  return (
-    <div>
-      <ExampleRootLayout>
-        <ExampleSpecialOffer />
+// export function ExampleApp() {
+//   return (
+//     <div>
+   
+//       <ExampleRootLayout>
+//         <ExampleSpecialOffer />
 
-        <div className="container mx-auto p-8">
-          <h1>Your Store</h1>
-          {/* Your content here */}
-        </div>
+//         <div className="container mx-auto p-8">
+//           <h1>Your Store</h1>
+//           {/* Your content here */}
+//         </div>
 
-        <ExampleCheckout />
-      </ExampleRootLayout>
+//         <ExampleCheckout />
+//       </ExampleRootLayout>
 
-      {/* Debug panel (development only) */}
-      <ExampleCampaignDebugPanel />
-    </div>
-  );
-}
+//       {/* Debug panel (development only) */}
+//       <ExampleCampaignDebugPanel />
+//     </div>
+//   );
+// }
