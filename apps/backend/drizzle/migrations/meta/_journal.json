@@ -36,6 +36,13 @@
       "when": 1767196036699,
       "tag": "0004_burly_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1767256361023,
+      "tag": "0005_useful_molten_man",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import { customersRoutes } from './modules/customers/customers.route'
 import { taxRoutes } from './modules/orders/tax.routes'
 import { analyticsRoutes } from './modules/analytics/analytics.routes'
 import { discountsRoutes } from './modules/discounts/discounts.routes'
+import { cartRoutes } from './modules/cart/cart.routes'
 import { showRoutes } from 'hono/dev';
 
 const app = new Hono()
@@ -30,6 +31,7 @@ app.route('/customers', customersRoutes)
 app.route('/tax', taxRoutes)
 app.route('/analytics', analyticsRoutes)
 app.route('/discounts', discountsRoutes)
+app.route('/cart', cartRoutes)
 
 // showRoutes(app);
 
