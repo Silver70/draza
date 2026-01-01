@@ -407,15 +407,16 @@ export const trackCampaignVisit = async (data: TrackVisitRequest) => {
  */
 export const createCampaign = async (data: {
   name: string
+  description?: string
   platform: string
+  campaignType: string
   parentCampaignId?: string
-  trackingCode?: string
-  cost?: string
-  budget?: string
-  targetAudience?: string
-  startDate?: string
-  endDate?: string
-  isActive?: boolean
+  postUrl?: string
+  cost?: number
+  budget?: number
+  startsAt?: string
+  endsAt?: string
+  metadata?: any
 }) => {
   console.info('Creating campaign...', data.name)
   try {
@@ -442,14 +443,14 @@ export const updateCampaign = async (
   id: string,
   data: {
     name?: string
-    platform?: string
-    parentCampaignId?: string
-    cost?: string
-    budget?: string
-    targetAudience?: string
-    startDate?: string
-    endDate?: string
+    description?: string
+    postUrl?: string
+    cost?: number
+    budget?: number
+    startsAt?: string
+    endsAt?: string
     isActive?: boolean
+    metadata?: any
   },
 ) => {
   console.info('Updating campaign...', id)

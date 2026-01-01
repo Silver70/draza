@@ -80,21 +80,32 @@ export type CampaignPlatform =
   | 'facebook'
   | 'twitter'
   | 'youtube'
-  | 'pinterest'
+  | 'multi'
   | 'other'
+
+export type CampaignType =
+  | 'post'
+  | 'reel'
+  | 'story'
+  | 'video'
+  | 'ad'
+  | 'campaign'
 
 export type Campaign = {
   id: string
   parentCampaignId: string | null
   name: string
+  description: string | null
   platform: CampaignPlatform
+  campaignType: CampaignType
+  postUrl: string | null
   trackingCode: string
   cost: string
   budget: string
-  targetAudience: string | null
-  startDate: Date | null
-  endDate: Date | null
+  startsAt: Date | null
+  endsAt: Date | null
   isActive: boolean
+  metadata: any
   createdAt: Date
   updatedAt: Date
 }
