@@ -150,8 +150,8 @@ export const mergeCartsSchema = z.object({
 
 // Admin query schemas
 export const abandonedCartsQuerySchema = z.object({
-  hoursAgo: z.number().int().positive().default(24),
-  minValue: z.number().positive().optional(),
+  hoursAgo: z.coerce.number().int().positive().default(24),
+  minValue: z.coerce.number().positive().optional(),
 });
 
 // Input types for service methods

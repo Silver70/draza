@@ -13,7 +13,8 @@ import {
   Cog,
   BoltIcon,
   TicketPercentIcon,
-  MegaphoneIcon
+  MegaphoneIcon,
+  ShoppingCart
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
@@ -87,7 +88,12 @@ const data = {
       url: "/orders",
       icon: FileText,
     },
-     {
+    {
+      title: "Carts",
+      url: "/carts/",
+      icon: ShoppingCart,
+    },
+    {
       title: "Campaigns",
       url: "/campaigns",
       icon: MegaphoneIcon,
