@@ -71,7 +71,7 @@ export function getPlatformDisplayName(platform: CampaignPlatform): string {
     facebook: 'Facebook',
     twitter: 'Twitter',
     youtube: 'YouTube',
-    pinterest: 'Pinterest',
+    multi: 'Multi-Platform',
     other: 'Other',
   }
   return platformNames[platform] || platform
@@ -87,7 +87,7 @@ export function getPlatformColor(platform: CampaignPlatform): string {
     facebook: 'bg-blue-600',
     twitter: 'bg-sky-500',
     youtube: 'bg-red-600',
-    pinterest: 'bg-red-700',
+    multi: 'bg-gradient-to-r from-blue-500 to-purple-500',
     other: 'bg-gray-500',
   }
   return platformColors[platform] || 'bg-gray-500'
@@ -103,7 +103,7 @@ export function getPlatformIcon(platform: CampaignPlatform): string {
     facebook: 'Facebook',
     twitter: 'Twitter',
     youtube: 'Youtube',
-    pinterest: 'Pin', // Pinterest not in lucide, use Pin as alternative
+    multi: 'Network', // Multi-platform uses Network icon
     other: 'Globe',
   }
   return platformIcons[platform] || 'Globe'

@@ -52,7 +52,7 @@ const campaignSchema = z.object({
   endsAt: z.string().optional(),
 })
 
-const platforms = ['instagram', 'facebook', 'tiktok', 'youtube', 'twitter', 'other'] as const
+const platforms = ['instagram', 'facebook', 'tiktok', 'youtube', 'twitter', 'multi', 'other'] as const
 
 const campaignTypes = [
   { value: 'post', label: 'Post' },

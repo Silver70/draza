@@ -168,9 +168,35 @@ export type CampaignProductPerformance = {
 
 export type CampaignAnalyticsDetailed = {
   campaign: Campaign
-  analytics: CampaignAnalytics
+  metrics: {
+    totalVisits: number
+    uniqueVisitors: number
+    totalConversions: number
+    conversionRate: string
+    totalRevenue: string
+    averageOrderValue: string
+    roi: string
+    costPerVisit: string
+    costPerConversion: string
+  }
   timeline?: CampaignTimelineData[]
-  topProducts?: CampaignProductPerformance[]
+  topProducts?: {
+    productId: string
+    productName: string
+    quantitySold: number
+    revenue: string
+  }[]
+  deviceBreakdown?: {
+    deviceType: string
+    visits: number
+    conversions: number
+  }[]
+  geographicBreakdown?: {
+    country: string
+    visits: number
+    conversions: number
+    revenue: string
+  }[]
 }
 
 export type CampaignOverview = {

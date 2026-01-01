@@ -19,6 +19,7 @@ import { Route as OrdersCreateRouteImport } from './routes/orders/create'
 import { Route as DiscountsCreateRouteImport } from './routes/discounts/create'
 import { Route as CustomersCreateRouteImport } from './routes/customers/create'
 import { Route as CampaignsCreateRouteImport } from './routes/campaigns/create'
+import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns/$campaignId'
 import { Route as SettingsTaxIndexRouteImport } from './routes/settings/tax/index'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
@@ -79,6 +80,11 @@ const CampaignsCreateRoute = CampaignsCreateRouteImport.update({
   path: '/campaigns/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
+  id: '/campaigns/$campaignId',
+  path: '/campaigns/$campaignId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsTaxIndexRoute = SettingsTaxIndexRouteImport.update({
   id: '/tax/',
   path: '/tax/',
@@ -132,6 +138,7 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
   '/discounts/create': typeof DiscountsCreateRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
@@ -219,6 +229,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
@@ -240,6 +251,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
     | '/discounts/create'
@@ -262,6 +274,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
   CampaignsCreateRoute: typeof CampaignsCreateRoute
   CustomersCreateRoute: typeof CustomersCreateRoute
   DiscountsCreateRoute: typeof DiscountsCreateRoute
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CampaignsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campaigns/$campaignId': {
+      id: '/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof CampaignsCampaignIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/tax/': {
       id: '/settings/tax/'
       path: '/tax'
@@ -434,6 +454,7 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
   CampaignsCreateRoute: CampaignsCreateRoute,
   CustomersCreateRoute: CustomersCreateRoute,
   DiscountsCreateRoute: DiscountsCreateRoute,
