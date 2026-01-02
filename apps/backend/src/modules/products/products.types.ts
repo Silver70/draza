@@ -9,6 +9,8 @@ import {
   categoriesTable,
   collectionsTable,
   collectionProductsTable,
+  productImagesTable,
+  productVariantImagesTable,
 } from "../../shared/db/catalogue";
 
 // Product types
@@ -49,13 +51,25 @@ export type UpdateCollection = Partial<Omit<NewCollection, "id" | "createdAt" | 
 export type CollectionProduct = InferSelectModel<typeof collectionProductsTable>;
 export type NewCollectionProduct = InferInsertModel<typeof collectionProductsTable>;
 
+// Product Image types
+export type ProductImage = InferSelectModel<typeof productImagesTable>;
+export type NewProductImage = InferInsertModel<typeof productImagesTable>;
+export type UpdateProductImage = Partial<Omit<NewProductImage, "id" | "createdAt" | "updatedAt">>;
+
+// Product Variant Image types
+export type ProductVariantImage = InferSelectModel<typeof productVariantImagesTable>;
+export type NewProductVariantImage = InferInsertModel<typeof productVariantImagesTable>;
+export type UpdateProductVariantImage = Partial<Omit<NewProductVariantImage, "id" | "createdAt" | "updatedAt">>;
+
 // Extended types with relations
 export type ProductWithVariants = Product & {
   variants: ProductVariant[];
+  images?: ProductImage[];
 };
 
 export type ProductWithCategory = Product & {
   category: Category;
+  images?: ProductImage[];
 };
 
 export type ProductWithDetails = Product & {
@@ -66,7 +80,9 @@ export type ProductWithDetails = Product & {
         attribute: Attribute;
       };
     })[];
+    images?: ProductVariantImage[];
   })[];
+  images?: ProductImage[];
 };
 
 export type ProductVariantWithAttributes = ProductVariant & {
@@ -75,6 +91,7 @@ export type ProductVariantWithAttributes = ProductVariant & {
       attribute: Attribute;
     };
   })[];
+  images?: ProductVariantImage[];
 };
 
 export type CategoryWithProducts = Category & {
@@ -222,4 +239,36 @@ export const collectionQuerySchema = z.object({
   search: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(10),
+});
+
+// Product Image schemas
+export const createProductImageSchema = z.object({
+  productId: z.string().uuid("Invalid product ID"),
+  url: z.string().url("Invalid URL").or(z.string().min(1, "URL is required")),
+  altText: z.string().optional().nullable(),
+  type: z.enum(["thumbnail", "gallery", "hero", "zoom"]).default("gallery"),
+  position: z.number().int().min(0).default(0),
+});
+
+export const updateProductImageSchema = z.object({
+  url: z.string().url("Invalid URL").or(z.string().min(1)).optional(),
+  altText: z.string().optional().nullable(),
+  type: z.enum(["thumbnail", "gallery", "hero", "zoom"]).optional(),
+  position: z.number().int().min(0).optional(),
+});
+
+// Product Variant Image schemas
+export const createProductVariantImageSchema = z.object({
+  productVariantId: z.string().uuid("Invalid product variant ID"),
+  url: z.string().url("Invalid URL").or(z.string().min(1, "URL is required")),
+  altText: z.string().optional().nullable(),
+  type: z.enum(["thumbnail", "gallery", "hero", "zoom"]).default("gallery"),
+  position: z.number().int().min(0).default(0),
+});
+
+export const updateProductVariantImageSchema = z.object({
+  url: z.string().url("Invalid URL").or(z.string().min(1)).optional(),
+  altText: z.string().optional().nullable(),
+  type: z.enum(["thumbnail", "gallery", "hero", "zoom"]).optional(),
+  position: z.number().int().min(0).optional(),
 });
