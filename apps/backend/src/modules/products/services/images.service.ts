@@ -251,7 +251,7 @@ export const imagesService = {
    */
   updateProductImage: async (
     imageId: string,
-    updates: { altText?: string; type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'; position?: number }
+    updates: { altText?: string | null; type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'; position?: number }
   ) => {
     const image = await productImagesRepo.getProductImageById(imageId);
     if (!image) {
@@ -266,7 +266,7 @@ export const imagesService = {
    */
   updateProductVariantImage: async (
     imageId: string,
-    updates: { altText?: string; type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'; position?: number }
+    updates: { altText?: string | null; type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'; position?: number }
   ) => {
     const image = await productVariantImagesRepo.getProductVariantImageById(imageId);
     if (!image) {

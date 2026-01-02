@@ -1,4 +1,4 @@
-import { supabase } from './client';
+import { ensureSupabaseClient } from './client';
 
 export type ImageUploadOptions = {
   bucket: string;
@@ -23,6 +23,7 @@ export const storageService = {
    */
   uploadImage: async (options: ImageUploadOptions): Promise<ImageUploadResult> => {
     try {
+      const supabase = ensureSupabaseClient();
       const { bucket, path, file, contentType } = options;
 
       // Upload to Supabase Storage
@@ -64,6 +65,7 @@ export const storageService = {
    */
   deleteImage: async (bucket: string, path: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      const supabase = ensureSupabaseClient();
       const { error } = await supabase.storage.from(bucket).remove([path]);
 
       if (error) {
@@ -104,6 +106,7 @@ export const storageService = {
    */
   deleteImages: async (bucket: string, paths: string[]): Promise<{ success: boolean; error?: string }> => {
     try {
+      const supabase = ensureSupabaseClient();
       const { error } = await supabase.storage.from(bucket).remove(paths);
 
       if (error) {
