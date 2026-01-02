@@ -31,6 +31,7 @@ bun run db:push            # Push schema changes directly to database (bypasses 
 - **Database**: PostgreSQL (Neon serverless)
 - **ORM**: Drizzle ORM
 - **Validation**: Zod
+- **File Storage**: Supabase Storage (for product images)
 
 ### Project Structure
 
@@ -42,12 +43,15 @@ src/
 │   ├── customers/        # Customer and address management
 │   ├── discounts/        # Discount codes and promotions
 │   ├── orders/           # Order processing, tax, shipping
-│   └── products/         # Products, variants, categories, collections
+│   └── products/         # Products, variants, categories, collections, images
 └── shared/
-    └── db/               # Database configuration and schemas
-        ├── index.ts      # Drizzle instance
-        ├── schema.ts     # Re-exports all schemas
-        └── *.ts          # Individual schema files
+    ├── db/               # Database configuration and schemas
+    │   ├── index.ts      # Drizzle instance
+    │   ├── schema.ts     # Re-exports all schemas
+    │   └── *.ts          # Individual schema files
+    └── supabase/         # Supabase client and storage service
+        ├── client.ts     # Supabase client instance
+        └── storage.service.ts  # Image upload/delete operations
 ```
 
 ### Module Organization Pattern
@@ -73,7 +77,7 @@ module/
 ### Database Schema Organization
 
 Database schemas are split by domain in `src/shared/db/`:
-- `catalogue.ts` - Products, variants, categories, collections
+- `catalogue.ts` - Products, variants, categories, collections, images
 - `customer.ts` - Customer records
 - `address.ts` - Shipping/billing addresses
 - `order.ts` - Orders and line items
@@ -90,9 +94,33 @@ All schemas are re-exported through `schema.ts` for use with Drizzle.
 
 **Orders Module**: Handles order creation with automatic tax calculation, shipping options, discount application, and campaign attribution via session IDs.
 
-**Products Module**: Product catalog with variant generation, attribute management, and inventory tracking. Includes category and collection organization.
+**Products Module**: Product catalog with variant generation, attribute management, and inventory tracking. Includes category and collection organization. Integrated image management with Supabase Storage for product and variant images.
 
 **Discounts Module**: Flexible discount system supporting percentage/fixed discounts, minimum requirements, usage limits, and product-specific discounts.
+
+### Image Management System
+
+Product images are stored using Supabase Storage with metadata in PostgreSQL:
+
+**Schema**:
+- `product_images` - Product-level images (general/marketing photos)
+- `product_variant_images` - Variant-specific images (e.g., different colors)
+- Both tables include: `url`, `altText`, `type` (thumbnail/gallery/hero/zoom), `position`
+
+**Storage Structure**:
+```
+Supabase Bucket: product-images
+├── products/{productId}/
+│   └── {filename}-{timestamp}-{random}.jpg
+└── variants/{variantId}/
+    └── {filename}-{timestamp}-{random}.jpg
+```
+
+**Image Service** (`images.service.ts`):
+- `uploadProductImage()` - Upload to Supabase + save URL to DB
+- `deleteProductImage()` - Delete from DB + remove from Supabase
+- `reorderProductImages()` - Update display order
+- Automatic cascade deletion when product/variant is deleted
 
 ### Campaign Attribution Flow
 
@@ -110,9 +138,24 @@ Frontend allowed origins:
 
 Configured in `src/index.ts` with credentials enabled.
 
-## Database Connection
+## Environment Variables
 
-Uses Neon serverless PostgreSQL with connection pooling. Connection string in `.env` as `DATABASE_URL`.
+Required environment variables in `.env`:
+
+```bash
+# Database
+DATABASE_URL=postgresql://...  # Neon serverless PostgreSQL connection string
+
+# Supabase Storage (for product images)
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+**Setting up Supabase Storage**:
+1. Create a Supabase project at https://supabase.com
+2. Go to Storage → Create a new bucket named `product-images`
+3. Set bucket to **public** (or configure RLS policies as needed)
+4. Copy your project URL and anon key to `.env`
 
 ## Important Notes
 
