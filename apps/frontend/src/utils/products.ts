@@ -495,3 +495,188 @@ export const allProductsWithVariantsQueryOptions = () =>
     queryKey: ['products', 'with-variants'],
     queryFn: () => fetchAllProductsWithVariants(),
   })
+
+// ============ IMAGE UPLOAD UTILITIES ============
+// Note: These use regular fetch instead of createServerFn because they need FormData
+
+export type ProductImage = {
+  id: string
+  productId: string
+  url: string
+  altText: string | null
+  type: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type ProductVariantImage = {
+  id: string
+  productVariantId: string
+  url: string
+  altText: string | null
+  type: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Upload a single product image
+ */
+export const uploadProductImage = async (
+  productId: string,
+  file: File,
+  options?: {
+    altText?: string
+    type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
+    position?: number
+  }
+): Promise<ProductImage> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('productId', productId)
+
+  if (options?.altText) formData.append('altText', options.altText)
+  if (options?.type) formData.append('type', options.type)
+  if (options?.position !== undefined) formData.append('position', options.position.toString())
+
+  const response = await fetch(`${API_BASE_URL}/products/images/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const result = await response.json()
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to upload image')
+  }
+
+  return result.data
+}
+
+/**
+ * Upload multiple product images
+ */
+export const uploadProductImages = async (
+  productId: string,
+  files: File[],
+  options?: {
+    altText?: string
+  }
+): Promise<ProductImage[]> => {
+  const uploadPromises = files.map((file, index) =>
+    uploadProductImage(productId, file, {
+      altText: options?.altText,
+      type: index === 0 ? 'hero' : 'gallery',
+      position: index,
+    })
+  )
+
+  return await Promise.all(uploadPromises)
+}
+
+/**
+ * Upload a single variant image
+ */
+export const uploadVariantImage = async (
+  variantId: string,
+  file: File,
+  options?: {
+    altText?: string
+    type?: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
+    position?: number
+  }
+): Promise<ProductVariantImage> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('productVariantId', variantId)
+
+  if (options?.altText) formData.append('altText', options.altText)
+  if (options?.type) formData.append('type', options.type)
+  if (options?.position !== undefined) formData.append('position', options.position.toString())
+
+  const response = await fetch(`${API_BASE_URL}/products/variants/images/upload`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  const result = await response.json()
+
+  if (!result.success) {
+    throw new Error(result.error || 'Failed to upload variant image')
+  }
+
+  return result.data
+}
+
+/**
+ * Upload multiple variant images
+ * @param variantImagesMap - Map of variantId to array of Files
+ */
+export const uploadVariantImages = async (
+  variantImagesMap: Map<string, File[]>
+): Promise<ProductVariantImage[]> => {
+  const uploadPromises: Promise<ProductVariantImage>[] = []
+
+  variantImagesMap.forEach((files, variantId) => {
+    files.forEach((file, index) => {
+      uploadPromises.push(
+        uploadVariantImage(variantId, file, {
+          type: 'gallery',
+          position: index,
+        })
+      )
+    })
+  })
+
+  return await Promise.all(uploadPromises)
+}
+
+/**
+ * Get all images for a product
+ */
+export const fetchProductImages = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data: productId }) => {
+    console.info(`Fetching images for product ${productId}...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: ProductImage[]
+      }>(`${API_BASE_URL}/products/images/${productId}`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch product images')
+    } catch (error) {
+      console.error('Error fetching product images:', error)
+      throw error
+    }
+  })
+
+/**
+ * Get all images for a variant
+ */
+export const fetchVariantImages = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data: variantId }) => {
+    console.info(`Fetching images for variant ${variantId}...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: ProductVariantImage[]
+      }>(`${API_BASE_URL}/products/variants/images/${variantId}`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch variant images')
+    } catch (error) {
+      console.error('Error fetching variant images:', error)
+      throw error
+    }
+  })

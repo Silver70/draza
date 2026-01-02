@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useState } from 'react'
-import { Plus, X, Trash2 } from 'lucide-react'
+import { Plus, X, Trash2, Upload, Image as ImageIcon } from 'lucide-react'
 import {
   Field,
   FieldLabel,
@@ -26,6 +26,8 @@ import {
   previewVariants,
   createAttribute,
   addAttributeValue,
+  uploadProductImages,
+  uploadVariantImages,
   type AttributeWithValues,
 } from '~/utils/products'
 import { PendingComponent } from '~/components/Pending'
@@ -106,11 +108,65 @@ function RouteComponent() {
   const [newAttributeValues, setNewAttributeValues] = useState<string[]>([''])
   const [isAddingNewAttribute, setIsAddingNewAttribute] = useState(false)
 
+  // State for image management
+  const [productImages, setProductImages] = useState<File[]>([])
+  const [productImagePreviews, setProductImagePreviews] = useState<string[]>([])
+  const [variantImages, setVariantImages] = useState<Map<string, File[]>>(new Map())
+  const [isUploadingImages, setIsUploadingImages] = useState(false)
+
   // Transform categories to match MultiSelect expected format
   const categoryOptions = categories.map(category => ({
     label: category.name,
     value: category.id
   }))
+
+  // Helper functions for image management
+  const handleProductImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    setProductImages(prev => [...prev, ...files])
+
+    // Create preview URLs
+    const newPreviews = files.map(file => URL.createObjectURL(file))
+    setProductImagePreviews(prev => [...prev, ...newPreviews])
+  }
+
+  const handleRemoveProductImage = (index: number) => {
+    // Revoke object URL to avoid memory leaks
+    URL.revokeObjectURL(productImagePreviews[index]!)
+
+    setProductImages(prev => prev.filter((_, i) => i !== index))
+    setProductImagePreviews(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleVariantImagesChange = (variantSku: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    setVariantImages(prev => {
+      const newMap = new Map(prev)
+      const existing = newMap.get(variantSku) || []
+      newMap.set(variantSku, [...existing, ...files])
+      return newMap
+    })
+  }
+
+  const handleRemoveVariantImage = (variantSku: string, index: number) => {
+    setVariantImages(prev => {
+      const newMap = new Map(prev)
+      const images = newMap.get(variantSku) || []
+      const filtered = images.filter((_, i) => i !== index)
+
+      if (filtered.length === 0) {
+        newMap.delete(variantSku)
+      } else {
+        newMap.set(variantSku, filtered)
+      }
+
+      return newMap
+    })
+  }
   
   const form = useForm({
     defaultValues: {
@@ -155,14 +211,23 @@ function RouteComponent() {
           // Handle different response structures
           let productName = validatedData.name
           let variantCount = variantsData.length
+          let productId = ''
 
           if (result && typeof result === 'object') {
             // Check if result has nested product
-            if ('product' in result && result.product && typeof result.product === 'object' && 'name' in result.product) {
-              productName = (result.product.name as string) || validatedData.name
+            if ('product' in result && result.product && typeof result.product === 'object') {
+              if ('name' in result.product) {
+                productName = (result.product.name as string) || validatedData.name
+              }
+              if ('id' in result.product) {
+                productId = (result.product.id as string)
+              }
             } else if ('name' in result && typeof result.name === 'string') {
               // Result is the product directly
               productName = result.name || validatedData.name
+              if ('id' in result) {
+                productId = (result.id as string)
+              }
             }
 
             // Check for variant result
@@ -171,8 +236,65 @@ function RouteComponent() {
             }
           }
 
+          // Upload images after product creation
+          let uploadedProductImages = 0
+          let uploadedVariantImages = 0
+
+          try {
+            setIsUploadingImages(true)
+
+            // Upload product images if any
+            if (productImages.length > 0 && productId) {
+              console.log(`Uploading ${productImages.length} product images...`)
+              await uploadProductImages(productId, productImages)
+              uploadedProductImages = productImages.length
+              console.log('Product images uploaded successfully')
+            }
+
+            // Upload variant images if any
+            if (variantImages.size > 0 && result.variantResult?.variants) {
+              console.log(`Uploading variant images for ${variantImages.size} variants...`)
+
+              // Map SKU to variant ID
+              const skuToIdMap = new Map<string, string>()
+              result.variantResult.variants.forEach((v: any) => {
+                if (v.sku && v.id) {
+                  skuToIdMap.set(v.sku, v.id)
+                }
+              })
+
+              // Create new map with variant IDs
+              const variantIdImages = new Map<string, File[]>()
+              variantImages.forEach((files, sku) => {
+                const variantId = skuToIdMap.get(sku)
+                if (variantId) {
+                  variantIdImages.set(variantId, files)
+                }
+              })
+
+              if (variantIdImages.size > 0) {
+                await uploadVariantImages(variantIdImages)
+                variantIdImages.forEach(files => {
+                  uploadedVariantImages += files.length
+                })
+                console.log('Variant images uploaded successfully')
+              }
+            }
+          } catch (imageError) {
+            console.error('Error uploading images:', imageError)
+            toast.warning('Product created, but some images failed to upload', {
+              description: imageError instanceof Error ? imageError.message : 'Please try uploading images later.',
+            })
+          } finally {
+            setIsUploadingImages(false)
+          }
+
+          const imagesSummary = uploadedProductImages + uploadedVariantImages > 0
+            ? ` ${uploadedProductImages + uploadedVariantImages} image(s) uploaded.`
+            : ''
+
           toast.success('Product with variants created successfully!', {
-            description: `${productName} has been created with ${variantCount} variants.`,
+            description: `${productName} has been created with ${variantCount} variants.${imagesSummary}`,
           })
 
           // Reset form state
@@ -185,6 +307,12 @@ function RouteComponent() {
           setNewAttributeName('')
           setNewAttributeValues([''])
           setIsAddingNewAttribute(false)
+
+          // Clean up image previews
+          productImagePreviews.forEach(url => URL.revokeObjectURL(url))
+          setProductImages([])
+          setProductImagePreviews([])
+          setVariantImages(new Map())
 
           // Navigate to products list
           setTimeout(() => {
@@ -223,14 +351,49 @@ function RouteComponent() {
 
           console.log('Product created successfully:', result)
 
+          // Upload images after product creation
+          let productId = ''
+          if (result && typeof result === 'object' && 'product' in result && result.product && typeof result.product === 'object' && 'id' in result.product) {
+            productId = (result.product.id as string)
+          }
+
+          let uploadedImages = 0
+
+          try {
+            setIsUploadingImages(true)
+
+            // Upload product images if any
+            if (productImages.length > 0 && productId) {
+              console.log(`Uploading ${productImages.length} product images...`)
+              await uploadProductImages(productId, productImages)
+              uploadedImages = productImages.length
+              console.log('Product images uploaded successfully')
+            }
+          } catch (imageError) {
+            console.error('Error uploading images:', imageError)
+            toast.warning('Product created, but some images failed to upload', {
+              description: imageError instanceof Error ? imageError.message : 'Please try uploading images later.',
+            })
+          } finally {
+            setIsUploadingImages(false)
+          }
+
+          const imagesSummary = uploadedImages > 0 ? ` ${uploadedImages} image(s) uploaded.` : ''
+
           toast.success('Product created successfully!', {
-            description: `${validatedData.name} has been added to your inventory.`,
+            description: `${validatedData.name} has been added to your inventory.${imagesSummary}`,
           })
 
           // Reset form state
           form.reset()
           setDefaultPrice(0)
           setDefaultQuantity(0)
+
+          // Clean up image previews
+          productImagePreviews.forEach(url => URL.revokeObjectURL(url))
+          setProductImages([])
+          setProductImagePreviews([])
+          setVariantImages(new Map())
 
           // Navigate to products list
           setTimeout(() => {
@@ -581,6 +744,79 @@ function RouteComponent() {
         </CardContent>
       </Card>
 
+      {/* Product Images Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Product Images</CardTitle>
+          <CardDescription>
+            Upload images for your product. The first image will be used as the main display image.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* File Input */}
+          <div className="space-y-2">
+            <FieldLabel htmlFor="productImages">
+              Upload Images {productImages.length > 0 && `(${productImages.length} selected)`}
+            </FieldLabel>
+            <div className="flex items-center gap-2">
+              <Input
+                id="productImages"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleProductImagesChange}
+                className="cursor-pointer"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => document.getElementById('productImages')?.click()}
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+            <FieldDescription>
+              Supported formats: JPG, PNG, WebP, GIF. You can upload multiple images at once.
+            </FieldDescription>
+          </div>
+
+          {/* Image Previews */}
+          {productImagePreviews.length > 0 && (
+            <div className="space-y-2">
+              <FieldLabel>Selected Images</FieldLabel>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {productImagePreviews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={preview}
+                      alt={`Product image ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-md border"
+                    />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveProductImage(index)}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Remove
+                      </Button>
+                    </div>
+                    {index === 0 && (
+                      <Badge className="absolute top-2 left-2" variant="default">
+                        Main
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Product Variants Card */}
       <Card>
         <CardHeader>
@@ -798,6 +1034,7 @@ function RouteComponent() {
                               <th className="text-left p-3 text-sm font-medium">Attributes</th>
                               <th className="text-left p-3 text-sm font-medium w-32">Price</th>
                               <th className="text-left p-3 text-sm font-medium w-32">Stock</th>
+                              <th className="text-left p-3 text-sm font-medium w-48">Images</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -832,6 +1069,45 @@ function RouteComponent() {
                                     className="w-full"
                                   />
                                 </td>
+                                <td className="p-3">
+                                  <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={(e) => handleVariantImagesChange(variant.sku, e)}
+                                        className="text-xs"
+                                        id={`variant-images-${variant.sku}`}
+                                      />
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => document.getElementById(`variant-images-${variant.sku}`)?.click()}
+                                      >
+                                        <ImageIcon className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    {variantImages.get(variant.sku) && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {variantImages.get(variant.sku)!.map((file, imgIndex) => (
+                                          <Badge
+                                            key={imgIndex}
+                                            variant="secondary"
+                                            className="text-xs flex items-center gap-1"
+                                          >
+                                            {file.name.substring(0, 10)}...
+                                            <X
+                                              className="h-3 w-3 cursor-pointer"
+                                              onClick={() => handleRemoveVariantImage(variant.sku, imgIndex)}
+                                            />
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -862,10 +1138,13 @@ function RouteComponent() {
               disabled={
                 !form.state.canSubmit ||
                 (createWithVariants && previewedVariants.length === 0) ||
-                (!createWithVariants && defaultPrice <= 0)
+                (!createWithVariants && defaultPrice <= 0) ||
+                isUploadingImages
               }
             >
-              {createWithVariants && previewedVariants.length > 0
+              {isUploadingImages
+                ? 'Uploading Images...'
+                : createWithVariants && previewedVariants.length > 0
                 ? `Create Product with ${previewedVariants.length} Variants`
                 : 'Create Product'}
             </Button>
@@ -882,6 +1161,12 @@ function RouteComponent() {
                 setNewAttributeName('')
                 setNewAttributeValues([''])
                 setIsAddingNewAttribute(false)
+
+                // Clean up image previews
+                productImagePreviews.forEach(url => URL.revokeObjectURL(url))
+                setProductImages([])
+                setProductImagePreviews([])
+                setVariantImages(new Map())
               }}
               className="w-full sm:w-auto"
             >
