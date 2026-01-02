@@ -89,39 +89,35 @@ const storeNavigation = [
 const developerNavigation = [
   {
     title: "Overview",
-    url: "/developer",
+    url: "/dev",
     icon: Code2,
   },
   {
     title: "Quick Start",
-    url: "/developer/quickstart",
+    url: "/dev/quickstart",
     icon: BoltIcon,
   },
   {
     title: "Guides",
-    url: "/developer/guides",
+    url: "/dev/guides",
     icon: BookOpen,
   },
   {
     title: "API Reference",
-    url: "/developer/api",
+    url: "/dev/api-references",
     icon: Terminal,
   },
   {
     title: "Components",
-    url: "/developer/components",
+    url: "/dev/components",
     icon: Blocks,
   },
   {
     title: "Webhooks",
-    url: "/developer/webhooks",
+    url: "/dev/webhooks",
     icon: Webhook,
   },
-  {
-    title: "Settings",
-    url: "/settings",
-    icon: Cog,
-  },
+
 ]
 
 // Team configurations with their respective navigation
