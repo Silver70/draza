@@ -67,7 +67,7 @@ function ProductDetailsContent({ productId }: { productId: string }) {
   const { data: images = [] } = useQuery(productImagesQueryOptions(productId))
 
   const variants = productWithVariants.variants || []
-
+ 
   // Get the main image (hero or first image)
   const mainImage = images.find(img => img.type === 'hero') || images[0]
 

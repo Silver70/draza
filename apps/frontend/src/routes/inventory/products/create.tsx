@@ -239,6 +239,7 @@ function RouteComponent() {
           // Upload images after product creation
           let uploadedProductImages = 0
           let uploadedVariantImages = 0
+          let imageUploadError = false
 
           try {
             setIsUploadingImages(true)
@@ -282,6 +283,7 @@ function RouteComponent() {
             }
           } catch (imageError) {
             console.error('Error uploading images:', imageError)
+            imageUploadError = true
             toast.warning('Product created, but some images failed to upload', {
               description: imageError instanceof Error ? imageError.message : 'Please try uploading images later.',
             })
@@ -289,13 +291,16 @@ function RouteComponent() {
             setIsUploadingImages(false)
           }
 
-          const imagesSummary = uploadedProductImages + uploadedVariantImages > 0
-            ? ` ${uploadedProductImages + uploadedVariantImages} image(s) uploaded.`
-            : ''
+          // Show success toast only if images uploaded successfully OR there were no images to upload
+          if (!imageUploadError || (uploadedProductImages + uploadedVariantImages) > 0) {
+            const imagesSummary = uploadedProductImages + uploadedVariantImages > 0
+              ? ` ${uploadedProductImages + uploadedVariantImages} image(s) uploaded.`
+              : ''
 
-          toast.success('Product with variants created successfully!', {
-            description: `${productName} has been created with ${variantCount} variants.${imagesSummary}`,
-          })
+            toast.success('Product with variants created successfully!', {
+              description: `${productName} has been created with ${variantCount} variants.${imagesSummary}`,
+            })
+          }
 
           // Reset form state
           form.reset()
@@ -315,9 +320,9 @@ function RouteComponent() {
           setVariantImages(new Map())
 
           // Navigate to products list
-          setTimeout(() => {
-            navigate({ to: '/inventory/products' })
-          }, 100)
+          console.log('Navigating to /inventory/products...')
+          await queryClient.invalidateQueries({ queryKey: ['products'] })
+          navigate({ to: '/inventory/products' })
         } else {
           // Create product with a single default variant (basic product)
           // Validate price is set
@@ -358,6 +363,7 @@ function RouteComponent() {
           }
 
           let uploadedImages = 0
+          let imageUploadError = false
 
           try {
             setIsUploadingImages(true)
@@ -371,6 +377,7 @@ function RouteComponent() {
             }
           } catch (imageError) {
             console.error('Error uploading images:', imageError)
+            imageUploadError = true
             toast.warning('Product created, but some images failed to upload', {
               description: imageError instanceof Error ? imageError.message : 'Please try uploading images later.',
             })
@@ -378,11 +385,14 @@ function RouteComponent() {
             setIsUploadingImages(false)
           }
 
-          const imagesSummary = uploadedImages > 0 ? ` ${uploadedImages} image(s) uploaded.` : ''
+          // Show success toast only if images uploaded successfully OR there were no images to upload
+          if (!imageUploadError || uploadedImages > 0) {
+            const imagesSummary = uploadedImages > 0 ? ` ${uploadedImages} image(s) uploaded.` : ''
 
-          toast.success('Product created successfully!', {
-            description: `${validatedData.name} has been added to your inventory.${imagesSummary}`,
-          })
+            toast.success('Product created successfully!', {
+              description: `${validatedData.name} has been added to your inventory.${imagesSummary}`,
+            })
+          }
 
           // Reset form state
           form.reset()
@@ -396,9 +406,9 @@ function RouteComponent() {
           setVariantImages(new Map())
 
           // Navigate to products list
-          setTimeout(() => {
-            navigate({ to: '/inventory/products' })
-          }, 100)
+          console.log('Navigating to /inventory/products...')
+          await queryClient.invalidateQueries({ queryKey: ['products'] })
+          navigate({ to: '/inventory/products' })
         }
       } catch (error) {
         if (error instanceof z.ZodError) {
