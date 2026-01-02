@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useSuspenseQuery, useQuery } from '@tanstack/react-query'
 import { Line, LineChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import {
   Sheet,
@@ -22,10 +22,11 @@ import {
   TableRow,
 } from '~/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
-import { Package, Loader2 } from 'lucide-react'
+import { Package, Loader2, ImageIcon } from 'lucide-react'
 import type { Product } from '~/types/productTypes'
-import { productWithVariantsQueryOptions } from '~/utils/products'
+import { productWithVariantsQueryOptions, fetchProductImages } from '~/utils/products'
 import { Suspense } from 'react'
+import { queryOptions } from '@tanstack/react-query'
 
 // Dummy sales data - TODO: Replace with real API data
 const salesData = [
@@ -44,6 +45,13 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+// Query options for product images
+const productImagesQueryOptions = (productId: string) =>
+  queryOptions({
+    queryKey: ['product', productId, 'images'],
+    queryFn: () => fetchProductImages({ data: productId }),
+  })
+
 type ProductDetailsSheetProps = {
   product: Product | null
   open: boolean
@@ -55,17 +63,33 @@ function ProductDetailsContent({ productId }: { productId: string }) {
     productWithVariantsQueryOptions(productId)
   )
 
+  // Fetch product images
+  const { data: images = [] } = useQuery(productImagesQueryOptions(productId))
+
   const variants = productWithVariants.variants || []
+
+  // Get the main image (hero or first image)
+  const mainImage = images.find(img => img.type === 'hero') || images[0]
 
   return (
     <div className="space-y-6 p-6">
-      {/* Image Placeholder */}
-      <div className="aspect-video w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50">
-        <div className="text-center">
-          <Package className="h-12 w-12 mx-auto text-muted-foreground/50" />
-          <p className="text-sm text-muted-foreground mt-2">Product Image</p>
+      {/* Product Image or Placeholder */}
+      {mainImage ? (
+        <div className="aspect-video w-full rounded-lg overflow-hidden border">
+          <img
+            src={mainImage.url}
+            alt={mainImage.altText || productWithVariants.name}
+            className="w-full h-full object-cover"
+          />
         </div>
-      </div>
+      ) : (
+        <div className="aspect-video w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50">
+          <div className="text-center">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground/50" />
+            <p className="text-sm text-muted-foreground mt-2">No Image Available</p>
+          </div>
+        </div>
+      )}
 
       {/* Product Info */}
       <div className="flex items-center gap-6">
