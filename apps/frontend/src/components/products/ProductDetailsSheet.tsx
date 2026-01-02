@@ -62,7 +62,7 @@ function ProductDetailsContent({ productId }: { productId: string }) {
   const { data: productWithVariants } = useSuspenseQuery(
     productWithVariantsQueryOptions(productId)
   )
-
+  console.log(productWithVariants)
   // Fetch product images
   const { data: images = [] } = useQuery(productImagesQueryOptions(productId))
 

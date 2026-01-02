@@ -14,8 +14,23 @@ export const productsRepo = {
 
   async getProductById(id: string) {
     const product = await db
-      .select()
+      .select({
+        id: productsTable.id,
+        name: productsTable.name,
+        slug: productsTable.slug,
+        description: productsTable.description,
+        categoryId: productsTable.categoryId,
+        isActive: productsTable.isActive,
+        createdAt: productsTable.createdAt,
+        updatedAt: productsTable.updatedAt,
+        category: {
+          id: categoriesTable.id,
+          name: categoriesTable.name,
+          slug: categoriesTable.slug,
+        },
+      })
       .from(productsTable)
+      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
       .where(eq(productsTable.id, id))
       .limit(1);
     return product[0];
