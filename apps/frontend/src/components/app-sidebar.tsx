@@ -15,12 +15,11 @@ import {
   ShoppingCart,
   Code2,
   BookOpen,
-  Blocks,
-  Webhook,
   Terminal
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
+import { NavMain } from "~/components/nav-main"
 import { NavUser } from "~/components/nav-user"
 import { TeamSwitcher } from "~/components/team-switcher"
 import {
@@ -85,39 +84,29 @@ const storeNavigation = [
   },
 ]
 
-// Navigation config for Developer Portal
-const developerNavigation = [
-  {
-    title: "Overview",
-    url: "/dev",
-    icon: Code2,
-  },
-  {
-    title: "Quick Start",
-    url: "/dev/quickstart",
-    icon: BoltIcon,
-  },
-  {
-    title: "Guides",
-    url: "/dev/guides",
-    icon: BookOpen,
-  },
+// Navigation config for Developer Portal - Flat items (single pages)
+const developerFlatNavigation = [
   {
     title: "API Reference",
-    url: "/dev/api-references",
+    url: "/dev/api-references/",
     icon: Terminal,
   },
-  {
-    title: "Components",
-    url: "/dev/components",
-    icon: Blocks,
-  },
-  {
-    title: "Webhooks",
-    url: "/dev/webhooks",
-    icon: Webhook,
-  },
+]
 
+// Navigation config for Developer Portal - Hierarchical items (with children)
+const developerHierarchicalNavigation = [
+  {
+    title: "Examples",
+    url: "/dev/examples",
+    icon: BookOpen,
+    items: [
+      {
+        title: "React",
+        url: "/dev/examples/react-exm",
+      },
+
+    ]
+  },
 ]
 
 // Team configurations with their respective navigation
@@ -132,7 +121,8 @@ const teams = [
     name: "Developer Portal",
     logo: Code2,
     plan: "Developer",
-    navigation: developerNavigation,
+    flatNavigation: developerFlatNavigation,
+    hierarchicalNavigation: developerHierarchicalNavigation,
   },
 ]
 
@@ -147,6 +137,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const isDeveloperPortal = activeTeam.name === "Developer Portal"
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -154,7 +145,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} onTeamChange={setActiveTeam} />
       </SidebarHeader>
       <SidebarContent>
-        <NavFlat items={activeTeam.navigation} label="Platform" />
+        {isDeveloperPortal ? (
+          <>
+            <NavFlat items={activeTeam.flatNavigation || []} label="Documentation" />
+            <NavMain items={activeTeam.hierarchicalNavigation || []} />
+          </>
+        ) : (
+          <NavFlat items={activeTeam.navigation || []} label="Platform" />
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

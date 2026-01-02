@@ -31,19 +31,10 @@ import { Route as DevGuidesIndexRouteImport } from './routes/dev/guides/index'
 import { Route as DevGettingStartedIndexRouteImport } from './routes/dev/getting-started/index'
 import { Route as DevExamplesIndexRouteImport } from './routes/dev/examples/index'
 import { Route as DevApiReferencesIndexRouteImport } from './routes/dev/api-references/index'
-import { Route as DevApiReferenceIndexRouteImport } from './routes/dev/api-reference/index'
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
 import { Route as DiscountsDiscountIdEditRouteImport } from './routes/discounts/$discountId/edit'
 import { Route as DiscountsDiscountIdCodesRouteImport } from './routes/discounts/$discountId/codes'
-import { Route as DevApiReferenceShippingRouteImport } from './routes/dev/api-reference/shipping'
-import { Route as DevApiReferenceProductsRouteImport } from './routes/dev/api-reference/products'
-import { Route as DevApiReferenceOrdersRouteImport } from './routes/dev/api-reference/orders'
-import { Route as DevApiReferenceDiscountsRouteImport } from './routes/dev/api-reference/discounts'
-import { Route as DevApiReferenceCustomersRouteImport } from './routes/dev/api-reference/customers'
-import { Route as DevApiReferenceCollectionsRouteImport } from './routes/dev/api-reference/collections'
-import { Route as DevApiReferenceCategoriesRouteImport } from './routes/dev/api-reference/categories'
-import { Route as DevApiReferenceCartRouteImport } from './routes/dev/api-reference/cart'
-import { Route as DevApiReferenceAddressesRouteImport } from './routes/dev/api-reference/addresses'
+import { Route as DevExamplesReactExmIndexRouteImport } from './routes/dev/examples/react-exm/index'
 import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
@@ -158,11 +149,6 @@ const DevApiReferencesIndexRoute = DevApiReferencesIndexRouteImport.update({
   path: '/dev/api-references/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DevApiReferenceIndexRoute = DevApiReferenceIndexRouteImport.update({
-  id: '/dev/api-reference/',
-  path: '/dev/api-reference/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
   id: '/inventory/products/create',
   path: '/inventory/products/create',
@@ -179,54 +165,10 @@ const DiscountsDiscountIdCodesRoute =
     path: '/discounts/$discountId/codes',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DevApiReferenceShippingRoute = DevApiReferenceShippingRouteImport.update({
-  id: '/dev/api-reference/shipping',
-  path: '/dev/api-reference/shipping',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevApiReferenceProductsRoute = DevApiReferenceProductsRouteImport.update({
-  id: '/dev/api-reference/products',
-  path: '/dev/api-reference/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevApiReferenceOrdersRoute = DevApiReferenceOrdersRouteImport.update({
-  id: '/dev/api-reference/orders',
-  path: '/dev/api-reference/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevApiReferenceDiscountsRoute =
-  DevApiReferenceDiscountsRouteImport.update({
-    id: '/dev/api-reference/discounts',
-    path: '/dev/api-reference/discounts',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DevApiReferenceCustomersRoute =
-  DevApiReferenceCustomersRouteImport.update({
-    id: '/dev/api-reference/customers',
-    path: '/dev/api-reference/customers',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DevApiReferenceCollectionsRoute =
-  DevApiReferenceCollectionsRouteImport.update({
-    id: '/dev/api-reference/collections',
-    path: '/dev/api-reference/collections',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DevApiReferenceCategoriesRoute =
-  DevApiReferenceCategoriesRouteImport.update({
-    id: '/dev/api-reference/categories',
-    path: '/dev/api-reference/categories',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DevApiReferenceCartRoute = DevApiReferenceCartRouteImport.update({
-  id: '/dev/api-reference/cart',
-  path: '/dev/api-reference/cart',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevApiReferenceAddressesRoute =
-  DevApiReferenceAddressesRouteImport.update({
-    id: '/dev/api-reference/addresses',
-    path: '/dev/api-reference/addresses',
+const DevExamplesReactExmIndexRoute =
+  DevExamplesReactExmIndexRouteImport.update({
+    id: '/dev/examples/react-exm/',
+    path: '/dev/examples/react-exm/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const InventoryCollectionsCollectionIdAddProductsRoute =
@@ -250,19 +192,9 @@ export interface FileRoutesByFullPath {
   '/dev': typeof DevIndexRoute
   '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
-  '/dev/api-reference/addresses': typeof DevApiReferenceAddressesRoute
-  '/dev/api-reference/cart': typeof DevApiReferenceCartRoute
-  '/dev/api-reference/categories': typeof DevApiReferenceCategoriesRoute
-  '/dev/api-reference/collections': typeof DevApiReferenceCollectionsRoute
-  '/dev/api-reference/customers': typeof DevApiReferenceCustomersRoute
-  '/dev/api-reference/discounts': typeof DevApiReferenceDiscountsRoute
-  '/dev/api-reference/orders': typeof DevApiReferenceOrdersRoute
-  '/dev/api-reference/products': typeof DevApiReferenceProductsRoute
-  '/dev/api-reference/shipping': typeof DevApiReferenceShippingRoute
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-reference': typeof DevApiReferenceIndexRoute
   '/dev/api-references': typeof DevApiReferencesIndexRoute
   '/dev/examples': typeof DevExamplesIndexRoute
   '/dev/getting-started': typeof DevGettingStartedIndexRoute
@@ -273,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/settings/orders': typeof SettingsOrdersIndexRoute
   '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
+  '/dev/examples/react-exm': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -288,19 +221,9 @@ export interface FileRoutesByTo {
   '/dev': typeof DevIndexRoute
   '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
-  '/dev/api-reference/addresses': typeof DevApiReferenceAddressesRoute
-  '/dev/api-reference/cart': typeof DevApiReferenceCartRoute
-  '/dev/api-reference/categories': typeof DevApiReferenceCategoriesRoute
-  '/dev/api-reference/collections': typeof DevApiReferenceCollectionsRoute
-  '/dev/api-reference/customers': typeof DevApiReferenceCustomersRoute
-  '/dev/api-reference/discounts': typeof DevApiReferenceDiscountsRoute
-  '/dev/api-reference/orders': typeof DevApiReferenceOrdersRoute
-  '/dev/api-reference/products': typeof DevApiReferenceProductsRoute
-  '/dev/api-reference/shipping': typeof DevApiReferenceShippingRoute
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-reference': typeof DevApiReferenceIndexRoute
   '/dev/api-references': typeof DevApiReferencesIndexRoute
   '/dev/examples': typeof DevExamplesIndexRoute
   '/dev/getting-started': typeof DevGettingStartedIndexRoute
@@ -311,6 +234,7 @@ export interface FileRoutesByTo {
   '/settings/orders': typeof SettingsOrdersIndexRoute
   '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
+  '/dev/examples/react-exm': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -327,19 +251,9 @@ export interface FileRoutesById {
   '/dev/': typeof DevIndexRoute
   '/discounts/': typeof DiscountsIndexRoute
   '/orders/': typeof OrdersIndexRoute
-  '/dev/api-reference/addresses': typeof DevApiReferenceAddressesRoute
-  '/dev/api-reference/cart': typeof DevApiReferenceCartRoute
-  '/dev/api-reference/categories': typeof DevApiReferenceCategoriesRoute
-  '/dev/api-reference/collections': typeof DevApiReferenceCollectionsRoute
-  '/dev/api-reference/customers': typeof DevApiReferenceCustomersRoute
-  '/dev/api-reference/discounts': typeof DevApiReferenceDiscountsRoute
-  '/dev/api-reference/orders': typeof DevApiReferenceOrdersRoute
-  '/dev/api-reference/products': typeof DevApiReferenceProductsRoute
-  '/dev/api-reference/shipping': typeof DevApiReferenceShippingRoute
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-reference/': typeof DevApiReferenceIndexRoute
   '/dev/api-references/': typeof DevApiReferencesIndexRoute
   '/dev/examples/': typeof DevExamplesIndexRoute
   '/dev/getting-started/': typeof DevGettingStartedIndexRoute
@@ -350,6 +264,7 @@ export interface FileRoutesById {
   '/settings/orders/': typeof SettingsOrdersIndexRoute
   '/settings/tax/': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
+  '/dev/examples/react-exm/': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -367,19 +282,9 @@ export interface FileRouteTypes {
     | '/dev'
     | '/discounts'
     | '/orders'
-    | '/dev/api-reference/addresses'
-    | '/dev/api-reference/cart'
-    | '/dev/api-reference/categories'
-    | '/dev/api-reference/collections'
-    | '/dev/api-reference/customers'
-    | '/dev/api-reference/discounts'
-    | '/dev/api-reference/orders'
-    | '/dev/api-reference/products'
-    | '/dev/api-reference/shipping'
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-reference'
     | '/dev/api-references'
     | '/dev/examples'
     | '/dev/getting-started'
@@ -390,6 +295,7 @@ export interface FileRouteTypes {
     | '/settings/orders'
     | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
+    | '/dev/examples/react-exm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -405,19 +311,9 @@ export interface FileRouteTypes {
     | '/dev'
     | '/discounts'
     | '/orders'
-    | '/dev/api-reference/addresses'
-    | '/dev/api-reference/cart'
-    | '/dev/api-reference/categories'
-    | '/dev/api-reference/collections'
-    | '/dev/api-reference/customers'
-    | '/dev/api-reference/discounts'
-    | '/dev/api-reference/orders'
-    | '/dev/api-reference/products'
-    | '/dev/api-reference/shipping'
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-reference'
     | '/dev/api-references'
     | '/dev/examples'
     | '/dev/getting-started'
@@ -428,6 +324,7 @@ export interface FileRouteTypes {
     | '/settings/orders'
     | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
+    | '/dev/examples/react-exm'
   id:
     | '__root__'
     | '/'
@@ -443,19 +340,9 @@ export interface FileRouteTypes {
     | '/dev/'
     | '/discounts/'
     | '/orders/'
-    | '/dev/api-reference/addresses'
-    | '/dev/api-reference/cart'
-    | '/dev/api-reference/categories'
-    | '/dev/api-reference/collections'
-    | '/dev/api-reference/customers'
-    | '/dev/api-reference/discounts'
-    | '/dev/api-reference/orders'
-    | '/dev/api-reference/products'
-    | '/dev/api-reference/shipping'
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-reference/'
     | '/dev/api-references/'
     | '/dev/examples/'
     | '/dev/getting-started/'
@@ -466,6 +353,7 @@ export interface FileRouteTypes {
     | '/settings/orders/'
     | '/settings/tax/'
     | '/inventory/collections/$collectionId/add-products'
+    | '/dev/examples/react-exm/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -482,19 +370,9 @@ export interface RootRouteChildren {
   DevIndexRoute: typeof DevIndexRoute
   DiscountsIndexRoute: typeof DiscountsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
-  DevApiReferenceAddressesRoute: typeof DevApiReferenceAddressesRoute
-  DevApiReferenceCartRoute: typeof DevApiReferenceCartRoute
-  DevApiReferenceCategoriesRoute: typeof DevApiReferenceCategoriesRoute
-  DevApiReferenceCollectionsRoute: typeof DevApiReferenceCollectionsRoute
-  DevApiReferenceCustomersRoute: typeof DevApiReferenceCustomersRoute
-  DevApiReferenceDiscountsRoute: typeof DevApiReferenceDiscountsRoute
-  DevApiReferenceOrdersRoute: typeof DevApiReferenceOrdersRoute
-  DevApiReferenceProductsRoute: typeof DevApiReferenceProductsRoute
-  DevApiReferenceShippingRoute: typeof DevApiReferenceShippingRoute
   DiscountsDiscountIdCodesRoute: typeof DiscountsDiscountIdCodesRoute
   DiscountsDiscountIdEditRoute: typeof DiscountsDiscountIdEditRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
-  DevApiReferenceIndexRoute: typeof DevApiReferenceIndexRoute
   DevApiReferencesIndexRoute: typeof DevApiReferencesIndexRoute
   DevExamplesIndexRoute: typeof DevExamplesIndexRoute
   DevGettingStartedIndexRoute: typeof DevGettingStartedIndexRoute
@@ -503,6 +381,7 @@ export interface RootRouteChildren {
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
   InventoryCollectionsCollectionIdAddProductsRoute: typeof InventoryCollectionsCollectionIdAddProductsRoute
+  DevExamplesReactExmIndexRoute: typeof DevExamplesReactExmIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -661,13 +540,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevApiReferencesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/api-reference/': {
-      id: '/dev/api-reference/'
-      path: '/dev/api-reference'
-      fullPath: '/dev/api-reference'
-      preLoaderRoute: typeof DevApiReferenceIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/inventory/products/create': {
       id: '/inventory/products/create'
       path: '/inventory/products/create'
@@ -689,67 +561,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscountsDiscountIdCodesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/api-reference/shipping': {
-      id: '/dev/api-reference/shipping'
-      path: '/dev/api-reference/shipping'
-      fullPath: '/dev/api-reference/shipping'
-      preLoaderRoute: typeof DevApiReferenceShippingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/products': {
-      id: '/dev/api-reference/products'
-      path: '/dev/api-reference/products'
-      fullPath: '/dev/api-reference/products'
-      preLoaderRoute: typeof DevApiReferenceProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/orders': {
-      id: '/dev/api-reference/orders'
-      path: '/dev/api-reference/orders'
-      fullPath: '/dev/api-reference/orders'
-      preLoaderRoute: typeof DevApiReferenceOrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/discounts': {
-      id: '/dev/api-reference/discounts'
-      path: '/dev/api-reference/discounts'
-      fullPath: '/dev/api-reference/discounts'
-      preLoaderRoute: typeof DevApiReferenceDiscountsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/customers': {
-      id: '/dev/api-reference/customers'
-      path: '/dev/api-reference/customers'
-      fullPath: '/dev/api-reference/customers'
-      preLoaderRoute: typeof DevApiReferenceCustomersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/collections': {
-      id: '/dev/api-reference/collections'
-      path: '/dev/api-reference/collections'
-      fullPath: '/dev/api-reference/collections'
-      preLoaderRoute: typeof DevApiReferenceCollectionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/categories': {
-      id: '/dev/api-reference/categories'
-      path: '/dev/api-reference/categories'
-      fullPath: '/dev/api-reference/categories'
-      preLoaderRoute: typeof DevApiReferenceCategoriesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/cart': {
-      id: '/dev/api-reference/cart'
-      path: '/dev/api-reference/cart'
-      fullPath: '/dev/api-reference/cart'
-      preLoaderRoute: typeof DevApiReferenceCartRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-reference/addresses': {
-      id: '/dev/api-reference/addresses'
-      path: '/dev/api-reference/addresses'
-      fullPath: '/dev/api-reference/addresses'
-      preLoaderRoute: typeof DevApiReferenceAddressesRouteImport
+    '/dev/examples/react-exm/': {
+      id: '/dev/examples/react-exm/'
+      path: '/dev/examples/react-exm'
+      fullPath: '/dev/examples/react-exm'
+      preLoaderRoute: typeof DevExamplesReactExmIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inventory/collections/$collectionId/add-products': {
@@ -790,19 +606,9 @@ const rootRouteChildren: RootRouteChildren = {
   DevIndexRoute: DevIndexRoute,
   DiscountsIndexRoute: DiscountsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
-  DevApiReferenceAddressesRoute: DevApiReferenceAddressesRoute,
-  DevApiReferenceCartRoute: DevApiReferenceCartRoute,
-  DevApiReferenceCategoriesRoute: DevApiReferenceCategoriesRoute,
-  DevApiReferenceCollectionsRoute: DevApiReferenceCollectionsRoute,
-  DevApiReferenceCustomersRoute: DevApiReferenceCustomersRoute,
-  DevApiReferenceDiscountsRoute: DevApiReferenceDiscountsRoute,
-  DevApiReferenceOrdersRoute: DevApiReferenceOrdersRoute,
-  DevApiReferenceProductsRoute: DevApiReferenceProductsRoute,
-  DevApiReferenceShippingRoute: DevApiReferenceShippingRoute,
   DiscountsDiscountIdCodesRoute: DiscountsDiscountIdCodesRoute,
   DiscountsDiscountIdEditRoute: DiscountsDiscountIdEditRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
-  DevApiReferenceIndexRoute: DevApiReferenceIndexRoute,
   DevApiReferencesIndexRoute: DevApiReferencesIndexRoute,
   DevExamplesIndexRoute: DevExamplesIndexRoute,
   DevGettingStartedIndexRoute: DevGettingStartedIndexRoute,
@@ -812,6 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
   InventoryCollectionsCollectionIdAddProductsRoute:
     InventoryCollectionsCollectionIdAddProductsRoute,
+  DevExamplesReactExmIndexRoute: DevExamplesReactExmIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

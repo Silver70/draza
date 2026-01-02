@@ -1,10 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Card, CardContent, CardHeader, CardTitle } from '~/components/ui/card'
-import { Badge } from '~/components/ui/badge'
 import { useState } from 'react'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, FileCode } from 'lucide-react'
 
-export const Route = createFileRoute('/dev/examples/')({
+export const Route = createFileRoute('/dev/examples/react-exm/')({
   component: RouteComponent,
 })
 
@@ -20,91 +18,79 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="absolute top-2 right-2 p-2 hover:bg-muted/50 rounded transition-colors"
+      className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
       title="Copy code"
     >
       {copied ? (
-        <Check className="h-4 w-4 text-green-500" />
+        <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
       ) : (
-        <Copy className="h-4 w-4 text-muted-foreground" />
+        <Copy className="h-4 w-4 text-gray-500 dark:text-gray-400" />
       )}
     </button>
   )
 }
 
-function CodeExample({ title, code }: { title: string; code: string }) {
+function CodeBlock({ code, title }: { code: string; title?: string }) {
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold mb-3">{title}</h3>
+    <div className="my-6 border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden bg-white dark:bg-gray-950">
+      {title && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-center gap-2">
+            <FileCode className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {title}
+            </span>
+          </div>
+          <CopyButton text={code} />
+        </div>
+      )}
       <div className="relative">
-        <CopyButton text={code} />
-        <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-          <code>{code}</code>
+        {!title && (
+          <div className="absolute top-3 right-3 z-10">
+            <CopyButton text={code} />
+          </div>
+        )}
+        <pre className="overflow-auto p-4 text-sm max-h-[500px]">
+          <code className="text-gray-800 dark:text-gray-200 font-mono">{code}</code>
         </pre>
       </div>
     </div>
   )
 }
 
-function RouteComponent() {
-  const [selectedFramework, setSelectedFramework] = useState('react')
-
-  const frameworks = [
-    { id: 'react', name: 'React', available: true },
-    { id: 'nextjs', name: 'Next.js', available: false },
-    { id: 'vue', name: 'Vue', available: false },
-    { id: 'angular', name: 'Angular', available: false },
-  ]
-
+function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Code Examples</h1>
-        <p className="text-muted-foreground">
-          Real-world implementation examples for integrating with the Draza API
+    <section className="mb-16">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-2">{title}</h2>
+        {description && (
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{description}</p>
+        )}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function RouteComponent() {
+  return (
+    <div className="p-8">
+      {/* Header */}
+      <div className="mb-12">
+        <h1 className="text-4xl font-bold mb-3">React Examples</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400">
+          Real-world React implementation examples for integrating with the Draza API
         </p>
       </div>
 
-      {/* Framework Tabs */}
-      <div className="flex gap-2 mb-8">
-        {frameworks.map((framework) => (
-          <button
-            key={framework.id}
-            onClick={() => framework.available && setSelectedFramework(framework.id)}
-            disabled={!framework.available}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedFramework === framework.id
-                ? 'bg-primary text-primary-foreground'
-                : framework.available
-                  ? 'bg-muted hover:bg-muted/80'
-                  : 'bg-muted/50 text-muted-foreground cursor-not-allowed'
-            }`}
-          >
-            {framework.name}
-            {!framework.available && (
-              <Badge variant="outline" className="ml-2 text-xs">
-                Coming Soon
-              </Badge>
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* React Examples */}
-      {selectedFramework === 'react' && (
-        <div className="space-y-8">
-          {/* Products Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Listing Page</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Display products with category filtering and search functionality
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="Product Listing Component"
-                code={`import { useEffect, useState } from 'react'
+      {/* Product Listing */}
+      <Section
+        title="Product Listing"
+        description="Display products with category filtering and search functionality"
+      >
+        <CodeBlock
+          title="Product Listing Component"
+          code={`import { useEffect, useState } from 'react'
 
 function ProductListingPage() {
   const [products, setProducts] = useState([])
@@ -159,11 +145,11 @@ function ProductListingPage() {
     </div>
   )
 }`}
-              />
+        />
 
-              <CodeExample
-                title="Product Detail Page with Variants"
-                code={`import { useEffect, useState } from 'react'
+        <CodeBlock
+          title="Product Detail Page with Variants"
+          code={`import { useEffect, useState } from 'react'
 
 function ProductDetailPage({ slug }) {
   const [productData, setProductData] = useState(null)
@@ -253,22 +239,16 @@ function ProductDetailPage({ slug }) {
     </div>
   )
 }`}
-              />
-            </CardContent>
-          </Card>
+        />
+      </Section>
 
-          {/* Shopping Cart Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Shopping Cart</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Manage cart items with quantity updates and removal
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="Shopping Cart Component"
-                code={`import { useEffect, useState } from 'react'
+      {/* Shopping Cart */}
+      <Section
+        title="Shopping Cart"
+        description="Manage cart items with quantity updates and removal"
+      >
+        <CodeBlock
+          code={`import { useEffect, useState } from 'react'
 
 function ShoppingCart() {
   const [cart, setCart] = useState(null)
@@ -363,22 +343,16 @@ function ShoppingCart() {
     </div>
   )
 }`}
-              />
-            </CardContent>
-          </Card>
+        />
+      </Section>
 
-          {/* Checkout Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Checkout Flow</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Complete checkout with shipping selection and order placement
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="Checkout Component"
-                code={`import { useEffect, useState } from 'react'
+      {/* Checkout */}
+      <Section
+        title="Checkout Flow"
+        description="Complete checkout with shipping selection and order placement"
+      >
+        <CodeBlock
+          code={`import { useEffect, useState } from 'react'
 
 function CheckoutPage() {
   const [cart, setCart] = useState(null)
@@ -508,22 +482,17 @@ function CheckoutPage() {
     </div>
   )
 }`}
-              />
-            </CardContent>
-          </Card>
+        />
+      </Section>
 
-          {/* Customer Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer Management</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Handle customer registration and guest checkout
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="Customer Registration"
-                code={`async function registerCustomer(formData) {
+      {/* Customer Management */}
+      <Section
+        title="Customer Management"
+        description="Handle customer registration and guest checkout"
+      >
+        <CodeBlock
+          title="Customer Registration"
+          code={`async function registerCustomer(formData) {
   try {
     const response = await fetch('http://localhost:3000/customers', {
       method: 'POST',
@@ -539,7 +508,6 @@ function CheckoutPage() {
     const data = await response.json()
 
     if (data.success) {
-      // Store customer ID
       localStorage.setItem('customerId', data.data.id)
       return data.data
     }
@@ -548,11 +516,11 @@ function CheckoutPage() {
     throw error
   }
 }`}
-              />
+        />
 
-              <CodeExample
-                title="Guest Checkout"
-                code={`async function createGuestCustomer(email) {
+        <CodeBlock
+          title="Guest Checkout"
+          code={`async function createGuestCustomer(email) {
   try {
     const response = await fetch('http://localhost:3000/customers/guest', {
       method: 'POST',
@@ -571,11 +539,11 @@ function CheckoutPage() {
     throw error
   }
 }`}
-              />
+        />
 
-              <CodeExample
-                title="Address Management"
-                code={`async function addAddress(customerId, addressData) {
+        <CodeBlock
+          title="Address Management"
+          code={`async function addAddress(customerId, addressData) {
   try {
     const response = await fetch(
       \`http://localhost:3000/customers/\${customerId}/addresses\`,
@@ -602,22 +570,16 @@ function CheckoutPage() {
     throw error
   }
 }`}
-              />
-            </CardContent>
-          </Card>
+        />
+      </Section>
 
-          {/* Order Tracking Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Order Tracking</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Allow customers to track orders by order number
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="Order Tracking Component"
-                code={`import { useState } from 'react'
+      {/* Order Tracking */}
+      <Section
+        title="Order Tracking"
+        description="Allow customers to track orders by order number"
+      >
+        <CodeBlock
+          code={`import { useState } from 'react'
 
 function OrderTrackingPage() {
   const [orderNumber, setOrderNumber] = useState('')
@@ -635,7 +597,6 @@ function OrderTrackingPage() {
       const data = await response.json()
 
       if (data.success) {
-        // Get full order details
         const detailsRes = await fetch(
           \`http://localhost:3000/orders/\${data.data.id}/details\`
         )
@@ -688,22 +649,17 @@ function OrderTrackingPage() {
     </div>
   )
 }`}
-              />
-            </CardContent>
-          </Card>
+        />
+      </Section>
 
-          {/* Utility Functions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Utility Functions</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Reusable helper functions for common operations
-              </p>
-            </CardHeader>
-            <CardContent>
-              <CodeExample
-                title="API Request Wrapper"
-                code={`const API_URL = 'http://localhost:3000'
+      {/* Utility Functions */}
+      <Section
+        title="Utility Functions"
+        description="Reusable helper functions for common operations"
+      >
+        <CodeBlock
+          title="API Request Wrapper"
+          code={`const API_URL = 'http://localhost:3000'
 
 export async function apiRequest(endpoint, options = {}) {
   try {
@@ -732,11 +688,11 @@ export async function apiRequest(endpoint, options = {}) {
 // Usage
 const products = await apiRequest('/products/active')
 console.log(products.data)`}
-              />
+        />
 
-              <CodeExample
-                title="Session Management"
-                code={`const SESSION_KEY = 'draza_session_id'
+        <CodeBlock
+          title="Session Management"
+          code={`const SESSION_KEY = 'draza_session_id'
 
 export function getSessionId() {
   let sessionId = localStorage.getItem(SESSION_KEY)
@@ -755,11 +711,11 @@ export function clearSession() {
 
 // Usage
 const sessionId = getSessionId()`}
-              />
+        />
 
-              <CodeExample
-                title="Price Formatting"
-                code={`export function formatPrice(price) {
+        <CodeBlock
+          title="Price Formatting"
+          code={`export function formatPrice(price) {
   const amount = typeof price === 'string' ? parseFloat(price) : price
 
   return new Intl.NumberFormat('en-US', {
@@ -770,11 +726,11 @@ const sessionId = getSessionId()`}
 
 // Usage
 <span>{formatPrice('29.99')}</span> // Output: $29.99`}
-              />
+        />
 
-              <CodeExample
-                title="Campaign Tracking Hook"
-                code={`import { useEffect } from 'react'
+        <CodeBlock
+          title="Campaign Tracking Hook"
+          code={`import { useEffect } from 'react'
 
 export function useCampaignTracking() {
   useEffect(() => {
@@ -818,14 +774,10 @@ export function useCampaignTracking() {
 // Usage in your root component
 function App() {
   useCampaignTracking()
-
   return <YourApp />
 }`}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+        />
+      </Section>
     </div>
   )
 }
