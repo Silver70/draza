@@ -1063,21 +1063,6 @@ productsRoutes.post("/", zValidator("json", createProductSchema), async (c) => {
 });
 
 /**
- * POST /products/with-variants
- * Create product with variants
- */
-productsRoutes.post("/with-variants", async (c) => {
-  try {
-    const data = await c.req.json();
-    const product = await productsService.createWithVariants(data);
-    return c.json({ success: true, data: product }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create product with variants";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
  * POST /products/preview-variants
  * Preview variant combinations without creating them
  */
