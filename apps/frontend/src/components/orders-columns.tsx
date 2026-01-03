@@ -24,7 +24,11 @@ const statusStyles = {
   refunded: "bg-red-100 text-red-800",
 }
 
-export const columns: ColumnDef<Order>[] = [
+type ColumnActions = {
+  onViewDetails: (order: Order) => void
+}
+
+export const createColumns = (actions: ColumnActions): ColumnDef<Order>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -173,7 +177,9 @@ export const columns: ColumnDef<Order>[] = [
               Copy order number
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => actions.onViewDetails(order)}>
+              View details
+            </DropdownMenuItem>
             <DropdownMenuItem>View customer</DropdownMenuItem>
             {order.status === "pending" && (
               <DropdownMenuItem>Mark as processing</DropdownMenuItem>
