@@ -564,3 +564,64 @@ export const addressStatsQueryOptions = (customerId: string) =>
     queryKey: ['customer', customerId, 'addresses', 'stats'],
     queryFn: () => fetchAddressStats({ data: customerId }),
   })
+
+// Fetch customer orders
+export const fetchCustomerOrders = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data }) => {
+    console.info(`Fetching orders for customer ${data}...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: any[] // Using any for now - you can import Order type if available
+      }>(`${API_BASE_URL}/orders/customer/${data}`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch customer orders')
+    } catch (error) {
+      console.error('Error fetching customer orders:', error)
+      throw error
+    }
+  })
+
+export const customerOrdersQueryOptions = (customerId: string) =>
+  queryOptions({
+    queryKey: ['customer', customerId, 'orders'],
+    queryFn: () => fetchCustomerOrders({ data: customerId }),
+  })
+
+// Fetch customer order stats
+export const fetchCustomerOrderStats = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data }) => {
+    console.info(`Fetching order stats for customer ${data}...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: {
+          totalOrders: number
+          totalSpent: number
+          averageOrderValue: number
+          ordersByStatus: Record<string, number>
+        }
+      }>(`${API_BASE_URL}/orders/customer/${data}/stats`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch customer order stats')
+    } catch (error) {
+      console.error('Error fetching customer order stats:', error)
+      throw error
+    }
+  })
+
+export const customerOrderStatsQueryOptions = (customerId: string) =>
+  queryOptions({
+    queryKey: ['customer', customerId, 'orders', 'stats'],
+    queryFn: () => fetchCustomerOrderStats({ data: customerId }),
+  })

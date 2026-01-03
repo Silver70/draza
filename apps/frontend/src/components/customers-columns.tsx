@@ -12,9 +12,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { Customer } from "@/utils/customers"
+import type { Customer } from "@/types/customerTypes"
 
-export const columns: ColumnDef<Customer>[] = [
+type ColumnActions = {
+  onViewDetails: (customer: Customer) => void
+}
+
+export const createColumns = (actions: ColumnActions): ColumnDef<Customer>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -146,9 +150,10 @@ export const columns: ColumnDef<Customer>[] = [
               Copy customer ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => actions.onViewDetails(customer)}>
+              View details
+            </DropdownMenuItem>
             <DropdownMenuItem>Edit customer</DropdownMenuItem>
-            <DropdownMenuItem>View addresses</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )
