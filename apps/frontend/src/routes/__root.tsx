@@ -17,6 +17,7 @@ import { AppSidebar } from '~/components/app-sidebar'
 import { ThemeProvider } from '~/components/theme-provider'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
 import { Separator } from '~/components/ui/separator'
+import { Toaster } from 'sonner'
 import appCss from '~/styles/app.css?url'
 
 
@@ -135,6 +136,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <AppSidebar />
             {children}
           </SidebarProvider>
+          <Toaster richColors position="top-right" />
         </ThemeProvider>
         <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools buttonPosition="bottom-left" />
