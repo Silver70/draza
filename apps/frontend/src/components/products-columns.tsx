@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -40,6 +40,31 @@ export const createColumns = (actions: ColumnActions): ColumnDef<Product>[] => [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    id: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      const product = row.original
+      const thumbnailImage = product.images?.find(img => img.type === 'thumbnail' || img.type === 'hero')
+      const fallbackImage = product.images?.[0]
+      const imageUrl = thumbnailImage?.url || fallbackImage?.url
+
+      return (
+        <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={thumbnailImage?.altText || fallbackImage?.altText || product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+          )}
+        </div>
+      )
+    },
+    enableSorting: false,
   },
   {
     accessorKey: "name",

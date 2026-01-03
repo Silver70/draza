@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "../../../shared/db";
-import { productsTable, productVariantsTable, categoriesTable } from "../../../shared/db/catalogue";
+import { productsTable, productVariantsTable, categoriesTable, productImagesTable } from "../../../shared/db/catalogue";
 import { NewProduct, UpdateProduct, NewProductVariant, UpdateProductVariant } from "../products.types";
 
 export const productsRepo = {
@@ -13,7 +13,8 @@ export const productsRepo = {
   },
 
   async getProductById(id: string) {
-    const product = await db
+    // Fetch product with category
+    const productResult = await db
       .select({
         id: productsTable.id,
         name: productsTable.name,
@@ -33,10 +34,26 @@ export const productsRepo = {
       .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
       .where(eq(productsTable.id, id))
       .limit(1);
-    return product[0];
+
+    if (!productResult[0]) {
+      return undefined;
+    }
+
+    // Fetch images for this product
+    const images = await db
+      .select()
+      .from(productImagesTable)
+      .where(eq(productImagesTable.productId, id))
+      .orderBy(productImagesTable.position);
+
+    return {
+      ...productResult[0],
+      images,
+    };
   },
 
   async getAllProducts() {
+    // Fetch all products with categories
     const products = await db
       .select({
         id: productsTable.id,
@@ -55,7 +72,27 @@ export const productsRepo = {
       })
       .from(productsTable)
       .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id));
-    return products;
+
+    // Fetch all images for all products in one query
+    const allImages = await db
+      .select()
+      .from(productImagesTable)
+      .orderBy(productImagesTable.position);
+
+    // Group images by product ID
+    const imagesByProduct = allImages.reduce((acc, image) => {
+      if (!acc[image.productId]) {
+        acc[image.productId] = [];
+      }
+      acc[image.productId].push(image);
+      return acc;
+    }, {} as Record<string, typeof allImages>);
+
+    // Attach images to products
+    return products.map(product => ({
+      ...product,
+      images: imagesByProduct[product.id] || [],
+    }));
   },
 
   async updateProduct(id: string, data: UpdateProduct) {

@@ -50,7 +50,7 @@ function CodeBlock({ code, title }: { code: string; title?: string }) {
             <CopyButton text={code} />
           </div>
         )}
-        <pre className="overflow-auto p-4 text-sm max-h-[500px]">
+        <pre className="overflow-auto p-4 text-sm max-h-125">
           <code className="text-gray-800 dark:text-gray-200 font-mono">{code}</code>
         </pre>
       </div>
