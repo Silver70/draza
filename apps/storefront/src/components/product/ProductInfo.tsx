@@ -1,0 +1,187 @@
+import { useState } from 'react'
+import type { ProductWithVariants, ProductVariant } from '~/types/productTypes'
+import { VariantSelector } from './VariantSelector'
+
+interface ProductInfoProps {
+  product: ProductWithVariants
+}
+
+export function ProductInfo({ product }: ProductInfoProps) {
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    product.variants.length === 1 ? product.variants[0] : null
+  )
+  const [quantity, setQuantity] = useState(1)
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (!selectedVariant) return
+    const max = selectedVariant.quantityInStock
+    if (newQuantity >= 1 && newQuantity <= max) {
+      setQuantity(newQuantity)
+    }
+  }
+
+  const handleAddToCart = () => {
+    if (!selectedVariant) return
+    // TODO: Implement add to cart functionality
+    console.log('Adding to cart:', {
+      productId: product.id,
+      variantId: selectedVariant.id,
+      quantity,
+    })
+  }
+
+  const isInStock = selectedVariant && selectedVariant.quantityInStock > 0
+  const price = selectedVariant ? parseFloat(selectedVariant.price) : 0
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Product Title */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl">
+          {product.name}
+        </h1>
+      </div>
+
+      {/* Price */}
+      {selectedVariant && (
+        <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+          ${price.toFixed(2)}
+        </div>
+      )}
+
+      {/* Stock Status */}
+      {selectedVariant && (
+        <div className="flex items-center gap-2">
+          <div
+            className={`h-2.5 w-2.5 rounded-full ${
+              isInStock
+                ? 'bg-green-500'
+                : 'bg-red-500'
+            }`}
+          />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {isInStock
+              ? `${selectedVariant.quantityInStock} in stock`
+              : 'Out of stock'}
+          </span>
+        </div>
+      )}
+
+      {/* Variant Selector */}
+      {product.variants.length > 1 && (
+        <VariantSelector
+          variants={product.variants}
+          selectedVariant={selectedVariant}
+          onVariantSelect={setSelectedVariant}
+        />
+      )}
+
+      {/* Quantity Selector */}
+      {selectedVariant && isInStock && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Quantity
+          </h3>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleQuantityChange(quantity - 1)}
+              disabled={quantity <= 1}
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M20 12H4"
+                />
+              </svg>
+            </button>
+            <input
+              type="number"
+              min="1"
+              max={selectedVariant.quantityInStock}
+              value={quantity}
+              onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+              className="h-10 w-20 rounded-md border border-gray-300 bg-white text-center text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+            />
+            <button
+              onClick={() => handleQuantityChange(quantity + 1)}
+              disabled={quantity >= selectedVariant.quantityInStock}
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add to Cart Button */}
+      <div className="space-y-3">
+        <button
+          onClick={handleAddToCart}
+          disabled={!selectedVariant || !isInStock}
+          className="w-full rounded-lg bg-gray-900 px-8 py-4 text-base font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200 transition-colors"
+        >
+          {!selectedVariant
+            ? 'Select a variant'
+            : !isInStock
+              ? 'Out of Stock'
+              : 'Add to Cart'}
+        </button>
+      </div>
+
+      {/* Description */}
+      {product.description && (
+        <div className="space-y-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Description
+          </h3>
+          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+            {product.description}
+          </p>
+        </div>
+      )}
+
+      {/* Product Details */}
+      {selectedVariant && (
+        <div className="space-y-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            Product Details
+          </h3>
+          <dl className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-gray-600 dark:text-gray-400">SKU</dt>
+              <dd className="font-medium text-gray-900 dark:text-gray-100">
+                {selectedVariant.sku}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-gray-600 dark:text-gray-400">Availability</dt>
+              <dd className="font-medium text-gray-900 dark:text-gray-100">
+                {selectedVariant.quantityInStock > 0 ? 'In Stock' : 'Out of Stock'}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      )}
+    </div>
+  )
+}
