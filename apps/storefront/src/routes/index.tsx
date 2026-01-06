@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import Container from '~/components/Container'
 import { productsQueryOptions, collectionProductsQueryOptions } from '~/utils/product'
 
 export const Route = createFileRoute('/')({
@@ -9,7 +10,8 @@ export const Route = createFileRoute('/')({
 function Home() {
   const { data: collectionProducts } = useSuspenseQuery(collectionProductsQueryOptions('08cf8a71-0844-4fc0-ade2-8850a303bbb7'))
   return (
-    <div className="p-2">
+    <Container>
+           <div>
       <h3 className='text-2xl'>Welcome Home!!!</h3>
       <p>We have {collectionProducts.products.length} products available.</p>
       {collectionProducts.products.map((product) => (
@@ -20,5 +22,7 @@ function Home() {
         </Link>
       ))}
     </div>
+    </Container>
+ 
   )
 }
