@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useCart } from '~/contexts/CartContext'
+import { CartSheet } from './cart/CartSheet'
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
   const { itemCount } = useCart()
 
   return (
@@ -45,9 +47,10 @@ export function Navbar() {
           {/* Cart and Mobile Menu Button */}
           <div className="flex items-center space-x-4">
             {/* Cart Icon */}
-            <Link
-              to="/"
-              className="relative p-2 text-gray-700 hover:text-gray-900"
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 text-gray-700 hover:text-gray-900 transition-colors"
+              aria-label="Open shopping cart"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -68,7 +71,7 @@ export function Navbar() {
                   {itemCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* Mobile menu button */}
             <button
@@ -133,6 +136,9 @@ export function Navbar() {
           </div>
         )}
       </div>
+
+      {/* Cart Sheet */}
+      <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </nav>
   )
 }

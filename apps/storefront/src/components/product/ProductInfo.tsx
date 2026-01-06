@@ -13,6 +13,7 @@ export function ProductInfo({ product }: ProductInfoProps) {
   )
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   const { addItem } = useCart()
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -31,8 +32,9 @@ export function ProductInfo({ product }: ProductInfoProps) {
       await addItem(selectedVariant.id, quantity)
       // Reset quantity after successful add
       setQuantity(1)
-      // Optional: Show success message/toast
-      alert('Item added to cart!')
+      // Show success state
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 2000)
     } catch (error) {
       console.error('Failed to add item to cart:', error)
       alert('Failed to add item to cart. Please try again.')
@@ -148,16 +150,37 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="space-y-3">
         <button
           onClick={handleAddToCart}
-          disabled={!selectedVariant || !isInStock || isAdding}
-          className="w-full rounded-lg bg-gray-900 px-8 py-4 text-base font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200 transition-colors"
+          disabled={!selectedVariant || !isInStock || isAdding || justAdded}
+          className={`w-full rounded-lg px-8 py-4 text-base font-semibold transition-colors flex items-center justify-center gap-2 ${
+            justAdded
+              ? 'bg-green-600 hover:bg-green-600'
+              : 'bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+          } text-white disabled:cursor-not-allowed disabled:opacity-50`}
         >
+          {justAdded && (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          )}
           {!selectedVariant
             ? 'Select a variant'
             : !isInStock
               ? 'Out of Stock'
-              : isAdding
-                ? 'Adding...'
-                : 'Add to Cart'}
+              : justAdded
+                ? 'Added to Cart!'
+                : isAdding
+                  ? 'Adding...'
+                  : 'Add to Cart'}
         </button>
       </div>
 
