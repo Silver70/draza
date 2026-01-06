@@ -1,26 +1,26 @@
 // Product Types
 export interface Product {
-  id: number
+  id: string
   name: string
   slug: string
   description: string | null
-  categoryId: number | null
+  categoryId: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
 }
 
 export interface ProductVariant {
-  id: number
-  productId: number
+  id: string
+  productId: string
   sku: string
   price: string
   quantityInStock: number
 }
 
 export interface ProductImage {
-  id: number
-  productId: number
+  id: string
+  productId: string
   url: string
   altText: string | null
   type: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
@@ -44,15 +44,15 @@ export type ProductWithVariantsResponse = {
 
 // Category & Collection Types
 interface Category {
-  id: number
+  id: string
   name: string
   slug: string
-  parentId: number | null
+  parentId: string | null
 }
 
 
 interface Collection {
-  id: number
+  id: string
   name: string
   slug: string
   description: string | null
@@ -72,9 +72,9 @@ export type CollectionWithProductsResponse = {
 
 // Cart Types
 interface Cart {
-  id: number
+  id: string
   sessionId: string
-  customerId: number | null
+  customerId: string | null
   status: 'active' | 'abandoned' | 'converted'
   subtotal: string
   discountTotal: string
@@ -84,16 +84,16 @@ interface Cart {
 }
 
 interface CartItem {
-  id: number
-  cartId: number
-  productVariantId: number
+  id: string
+  cartId: string
+  productVariantId: string
   quantity: number
   unitPrice: string
 }
 
 // Customer Types
 interface Customer {
-  id: number
+  id: string
   firstName: string
   lastName: string
   email: string
@@ -103,8 +103,8 @@ interface Customer {
 }
 
 interface Address {
-  id: number
-  customerId: number
+  id: string
+  customerId: string
   firstName: string
   lastName: string
   street: string
@@ -117,9 +117,9 @@ interface Address {
 
 // Order Types
 interface Order {
-  id: number
+  id: string
   orderNumber: string
-  customerId: number
+  customerId: string
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded'
   subtotal: string
   discountAmount: string
@@ -130,9 +130,9 @@ interface Order {
 }
 
 interface OrderItem {
-  id: number
-  orderId: number
-  productVariantId: number
+  id: string
+  orderId: string
+  productVariantId: string
   quantity: number
   unitPrice: string
   totalPrice: string
@@ -140,7 +140,7 @@ interface OrderItem {
 
 // Discount Types
 interface Discount {
-  id: number
+  id: string
   name: string
   discountType: 'percentage' | 'fixed_amount'
   value: string

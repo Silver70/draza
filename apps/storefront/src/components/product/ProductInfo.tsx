@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { ProductWithVariants, ProductVariant } from '~/types/productTypes'
 import { VariantSelector } from './VariantSelector'
+import { useCart } from '~/contexts/CartContext'
 
 interface ProductInfoProps {
   product: ProductWithVariants
@@ -11,6 +12,8 @@ export function ProductInfo({ product }: ProductInfoProps) {
     product.variants.length === 1 ? product.variants[0] : null
   )
   const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const { addItem } = useCart()
 
   const handleQuantityChange = (newQuantity: number) => {
     if (!selectedVariant) return
@@ -20,14 +23,22 @@ export function ProductInfo({ product }: ProductInfoProps) {
     }
   }
 
-  const handleAddToCart = () => {
-    if (!selectedVariant) return
-    // TODO: Implement add to cart functionality
-    console.log('Adding to cart:', {
-      productId: product.id,
-      variantId: selectedVariant.id,
-      quantity,
-    })
+  const handleAddToCart = async () => {
+    if (!selectedVariant || isAdding) return
+
+    try {
+      setIsAdding(true)
+      await addItem(selectedVariant.id, quantity)
+      // Reset quantity after successful add
+      setQuantity(1)
+      // Optional: Show success message/toast
+      alert('Item added to cart!')
+    } catch (error) {
+      console.error('Failed to add item to cart:', error)
+      alert('Failed to add item to cart. Please try again.')
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   const isInStock = selectedVariant && selectedVariant.quantityInStock > 0
@@ -137,14 +148,16 @@ export function ProductInfo({ product }: ProductInfoProps) {
       <div className="space-y-3">
         <button
           onClick={handleAddToCart}
-          disabled={!selectedVariant || !isInStock}
+          disabled={!selectedVariant || !isInStock || isAdding}
           className="w-full rounded-lg bg-gray-900 px-8 py-4 text-base font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200 transition-colors"
         >
           {!selectedVariant
             ? 'Select a variant'
             : !isInStock
               ? 'Out of Stock'
-              : 'Add to Cart'}
+              : isAdding
+                ? 'Adding...'
+                : 'Add to Cart'}
         </button>
       </div>
 
