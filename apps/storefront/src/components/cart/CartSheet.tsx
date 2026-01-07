@@ -140,15 +140,12 @@ export function CartSheet({ isOpen, onClose }: CartSheetProps) {
             </p>
 
             {/* Checkout Button */}
-            <button
-              onClick={() => {
-                // TODO: Navigate to checkout
-                console.log('Navigate to checkout')
-              }}
-              className="w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            <a
+              href="/checkout"
+              className="block w-full bg-gray-900 text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-colors text-center"
             >
               Checkout
-            </button>
+            </a>
 
             {/* Continue Shopping */}
             <button
