@@ -364,7 +364,8 @@ productsRoutes.get("/collections/:id", async (c) => {
 productsRoutes.get("/collections/:id/products", async (c) => {
   try {
     const id = c.req.param("id");
-    const collection = await collectionsService.findByIdWithProducts(id);
+    const activeOnly = c.req.query("activeOnly") === "true";
+    const collection = await collectionsService.findByIdWithProducts(id, activeOnly);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Collection not found";

@@ -45,7 +45,7 @@ export const fetchCollectionProducts = async (
   console.info(`Fetching products for collection: ${collectionId}`)
   try {
     const response = await axios.get<CollectionWithProductsResponse>(
-      `${API_BASE_URL}/products/collections/${collectionId}/products`,
+      `${API_BASE_URL}/products/collections/${collectionId}/products?activeOnly=true`,
     )
 
     if (response.data.success) {
