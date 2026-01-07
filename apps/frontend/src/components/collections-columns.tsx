@@ -13,9 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import type { CollectionWithProductCount } from "@/types/productTypes"
+import type { Collection, CollectionWithProductCount } from "@/types/productTypes"
 
-export const columns: ColumnDef<CollectionWithProductCount>[] = [
+type ColumnsConfig = {
+  onViewDetails: (collection: Collection) => void
+}
+
+export const createColumns = ({ onViewDetails }: ColumnsConfig): ColumnDef<CollectionWithProductCount>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -151,7 +155,9 @@ export const columns: ColumnDef<CollectionWithProductCount>[] = [
                 Add Products
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onViewDetails(collection)}>
+              View details
+            </DropdownMenuItem>
             <DropdownMenuItem>Edit collection</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

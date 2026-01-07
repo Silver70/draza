@@ -209,6 +209,34 @@ export const collectionsWithProductCountQueryOptions = () =>
     queryFn: () => fetchCollectionsWithProductCount(),
   })
 
+// Fetch single collection with products
+export const fetchCollectionWithProducts = createServerFn({ method: 'GET' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data }) => {
+    console.info(`Fetching collection ${data} with products...`)
+    try {
+      const response = await axios.get<{
+        success: boolean
+        data: Collection & { products: Product[]; productCount: number }
+      }>(`${API_BASE_URL}/products/collections/${data}/products`)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Collection not found')
+    } catch (error) {
+      console.error('Error fetching collection with products:', error)
+      throw error
+    }
+  })
+
+export const collectionWithProductsQueryOptions = (collectionId: string) =>
+  queryOptions({
+    queryKey: ['collection', collectionId, 'products'],
+    queryFn: () => fetchCollectionWithProducts({ data: collectionId }),
+  })
+
 export const createCollection = createServerFn({ method: 'POST' })
   .inputValidator((d: Partial<Collection>) => d)
   .handler(async ({ data }) => {
