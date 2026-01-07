@@ -10,8 +10,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 export async function getCart(customerId?: string): Promise<Cart> {
   const sessionId = getOrCreateSessionId()
 
+  const params: Record<string, string> = { sessionId }
+  if (customerId) {
+    params.customerId = customerId
+  }
+
   const response = await axios.get<CartResponse>(`${API_BASE_URL}/cart`, {
-    params: { sessionId, customerId },
+    params,
   })
 
   if (!response.data.success) {

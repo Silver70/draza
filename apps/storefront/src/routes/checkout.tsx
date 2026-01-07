@@ -1,10 +1,11 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { z } from 'zod'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useCart } from '~/contexts/CartContext'
 import Container from '~/components/Container'
 import clsx from 'clsx'
+import { createOrder, getShippingMethods, type CreateOrderRequest } from '~/utils/order'
 
 export const Route = createFileRoute('/checkout')({
   component: CheckoutPage,
@@ -24,7 +25,7 @@ const checkoutSchema = z.object({
   shippingState: z.string().min(1, 'State/Province is required'),
   shippingZip: z.string().min(1, 'ZIP/Postal code is required'),
   shippingCountry: z.string().min(1, 'Country is required'),
-  shippingPhone: z.string().min(1, 'Phone number is required'),
+  shippingPhone: z.string().min(7, 'Phone number must be at least 7 characters').max(20, 'Phone number too long'),
 
   // Billing Address
   billingSameAsShipping: z.boolean(),
@@ -48,9 +49,24 @@ const checkoutSchema = z.object({
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>
 
+interface ShippingMethod {
+  id: string
+  name: string
+  description: string
+  baseCost: string
+  isActive: boolean
+}
+
 function CheckoutPage() {
-  const { cart, isLoading } = useCart()
+  const { cart, isLoading, clearCart } = useCart()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [orderSuccess, setOrderSuccess] = useState<{
+    orderNumber: string
+    total: string
+  } | null>(null)
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([])
+  const [loadingShipping, setLoadingShipping] = useState(true)
+  const navigate = useNavigate()
 
   const form = useForm({
     defaultValues: {
@@ -84,15 +100,73 @@ function CheckoutPage() {
         // Validate using zod schema
         const validatedData = checkoutSchema.parse(value)
         console.log('Checkout data:', validatedData)
-        // TODO: Submit order to backend
-        alert('Order submitted! (This is a placeholder)')
+
+        // Prepare order request
+        const orderRequest: CreateOrderRequest = {
+          email: validatedData.email,
+          firstName: validatedData.shippingFirstName,
+          lastName: validatedData.shippingLastName,
+          phone: validatedData.shippingPhone,
+          shippingAddress: {
+            streetAddress: validatedData.shippingAddress,
+            apartment: validatedData.shippingAddress2,
+            city: validatedData.shippingCity,
+            state: validatedData.shippingState,
+            postalCode: validatedData.shippingZip,
+            country: validatedData.shippingCountry,
+          },
+          billingAddress: validatedData.billingSameAsShipping
+            ? {
+                streetAddress: validatedData.shippingAddress,
+                apartment: validatedData.shippingAddress2,
+                city: validatedData.shippingCity,
+                state: validatedData.shippingState,
+                postalCode: validatedData.shippingZip,
+                country: validatedData.shippingCountry,
+              }
+            : {
+                streetAddress: validatedData.billingAddress || '',
+                apartment: validatedData.billingAddress2,
+                city: validatedData.billingCity || '',
+                state: validatedData.billingState || '',
+                postalCode: validatedData.billingZip || '',
+                country: validatedData.billingCountry || 'United States',
+              },
+          items: cart!.items.map((item) => ({
+            productVariantId: item.productVariant.id,
+            quantity: item.quantity,
+          })),
+          shippingMethodId: validatedData.shippingMethodId,
+          discountCode: undefined, // TODO: Add discount code support
+          notes: undefined,
+        }
+
+        console.log('Submitting order:', orderRequest)
+
+        // Create order
+        const result = await createOrder(orderRequest)
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create order')
+        }
+
+        console.log('Order created successfully:', result.data)
+
+        // Clear the cart
+        await clearCart()
+
+        // Show success state
+        setOrderSuccess({
+          orderNumber: result.data?.orderNumber || '',
+          total: result.data?.total || '0.00',
+        })
       } catch (error) {
         if (error instanceof z.ZodError) {
           console.error('Validation failed:', error.issues)
           alert('Please fix the form errors: ' + error.issues[0]?.message)
         } else {
           console.error('Checkout error:', error)
-          alert('Failed to submit order')
+          alert('Failed to submit order: ' + (error instanceof Error ? error.message : 'Unknown error'))
         }
       } finally {
         setIsSubmitting(false)
@@ -100,12 +174,24 @@ function CheckoutPage() {
     },
   })
 
-  // Mock shipping methods (TODO: Fetch from backend)
-  const shippingMethods = [
-    { id: '1', name: 'Standard Shipping', price: 5.99, estimatedDays: '5-7' },
-    { id: '2', name: 'Express Shipping', price: 12.99, estimatedDays: '2-3' },
-    { id: '3', name: 'Overnight Shipping', price: 24.99, estimatedDays: '1' },
-  ]
+  // Fetch shipping methods from backend
+  useEffect(() => {
+    async function loadShippingMethods() {
+      try {
+        setLoadingShipping(true)
+        const methods = await getShippingMethods()
+        setShippingMethods(methods)
+      } catch (error) {
+        console.error('Failed to load shipping methods:', error)
+        // Show error to user
+        alert('Failed to load shipping methods. Please refresh the page.')
+      } finally {
+        setLoadingShipping(false)
+      }
+    }
+
+    loadShippingMethods()
+  }, [])
 
   if (isLoading) {
     return (
@@ -125,6 +211,64 @@ function CheckoutPage() {
           </a>
         </div>
       </Container>
+    )
+  }
+
+  // Show success screen if order was placed
+  if (orderSuccess) {
+    return (
+      <div className="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          {/* Success Icon */}
+          <div className="mb-6 flex justify-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <svg
+                className="w-8 h-8 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+          </div>
+
+          {/* Success Message */}
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Order Placed Successfully!</h2>
+          <p className="text-gray-600 mb-6">Thank you for your purchase</p>
+
+          {/* Order Details */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-600">Order Number:</span>
+              <span className="font-semibold text-gray-900">{orderSuccess.orderNumber}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-600">Total:</span>
+              <span className="font-bold text-gray-900">${parseFloat(orderSuccess.total).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-500 mb-6">
+            A confirmation email has been sent to your email address.
+          </p>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate({ to: '/' })}
+              className="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -408,7 +552,23 @@ function CheckoutPage() {
                   </form.Field>
 
                   {/* Phone */}
-                  <form.Field name="shippingPhone">
+                  <form.Field
+                    name="shippingPhone"
+                    validators={{
+                      onChange: ({ value }) => {
+                        if (!value || value.trim().length === 0) {
+                          return 'Phone number is required'
+                        }
+                        if (value.length < 7) {
+                          return 'Phone number must be at least 7 characters'
+                        }
+                        if (value.length > 20) {
+                          return 'Phone number too long'
+                        }
+                        return undefined
+                      },
+                    }}
+                  >
                     {(field) => (
                       <div>
                         <label htmlFor="shippingPhone" className="block text-sm font-medium text-gray-700 mb-1">
@@ -424,6 +584,7 @@ function CheckoutPage() {
                             'w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500',
                             field.state.meta.errors.length > 0 ? 'border-red-500' : 'border-gray-300'
                           )}
+                          placeholder="(555) 123-4567"
                         />
                         {field.state.meta.errors.length > 0 && (
                           <p className="mt-1 text-sm text-red-600">{field.state.meta.errors[0]}</p>
@@ -438,42 +599,48 @@ function CheckoutPage() {
               <section className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Shipping Method</h2>
 
-                <form.Field name="shippingMethodId">
-                  {(field) => (
-                    <div className="space-y-2">
-                      {shippingMethods.map((method) => (
-                        <label
-                          key={method.id}
-                          className={clsx(
-                            'flex items-center justify-between p-4 border rounded-md cursor-pointer transition-colors',
-                            field.state.value === method.id
-                              ? 'border-blue-500 bg-blue-50'
-                              : 'border-gray-300 hover:bg-gray-50'
-                          )}
-                        >
-                          <div className="flex items-center">
-                            <input
-                              type="radio"
-                              name="shippingMethod"
-                              value={method.id}
-                              checked={field.state.value === method.id}
-                              onChange={(e) => field.handleChange(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                            />
-                            <div className="ml-3">
-                              <p className="font-medium text-gray-900">{method.name}</p>
-                              <p className="text-sm text-gray-500">{method.estimatedDays} business days</p>
+                {loadingShipping ? (
+                  <div className="text-center py-4 text-gray-500">Loading shipping methods...</div>
+                ) : shippingMethods.length === 0 ? (
+                  <div className="text-center py-4 text-red-600">No shipping methods available</div>
+                ) : (
+                  <form.Field name="shippingMethodId">
+                    {(field) => (
+                      <div className="space-y-2">
+                        {shippingMethods.map((method) => (
+                          <label
+                            key={method.id}
+                            className={clsx(
+                              'flex items-center justify-between p-4 border rounded-md cursor-pointer transition-colors',
+                              field.state.value === method.id
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-300 hover:bg-gray-50'
+                            )}
+                          >
+                            <div className="flex items-center">
+                              <input
+                                type="radio"
+                                name="shippingMethod"
+                                value={method.id}
+                                checked={field.state.value === method.id}
+                                onChange={(e) => field.handleChange(e.target.value)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                              />
+                              <div className="ml-3">
+                                <p className="font-medium text-gray-900">{method.name}</p>
+                                <p className="text-sm text-gray-500">{method.description}</p>
+                              </div>
                             </div>
-                          </div>
-                          <span className="font-semibold text-gray-900">${method.price.toFixed(2)}</span>
-                        </label>
-                      ))}
-                      {field.state.meta.errors.length > 0 && (
-                        <p className="mt-1 text-sm text-red-600">{field.state.meta.errors[0]}</p>
-                      )}
-                    </div>
-                  )}
-                </form.Field>
+                            <span className="font-semibold text-gray-900">${parseFloat(method.baseCost).toFixed(2)}</span>
+                          </label>
+                        ))}
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="mt-1 text-sm text-red-600">{field.state.meta.errors[0]}</p>
+                        )}
+                      </div>
+                    )}
+                  </form.Field>
+                )}
               </section>
 
               {/* Payment (Placeholder) */}
@@ -557,7 +724,7 @@ function CheckoutPage() {
                     return selectedMethod ? (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Shipping</span>
-                        <span className="font-medium text-gray-900">${selectedMethod.price.toFixed(2)}</span>
+                        <span className="font-medium text-gray-900">${parseFloat(selectedMethod.baseCost).toFixed(2)}</span>
                       </div>
                     ) : (
                       <div className="flex justify-between text-sm">
@@ -578,7 +745,7 @@ function CheckoutPage() {
                   <form.Subscribe selector={(state) => state.values.shippingMethodId}>
                     {(shippingMethodId) => {
                       const selectedMethod = shippingMethods.find((m) => m.id === shippingMethodId)
-                      const shipping = selectedMethod ? selectedMethod.price : 0
+                      const shipping = selectedMethod ? parseFloat(selectedMethod.baseCost) : 0
                       const total = parseFloat(cart.total) + shipping
                       return <span>${total.toFixed(2)}</span>
                     }}
