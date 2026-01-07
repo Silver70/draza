@@ -53,7 +53,7 @@ interface ShippingMethod {
   id: string
   name: string
   description: string
-  baseCost: string
+  baseRate: string  // Note: backend uses baseRate, not baseCost
   isActive: boolean
 }
 
@@ -180,6 +180,7 @@ function CheckoutPage() {
       try {
         setLoadingShipping(true)
         const methods = await getShippingMethods()
+        console.log('Loaded shipping methods:', methods)
         setShippingMethods(methods)
       } catch (error) {
         console.error('Failed to load shipping methods:', error)
@@ -631,7 +632,9 @@ function CheckoutPage() {
                                 <p className="text-sm text-gray-500">{method.description}</p>
                               </div>
                             </div>
-                            <span className="font-semibold text-gray-900">${parseFloat(method.baseCost).toFixed(2)}</span>
+                            <span className="font-semibold text-gray-900">
+                              ${method.baseRate && !isNaN(parseFloat(method.baseRate)) ? parseFloat(method.baseRate).toFixed(2) : '0.00'}
+                            </span>
                           </label>
                         ))}
                         {field.state.meta.errors.length > 0 && (
@@ -678,7 +681,7 @@ function CheckoutPage() {
                   return (
                     <div key={item.id} className="flex gap-4">
                       {/* Product Image */}
-                      <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden relative">
+                      <div className="shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden relative">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -721,10 +724,14 @@ function CheckoutPage() {
                 <form.Subscribe selector={(state) => state.values.shippingMethodId}>
                   {(shippingMethodId) => {
                     const selectedMethod = shippingMethods.find((m) => m.id === shippingMethodId)
+                    const shippingCost = selectedMethod?.baseRate && !isNaN(parseFloat(selectedMethod.baseRate))
+                      ? parseFloat(selectedMethod.baseRate).toFixed(2)
+                      : '0.00'
+
                     return selectedMethod ? (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Shipping</span>
-                        <span className="font-medium text-gray-900">${parseFloat(selectedMethod.baseCost).toFixed(2)}</span>
+                        <span className="font-medium text-gray-900">${shippingCost}</span>
                       </div>
                     ) : (
                       <div className="flex justify-between text-sm">
@@ -745,9 +752,11 @@ function CheckoutPage() {
                   <form.Subscribe selector={(state) => state.values.shippingMethodId}>
                     {(shippingMethodId) => {
                       const selectedMethod = shippingMethods.find((m) => m.id === shippingMethodId)
-                      const shipping = selectedMethod ? parseFloat(selectedMethod.baseCost) : 0
+                      const shipping = selectedMethod?.baseRate && !isNaN(parseFloat(selectedMethod.baseRate))
+                        ? parseFloat(selectedMethod.baseRate)
+                        : 0
                       const total = parseFloat(cart.total) + shipping
-                      return <span>${total.toFixed(2)}</span>
+                      return <span>${!isNaN(total) ? total.toFixed(2) : '0.00'}</span>
                     }}
                   </form.Subscribe>
                 </div>
