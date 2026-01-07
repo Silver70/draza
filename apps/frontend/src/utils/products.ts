@@ -73,6 +73,48 @@ export const createProduct = createServerFn({ method: 'POST' })
     }
   })
 
+// Activate product
+export const activateProduct = createServerFn({ method: 'POST' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data: productId }) => {
+    console.info(`Activating product ${productId}...`)
+    try {
+      const response = await axios.put<{ success: boolean; data: Product }>(
+        `${API_BASE_URL}/products/${productId}/activate`,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to activate product')
+    } catch (error) {
+      console.error('Error activating product:', error)
+      throw error
+    }
+  })
+
+// Deactivate product
+export const deactivateProduct = createServerFn({ method: 'POST' })
+  .inputValidator((d: string) => d)
+  .handler(async ({ data: productId }) => {
+    console.info(`Deactivating product ${productId}...`)
+    try {
+      const response = await axios.put<{ success: boolean; data: Product }>(
+        `${API_BASE_URL}/products/${productId}/deactivate`,
+      )
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to deactivate product')
+    } catch (error) {
+      console.error('Error deactivating product:', error)
+      throw error
+    }
+  })
+
 
 export const productQueryOptions = (productId: string) =>
   queryOptions({

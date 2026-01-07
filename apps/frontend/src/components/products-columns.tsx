@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import type { Product } from "../types/productTypes"
+import { EditableProductStatus } from "~/components/products/EditableProductStatus"
 
 type ColumnActions = {
   onViewDetails: (product: Product) => void
@@ -106,17 +107,12 @@ export const createColumns = (actions: ColumnActions): ColumnDef<Product>[] => [
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => {
-      const isActive = row.getValue("isActive") as boolean
+      const product = row.original
       return (
-        <div
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </div>
+        <EditableProductStatus
+          productId={product.id}
+          isActive={product.isActive}
+        />
       )
     },
   },
