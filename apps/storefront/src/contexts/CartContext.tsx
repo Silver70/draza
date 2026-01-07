@@ -17,14 +17,47 @@ interface CartContextValue {
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
 
+const CART_STORAGE_KEY = 'draza_cart_data'
+
+// Cart persistence helpers
+function saveCartToStorage(cart: Cart | null) {
+  if (typeof window === 'undefined') return
+  try {
+    if (cart) {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart))
+    } else {
+      localStorage.removeItem(CART_STORAGE_KEY)
+    }
+  } catch (error) {
+    console.error('Failed to save cart to localStorage:', error)
+  }
+}
+
+function loadCartFromStorage(): Cart | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    return stored ? JSON.parse(stored) : null
+  } catch (error) {
+    console.error('Failed to load cart from localStorage:', error)
+    return null
+  }
+}
+
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [cart, setCart] = useState<Cart | null>(null)
+  // Initialize cart from localStorage for instant load
+  const [cart, setCart] = useState<Cart | null>(() => loadCartFromStorage())
   const [isLoading, setIsLoading] = useState(true)
 
   // Calculate total item count
   const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) || 0
 
-  // Load cart on mount
+  // Persist cart to localStorage whenever it changes
+  useEffect(() => {
+    saveCartToStorage(cart)
+  }, [cart])
+
+  // Load cart from API on mount
   useEffect(() => {
     loadCart()
   }, [])
@@ -43,6 +76,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   async function addItem(variantId: string, quantity: number) {
     try {
+      // For addItem, we call the API first since we need product data
+      // But we don't block the UI - the operation happens in background
       const updatedCart = await cartApi.addToCart(variantId, quantity)
       setCart(updatedCart)
     } catch (error) {
@@ -52,31 +87,95 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   async function updateItemQuantity(itemId: string, quantity: number) {
+    if (!cart) return
+
+    // Store previous cart for rollback
+    const previousCart = cart
+
     try {
+      // Optimistic update - update UI immediately
+      const optimisticCart = {
+        ...cart,
+        items: cart.items.map((item) =>
+          item.id === itemId ? { ...item, quantity } : item
+        ),
+      }
+
+      // Recalculate totals optimistically (rough estimate)
+      const item = cart.items.find((i) => i.id === itemId)
+      if (item) {
+        const oldItemTotal = parseFloat(item.unitPrice) * item.quantity
+        const newItemTotal = parseFloat(item.unitPrice) * quantity
+        const difference = newItemTotal - oldItemTotal
+
+        optimisticCart.subtotal = (parseFloat(cart.subtotal) + difference).toFixed(2)
+        optimisticCart.total = (parseFloat(cart.total) + difference).toFixed(2)
+      }
+
+      setCart(optimisticCart)
+
+      // Call API in background
       const updatedCart = await cartApi.updateCartItemQuantity(itemId, quantity)
       setCart(updatedCart)
     } catch (error) {
       console.error('Failed to update item quantity:', error)
+      // Rollback on error
+      setCart(previousCart)
       throw error
     }
   }
 
   async function removeItem(itemId: string) {
+    if (!cart) return
+
+    // Store previous cart for rollback
+    const previousCart = cart
+
     try {
+      // Optimistic update - update UI immediately
+      const item = cart.items.find((i) => i.id === itemId)
+      const optimisticCart = {
+        ...cart,
+        items: cart.items.filter((item) => item.id !== itemId),
+      }
+
+      // Recalculate totals optimistically
+      if (item) {
+        const itemTotal = parseFloat(item.unitPrice) * item.quantity
+        optimisticCart.subtotal = (parseFloat(cart.subtotal) - itemTotal).toFixed(2)
+        optimisticCart.total = (parseFloat(cart.total) - itemTotal).toFixed(2)
+      }
+
+      setCart(optimisticCart)
+
+      // Call API in background
       const updatedCart = await cartApi.removeCartItem(itemId)
       setCart(updatedCart)
     } catch (error) {
       console.error('Failed to remove item from cart:', error)
+      // Rollback on error
+      setCart(previousCart)
       throw error
     }
   }
 
   async function clearCart() {
+    if (!cart) return
+
+    // Store previous cart for rollback
+    const previousCart = cart
+
     try {
+      // Optimistic update
+      setCart({ ...cart, items: [], subtotal: '0.00', total: '0.00' })
+
+      // Call API in background
       const updatedCart = await cartApi.clearCart()
       setCart(updatedCart)
     } catch (error) {
       console.error('Failed to clear cart:', error)
+      // Rollback on error
+      setCart(previousCart)
       throw error
     }
   }
