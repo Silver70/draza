@@ -9,7 +9,7 @@ import { MetricCard } from '~/components/dashboard/MetricCard'
 import { SalesTrendChart } from '~/components/dashboard/SalesTrendChart'
 import { CustomerGrowthChart } from '~/components/dashboard/CustomerGrowthChart'
 import { RecentOrdersTable } from '~/components/dashboard/RecentOrdersTable'
-import { DollarSign, ShoppingCart, Users } from 'lucide-react'
+import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -36,15 +36,7 @@ function Home() {
     <div className="space-y-6">
       {/* Key Metrics - 3 Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
-          title="Total Customer"
-          value={overview.totalCustomers.toLocaleString()}
-          icon={Users}
-          trend={{
-            value: 3.1,
-            label: 'From last month'
-          }}
-        />
+
         <MetricCard
           title="Total Revenue"
           value={formattedRevenue}
@@ -60,6 +52,15 @@ function Home() {
           icon={ShoppingCart}
           trend={{
             value: 1.3,
+            label: 'From last month'
+          }}
+        />
+        <MetricCard
+          title="Conversion Rate"
+          value="3.2%"
+          icon={TrendingUp}
+          trend={{
+            value: 0.5,
             label: 'From last month'
           }}
         />
