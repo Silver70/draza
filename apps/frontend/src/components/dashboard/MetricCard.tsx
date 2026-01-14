@@ -39,8 +39,10 @@ export function MetricCard({
             <div className="flex items-center gap-2 text-sm">
               <span
                 className={cn(
-                  'font-medium',
-                  trend.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  'rounded-full px-2 py-0.5 text-xs font-medium',
+                  trend.value >= 0
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 )}
               >
                 {trend.value >= 0 ? '+' : ''}
