@@ -21,7 +21,7 @@ export function MetricCard({
   trend
 }: MetricCardProps) {
   return (
-    <Card>
+    <Card className="bg-linear-to-b from-primary/10 to-white dark:to-background">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium text-muted-foreground">
