@@ -84,30 +84,7 @@ const storeNavigation = [
   },
 ]
 
-// Navigation config for Developer Portal - Flat items (single pages)
-const developerFlatNavigation = [
-  {
-    title: "API Reference",
-    url: "/dev/api-references/",
-    icon: Terminal,
-  },
-]
 
-// Navigation config for Developer Portal - Hierarchical items (with children)
-const developerHierarchicalNavigation = [
-  {
-    title: "Examples",
-    url: "/dev/examples",
-    icon: BookOpen,
-    items: [
-      {
-        title: "React",
-        url: "/dev/examples/react-exm",
-      },
-
-    ]
-  },
-]
 
 // Team configurations with their respective navigation
 const teams = [
@@ -116,14 +93,8 @@ const teams = [
     logo: AudioWaveform,
     plan: "Production",
     navigation: storeNavigation,
-  },
-  {
-    name: "Developer Portal",
-    logo: Code2,
-    plan: "Developer",
-    flatNavigation: developerFlatNavigation,
-    hierarchicalNavigation: developerHierarchicalNavigation,
-  },
+  }
+ 
 ]
 
 // This is sample data.
@@ -145,14 +116,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} onTeamChange={setActiveTeam} />
       </SidebarHeader>
       <SidebarContent>
-        {isDeveloperPortal ? (
-          <>
-            <NavFlat items={activeTeam.flatNavigation || []} label="Documentation" />
-            <NavMain items={activeTeam.hierarchicalNavigation || []} />
-          </>
-        ) : (
+      
           <NavFlat items={activeTeam.navigation || []} label="Platform" />
-        )}
+    
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

@@ -26,12 +26,9 @@ import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/order
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
 import { Route as InventoryCategoriesIndexRouteImport } from './routes/inventory/categories/index'
-import { Route as DevExamplesIndexRouteImport } from './routes/dev/examples/index'
-import { Route as DevApiReferencesIndexRouteImport } from './routes/dev/api-references/index'
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
 import { Route as DiscountsDiscountIdEditRouteImport } from './routes/discounts/$discountId/edit'
 import { Route as DiscountsDiscountIdCodesRouteImport } from './routes/discounts/$discountId/codes'
-import { Route as DevExamplesReactExmIndexRouteImport } from './routes/dev/examples/react-exm/index'
 import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
@@ -121,16 +118,6 @@ const InventoryCategoriesIndexRoute =
     path: '/inventory/categories/',
     getParentRoute: () => rootRouteImport,
   } as any)
-const DevExamplesIndexRoute = DevExamplesIndexRouteImport.update({
-  id: '/dev/examples/',
-  path: '/dev/examples/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevApiReferencesIndexRoute = DevApiReferencesIndexRouteImport.update({
-  id: '/dev/api-references/',
-  path: '/dev/api-references/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
   id: '/inventory/products/create',
   path: '/inventory/products/create',
@@ -145,12 +132,6 @@ const DiscountsDiscountIdCodesRoute =
   DiscountsDiscountIdCodesRouteImport.update({
     id: '/discounts/$discountId/codes',
     path: '/discounts/$discountId/codes',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DevExamplesReactExmIndexRoute =
-  DevExamplesReactExmIndexRouteImport.update({
-    id: '/dev/examples/react-exm/',
-    path: '/dev/examples/react-exm/',
     getParentRoute: () => rootRouteImport,
   } as any)
 const InventoryCollectionsCollectionIdAddProductsRoute =
@@ -176,15 +157,12 @@ export interface FileRoutesByFullPath {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-references': typeof DevApiReferencesIndexRoute
-  '/dev/examples': typeof DevExamplesIndexRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
   '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
-  '/dev/examples/react-exm': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -202,15 +180,12 @@ export interface FileRoutesByTo {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-references': typeof DevApiReferencesIndexRoute
-  '/dev/examples': typeof DevExamplesIndexRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
   '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
-  '/dev/examples/react-exm': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -229,15 +204,12 @@ export interface FileRoutesById {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
-  '/dev/api-references/': typeof DevApiReferencesIndexRoute
-  '/dev/examples/': typeof DevExamplesIndexRoute
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
   '/inventory/collections/': typeof InventoryCollectionsIndexRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
   '/settings/orders/': typeof SettingsOrdersIndexRoute
   '/settings/tax/': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
-  '/dev/examples/react-exm/': typeof DevExamplesReactExmIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -257,15 +229,12 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-references'
-    | '/dev/examples'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
     | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
-    | '/dev/examples/react-exm'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -283,15 +252,12 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-references'
-    | '/dev/examples'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
     | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
-    | '/dev/examples/react-exm'
   id:
     | '__root__'
     | '/'
@@ -309,15 +275,12 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
-    | '/dev/api-references/'
-    | '/dev/examples/'
     | '/inventory/categories/'
     | '/inventory/collections/'
     | '/inventory/products/'
     | '/settings/orders/'
     | '/settings/tax/'
     | '/inventory/collections/$collectionId/add-products'
-    | '/dev/examples/react-exm/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -336,13 +299,10 @@ export interface RootRouteChildren {
   DiscountsDiscountIdCodesRoute: typeof DiscountsDiscountIdCodesRoute
   DiscountsDiscountIdEditRoute: typeof DiscountsDiscountIdEditRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
-  DevApiReferencesIndexRoute: typeof DevApiReferencesIndexRoute
-  DevExamplesIndexRoute: typeof DevExamplesIndexRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
   InventoryCollectionsCollectionIdAddProductsRoute: typeof InventoryCollectionsCollectionIdAddProductsRoute
-  DevExamplesReactExmIndexRoute: typeof DevExamplesReactExmIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -466,20 +426,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryCategoriesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dev/examples/': {
-      id: '/dev/examples/'
-      path: '/dev/examples'
-      fullPath: '/dev/examples'
-      preLoaderRoute: typeof DevExamplesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/api-references/': {
-      id: '/dev/api-references/'
-      path: '/dev/api-references'
-      fullPath: '/dev/api-references'
-      preLoaderRoute: typeof DevApiReferencesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/inventory/products/create': {
       id: '/inventory/products/create'
       path: '/inventory/products/create'
@@ -499,13 +445,6 @@ declare module '@tanstack/react-router' {
       path: '/discounts/$discountId/codes'
       fullPath: '/discounts/$discountId/codes'
       preLoaderRoute: typeof DiscountsDiscountIdCodesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dev/examples/react-exm/': {
-      id: '/dev/examples/react-exm/'
-      path: '/dev/examples/react-exm'
-      fullPath: '/dev/examples/react-exm'
-      preLoaderRoute: typeof DevExamplesReactExmIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inventory/collections/$collectionId/add-products': {
@@ -548,14 +487,11 @@ const rootRouteChildren: RootRouteChildren = {
   DiscountsDiscountIdCodesRoute: DiscountsDiscountIdCodesRoute,
   DiscountsDiscountIdEditRoute: DiscountsDiscountIdEditRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
-  DevApiReferencesIndexRoute: DevApiReferencesIndexRoute,
-  DevExamplesIndexRoute: DevExamplesIndexRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
   InventoryCollectionsIndexRoute: InventoryCollectionsIndexRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
   InventoryCollectionsCollectionIdAddProductsRoute:
     InventoryCollectionsCollectionIdAddProductsRoute,
-  DevExamplesReactExmIndexRoute: DevExamplesReactExmIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
