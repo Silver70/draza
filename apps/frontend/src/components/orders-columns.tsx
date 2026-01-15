@@ -1,19 +1,12 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Eye, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type { Order } from "@/types/orderTypes"
 import { EditableOrderStatus } from "~/components/orders/EditableOrderStatus"
+import { toast } from "sonner"
 
 type ColumnActions = {
   onViewDetails: (order: Order) => void
@@ -142,54 +135,38 @@ export const createColumns = (actions: ColumnActions): ColumnDef<Order>[] => [
   },
   {
     id: "actions",
+    header: "Actions",
     enableHiding: false,
     cell: ({ row }) => {
       const order = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order.id)}
-            >
-              Copy order ID
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order.orderNumber)}
-            >
-              Copy order number
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => actions.onViewDetails(order)}>
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            {order.status === "pending" && (
-              <DropdownMenuItem>Mark as processing</DropdownMenuItem>
-            )}
-            {order.status === "processing" && (
-              <DropdownMenuItem>Mark as shipped</DropdownMenuItem>
-            )}
-            {order.status === "shipped" && (
-              <DropdownMenuItem>Mark as delivered</DropdownMenuItem>
-            )}
-            {(order.status === "pending" || order.status === "processing") && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  Cancel order
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+        
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => actions.onViewDetails(order)}
+            title="View details"
+          >
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">View details</span>
+          </Button>
+            <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              navigator.clipboard.writeText(order.orderNumber)
+              toast.success("Order number copied to clipboard")
+            }}
+            title="Copy order number"
+          >
+            <Copy className="h-4 w-4" />
+            <span className="sr-only">Copy order number</span>
+          </Button>
+        </div>
       )
     },
   },

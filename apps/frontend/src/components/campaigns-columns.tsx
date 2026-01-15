@@ -1,18 +1,10 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Copy, ExternalLink, Pencil, Trash, TrendingUp } from "lucide-react"
+import { ArrowUpDown, Eye, Copy } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type { Campaign } from "@/types/analyticsTypes"
 import {
   getPlatformDisplayName,
@@ -25,54 +17,23 @@ import {
 function CampaignActionsCell({ campaign }: { campaign: Campaign }) {
   const navigate = useNavigate()
 
-  const handleCopyTrackingCode = async () => {
-    await navigator.clipboard.writeText(campaign.trackingCode)
-  }
-
-  const handleCopyTrackingURL = async () => {
-    const baseURL = window.location.origin
-    const trackingURL = `${baseURL}?utm_campaign=${campaign.trackingCode}`
-    await navigator.clipboard.writeText(trackingURL)
-  }
-
   const handleViewAnalytics = () => {
     navigate({ to: '/campaigns/$campaignId', params: { campaignId: campaign.id } })
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem onClick={handleCopyTrackingCode}>
-          <Copy className="mr-2 h-4 w-4" />
-          Copy tracking code
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleCopyTrackingURL}>
-          <ExternalLink className="mr-2 h-4 w-4" />
-          Copy tracking URL
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleViewAnalytics}>
-          <TrendingUp className="mr-2 h-4 w-4" />
-          View analytics
-        </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit campaign
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive" disabled>
-          <Trash className="mr-2 h-4 w-4" />
-          Delete campaign
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex items-center gap-2">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0"
+        onClick={handleViewAnalytics}
+        title="View analytics"
+      >
+        <Eye className="h-4 w-4" />
+        <span className="sr-only">View analytics</span>
+      </Button>
+    </div>
   )
 }
 

@@ -1,21 +1,13 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal, Percent, DollarSign, Tag, Store, Package, Layers, Boxes } from "lucide-react"
+import { ArrowUpDown, Eye, Pencil, Trash, Percent, DollarSign, Tag, Store, Package, Layers, Boxes } from "lucide-react"
+import { Link } from "@tanstack/react-router"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import type { Discount } from "@/types/discountTypes"
 import { formatDiscountValue, getDiscountStatusText } from "@/utils/discounts"
-import { Link } from "@tanstack/react-router"
 
 type ColumnActions = {
   onEdit?: (discount: Discount) => void
@@ -223,62 +215,51 @@ export const createColumns = (actions: ColumnActions): ColumnDef<Discount>[] => 
   },
   {
     id: "actions",
+    header: "Actions",
     enableHiding: false,
     cell: ({ row }) => {
       const discount = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(discount.id)}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            asChild
+            title="View details"
+          >
+            
+            <Link to={`/discounts`}>
+              <Eye className="h-4 w-4" />
+              <span className="sr-only">View details</span>
+            </Link>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            asChild
+            title="Edit discount"
+          >
+            <Link to={`/discounts/${discount.id}/edit`}>
+              <Pencil className="h-4 w-4" />
+              <span className="sr-only">Edit discount</span>
+            </Link>
+          </Button>
+          {actions.onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              onClick={() => actions.onDelete!(discount)}
+              title="Delete discount"
             >
-              Copy discount ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to={`/discounts/${discount.id}/edit`}>
-                Edit discount
-              </Link>
-            </DropdownMenuItem>
-            {discount.scope === "code" && (
-              <DropdownMenuItem asChild>
-                <Link to={`/discounts/${discount.id}/codes`}>
-                  Manage codes
-                </Link>
-              </DropdownMenuItem>
-            )}
-            {actions.onDuplicate && (
-              <DropdownMenuItem onClick={() => actions.onDuplicate!(discount)}>
-                Duplicate
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuSeparator />
-            {actions.onToggleActive && (
-              <DropdownMenuItem onClick={() => actions.onToggleActive!(discount)}>
-                {discount.isActive ? "Deactivate" : "Activate"}
-              </DropdownMenuItem>
-            )}
-            {actions.onDelete && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => actions.onDelete!(discount)}
-                >
-                  Delete discount
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <Trash className="h-4 w-4" />
+              <span className="sr-only">Delete discount</span>
+            </Button>
+          )}
+        </div>
       )
     },
   },

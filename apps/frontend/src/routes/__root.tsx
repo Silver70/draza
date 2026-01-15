@@ -138,8 +138,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </SidebarProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>
-        <TanStackRouterDevtools position="bottom-right" />
-        <ReactQueryDevtools buttonPosition="bottom-left" />
+
         <Scripts />
       </body>
     </html>
