@@ -19,17 +19,24 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar"
 
-export function TeamSwitcher({
+export function TeamSwitcher<T extends {
+  name: string
+  logo: React.ElementType
+  plan: string
+}>({
   teams,
+  onTeamChange,
 }: {
-  teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
+  teams: T[]
+  onTeamChange?: (team: T) => void
 }) {
   const { isMobile } = useSidebar()
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+
+  const handleTeamChange = (team: T) => {
+    setActiveTeam(team)
+    onTeamChange?.(team)
+  }
 
   if (!activeTeam) {
     return null
@@ -66,7 +73,7 @@ export function TeamSwitcher({
             {teams.map((team, index) => (
               <DropdownMenuItem
                 key={team.name}
-                onClick={() => setActiveTeam(team)}
+                onClick={() => handleTeamChange(team)}
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">

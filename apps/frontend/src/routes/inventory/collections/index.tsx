@@ -2,11 +2,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
-import { columns } from '@/components/collections-columns'
+import { createColumns } from '@/components/collections-columns'
 import { collectionsWithProductCountQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
 import { CreateCollectionModal } from '@/components/create-collection-modal'
+import { CollectionDetailsSheet } from '~/components/collections/CollectionDetailsSheet'
+import type { Collection } from '~/types/productTypes'
 
 export const Route = createFileRoute('/inventory/collections/')({
   component: RouteComponent,
@@ -21,10 +23,21 @@ export const Route = createFileRoute('/inventory/collections/')({
 function RouteComponent() {
   const { data: collections } = useSuspenseQuery(collectionsWithProductCountQueryOptions())
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
   const handleAddCollection = () => {
     setIsCreateModalOpen(true)
   }
+
+  const handleViewDetails = (collection: Collection) => {
+    setSelectedCollection(collection)
+    setSheetOpen(true)
+  }
+
+  const columns = createColumns({
+    onViewDetails: handleViewDetails,
+  })
 
   return (
     <>
@@ -34,6 +47,12 @@ function RouteComponent() {
           Manage your product collections
         </p>
       </div>
+
+      <CollectionDetailsSheet
+        collection={selectedCollection}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
       {collections.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-muted/50">
           <div className="text-center space-y-2">

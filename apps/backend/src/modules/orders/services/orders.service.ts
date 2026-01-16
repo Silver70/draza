@@ -6,6 +6,9 @@ import { NewOrder } from "../orders.types";
 import { generateOrderNumber } from "../utils/index";
 import { calculateOrderTax } from "./tax.service";
 import { calculateShippingOptions, getShippingMethod, calculateEstimatedDeliveryDate } from "./shipping.service";
+import { discountCodesService } from "../../discounts/services";
+import { orderDiscountsRepo } from "../../discounts/repo";
+import { campaignsService } from "../../analytics/services";
 
 export const ordersService = {
   /**
@@ -209,6 +212,8 @@ export const ordersService = {
   /**
    * Create a new order with items
    * Tax and shipping are calculated automatically based on address and shipping method
+   * Discounts are applied before tax calculation
+   * Campaign attribution is handled automatically if sessionId is provided
    */
   create: async (data: {
     customerId: string;
@@ -219,6 +224,8 @@ export const ordersService = {
       quantity: number;
     }>;
     shippingMethodId: string; // Selected shipping method
+    discountCode?: string; // Optional discount code
+    sessionId?: string; // Optional session ID for campaign attribution
     notes?: string;
   }) => {
     // Validate customer exists
@@ -292,11 +299,37 @@ export const ordersService = {
       });
     }
 
-    // Calculate tax based on shipping address
+    // Validate and calculate discount if code provided
+    let discountAmount = 0;
+    let discountData: any = null;
+
+    if (data.discountCode) {
+      try {
+        discountData = await discountCodesService.calculateCodeDiscount(
+          data.discountCode,
+          subtotal
+        );
+        discountAmount = discountData.discountAmount;
+      } catch (error) {
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : "Invalid discount code"
+        );
+      }
+    }
+
+    // Calculate taxable amount (subtotal minus discount)
+    const taxableAmount = subtotal - discountAmount;
+
+    // Calculate tax based on discounted subtotal
     const taxCalculation = await calculateOrderTax({
       shippingState: shippingAddress.state,
       shippingCountry: shippingAddress.country,
-      items: itemsForTaxCalculation,
+      items: itemsForTaxCalculation.map(item => ({
+        ...item,
+        subtotal: item.subtotal * (taxableAmount / subtotal), // Proportionally reduce each item's subtotal
+      })),
     });
 
     // Calculate shipping cost based on selected method
@@ -327,7 +360,7 @@ export const ordersService = {
     // Calculate final total
     const shippingCost = selectedShipping.cost;
     const tax = taxCalculation.taxAmount;
-    const total = subtotal + tax + shippingCost;
+    const total = subtotal - discountAmount + tax + shippingCost;
 
     // Generate unique order number
     const orderNumber = generateOrderNumber();
@@ -340,6 +373,7 @@ export const ordersService = {
       billingAddressId: data.billingAddressId,
       status: "pending",
       subtotal: subtotal.toFixed(2),
+      discountAmount: discountAmount.toFixed(2),
       tax: tax.toFixed(2),
       shippingCost: shippingCost.toFixed(2),
       total: total.toFixed(2),
@@ -358,6 +392,28 @@ export const ordersService = {
     // Create order with items in transaction
     const order = await ordersRepo.createOrder(orderData, orderItems);
 
+    // Record applied discount in order_discounts table
+    if (discountData && discountAmount > 0) {
+      await orderDiscountsRepo.createOrderDiscount({
+        orderId: order.id,
+        discountId: discountData.discount.id,
+        code: data.discountCode || null,
+        discountType: discountData.discount.discountType,
+        value: discountData.discount.value,
+        appliedAmount: discountAmount.toFixed(2),
+        description: `${discountData.discount.name}: ${
+          discountData.discount.discountType === "percentage"
+            ? `${discountData.discount.value}% off`
+            : `$${discountData.discount.value} off`
+        }`,
+      });
+
+      // Increment discount code usage count
+      if (discountData.discountCode) {
+        await discountCodesService.incrementUsage(discountData.discountCode.id);
+      }
+    }
+
     // Deduct inventory (TODO: Consider moving this to a separate inventory service)
     for (const item of data.items) {
       const variant = await productVariantsRepo.getProductVariantById(item.productVariantId);
@@ -367,6 +423,21 @@ export const ordersService = {
       await productVariantsRepo.updateProductVariant(item.productVariantId, {
         quantityInStock: variant.quantityInStock - item.quantity,
       });
+    }
+
+    // Handle campaign attribution if sessionId is provided
+    if (data.sessionId) {
+      try {
+        await campaignsService.attributeOrder(
+          data.sessionId,
+          order.id,
+          data.customerId,
+          order.total
+        );
+      } catch (error) {
+        // Log error but don't fail the order
+        console.error('Campaign attribution error:', error);
+      }
     }
 
     return order;
@@ -553,6 +624,7 @@ export const ordersService = {
       itemCount,
       totalQuantity,
       subtotal: order.subtotal,
+      discountAmount: order.discountAmount,
       tax: order.tax,
       shippingCost: order.shippingCost,
       total: order.total,
@@ -599,5 +671,18 @@ export const ordersService = {
 
     // Order items will be cascade deleted
     return await ordersRepo.deleteOrder(id);
+  },
+
+  /**
+   * Get applied discounts for an order
+   */
+  getOrderDiscounts: async (orderId: string) => {
+    const order = await ordersRepo.getOrderById(orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    const discounts = await orderDiscountsRepo.getOrderDiscountsByOrderId(orderId);
+    return discounts;
   },
 };

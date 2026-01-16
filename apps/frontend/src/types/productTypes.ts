@@ -10,6 +10,17 @@ export type CategoryWithProductCount = Category & {
   productCount: number
 }
 
+export type ProductImage = {
+  id: string
+  productId: string
+  url: string
+  altText: string | null
+  type: 'thumbnail' | 'gallery' | 'hero' | 'zoom'
+  position: number
+  createdAt: string
+  updatedAt: string
+}
+
 export type Product = {
   id: string
   name: string
@@ -17,6 +28,7 @@ export type Product = {
   description?: string
   categoryId?: string
   category?: Category | null
+  images?: ProductImage[]
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -26,9 +38,10 @@ export type ProductVariant = {
   id: string
   productId: string
   sku: string
-  price: number
-  quantity: number
-  isActive: boolean
+  price: string
+  quantityInStock: number
+  createdAt: string
+  updatedAt: string
 }
 
 export type ProductWithVariants = Product & {

@@ -64,6 +64,8 @@ export const createOrderSchema = z.object({
     quantity: z.number().int().positive("Quantity must be positive"),
   })).min(1, "Order must have at least one item"),
   shippingMethodId: z.string().uuid("Invalid shipping method ID"),
+  discountCode: z.string().optional(),
+  sessionId: z.string().uuid("Invalid session ID").optional(), // For campaign attribution
   notes: z.string().optional().nullable(),
 });
 

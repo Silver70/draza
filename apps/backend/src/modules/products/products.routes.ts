@@ -4,6 +4,7 @@ import { productsService } from "./services/products.service";
 import { categoriesService } from "./services/categories.service";
 import { collectionsService } from "./services/collections.service";
 import { attributesService } from "./services/attributes.service";
+import { imagesService } from "./services/images.service";
 import {
   createProductSchema,
   updateProductSchema,
@@ -15,6 +16,10 @@ import {
   updateAttributeSchema,
   createAttributeValueSchema,
   updateAttributeValueSchema,
+  createProductImageSchema,
+  updateProductImageSchema,
+  createProductVariantImageSchema,
+  updateProductVariantImageSchema,
 } from "./products.types";
 
 export const productsRoutes = new Hono();
@@ -359,7 +364,8 @@ productsRoutes.get("/collections/:id", async (c) => {
 productsRoutes.get("/collections/:id/products", async (c) => {
   try {
     const id = c.req.param("id");
-    const collection = await collectionsService.findByIdWithProducts(id);
+    const activeOnly = c.req.query("activeOnly") === "true";
+    const collection = await collectionsService.findByIdWithProducts(id, activeOnly);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Collection not found";
@@ -755,6 +761,215 @@ productsRoutes.delete("/variants/:variantId/attributes/:valueId", async (c) => {
   }
 });
 
+// ==================== IMAGE MANAGEMENT ROUTES ====================
+// NOTE: These must come BEFORE /products/:id to avoid route conflicts
+
+/**
+ * POST /products/images/upload
+ * Upload a product image
+ * Expects multipart/form-data with: productId, file, altText?, type?, position?
+ */
+productsRoutes.post("/images/upload", async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const file = body.file as File;
+    const productId = body.productId as string;
+    const altText = body.altText as string | undefined;
+    const type = (body.type as 'thumbnail' | 'gallery' | 'hero' | 'zoom') || 'gallery';
+    const position = body.position ? parseInt(body.position as string) : 0;
+
+    if (!file || !productId) {
+      return c.json({ success: false, error: "File and productId are required" }, 400);
+    }
+
+    const buffer = await file.arrayBuffer();
+    const result = await imagesService.uploadProductImage({
+      productId,
+      file: Buffer.from(buffer),
+      filename: file.name,
+      altText,
+      type,
+      position,
+    });
+
+    return c.json({ success: true, data: result.image }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to upload image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * POST /products/variants/images/upload
+ * Upload a product variant image
+ * Expects multipart/form-data with: productVariantId, file, altText?, type?, position?
+ */
+productsRoutes.post("/variants/images/upload", async (c) => {
+  try {
+    const body = await c.req.parseBody();
+    const file = body.file as File;
+    const productVariantId = body.productVariantId as string;
+    const altText = body.altText as string | undefined;
+    const type = (body.type as 'thumbnail' | 'gallery' | 'hero' | 'zoom') || 'gallery';
+    const position = body.position ? parseInt(body.position as string) : 0;
+
+    if (!file || !productVariantId) {
+      return c.json({ success: false, error: "File and productVariantId are required" }, 400);
+    }
+
+    const buffer = await file.arrayBuffer();
+    const result = await imagesService.uploadProductVariantImage({
+      productVariantId,
+      file: Buffer.from(buffer),
+      filename: file.name,
+      altText,
+      type,
+      position,
+    });
+
+    return c.json({ success: true, data: result.image }, 201);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to upload variant image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * GET /products/images/:productId
+ * Get all images for a product
+ */
+productsRoutes.get("/images/:productId", async (c) => {
+  try {
+    const productId = c.req.param("productId");
+    const images = await imagesService.getProductImages(productId);
+    return c.json({ success: true, data: images });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch product images";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * GET /products/variants/images/:variantId
+ * Get all images for a product variant
+ */
+productsRoutes.get("/variants/images/:variantId", async (c) => {
+  try {
+    const variantId = c.req.param("variantId");
+    const images = await imagesService.getProductVariantImages(variantId);
+    return c.json({ success: true, data: images });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to fetch variant images";
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+/**
+ * PUT /products/images/:imageId
+ * Update product image metadata
+ */
+productsRoutes.put("/images/:imageId", zValidator("json", updateProductImageSchema), async (c) => {
+  try {
+    const imageId = c.req.param("imageId");
+    const data = c.req.valid("json");
+    const image = await imagesService.updateProductImage(imageId, data);
+    return c.json({ success: true, data: image });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/variants/images/:imageId
+ * Update product variant image metadata
+ */
+productsRoutes.put("/variants/images/:imageId", zValidator("json", updateProductVariantImageSchema), async (c) => {
+  try {
+    const imageId = c.req.param("imageId");
+    const data = c.req.valid("json");
+    const image = await imagesService.updateProductVariantImage(imageId, data);
+    return c.json({ success: true, data: image });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to update variant image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/images/:productId/reorder
+ * Reorder product images
+ * Expects JSON: { imageIds: string[] }
+ */
+productsRoutes.put("/images/:productId/reorder", async (c) => {
+  try {
+    const productId = c.req.param("productId");
+    const { imageIds } = await c.req.json();
+
+    if (!Array.isArray(imageIds)) {
+      return c.json({ success: false, error: "imageIds must be an array" }, 400);
+    }
+
+    await imagesService.reorderProductImages(productId, imageIds);
+    return c.json({ success: true, message: "Images reordered successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to reorder images";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * PUT /products/variants/images/:variantId/reorder
+ * Reorder product variant images
+ * Expects JSON: { imageIds: string[] }
+ */
+productsRoutes.put("/variants/images/:variantId/reorder", async (c) => {
+  try {
+    const variantId = c.req.param("variantId");
+    const { imageIds } = await c.req.json();
+
+    if (!Array.isArray(imageIds)) {
+      return c.json({ success: false, error: "imageIds must be an array" }, 400);
+    }
+
+    await imagesService.reorderProductVariantImages(variantId, imageIds);
+    return c.json({ success: true, message: "Variant images reordered successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to reorder variant images";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * DELETE /products/images/:imageId
+ * Delete a product image
+ */
+productsRoutes.delete("/images/:imageId", async (c) => {
+  try {
+    const imageId = c.req.param("imageId");
+    await imagesService.deleteProductImage(imageId);
+    return c.json({ success: true, message: "Image deleted successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
+/**
+ * DELETE /products/variants/images/:imageId
+ * Delete a product variant image
+ */
+productsRoutes.delete("/variants/images/:imageId", async (c) => {
+  try {
+    const imageId = c.req.param("imageId");
+    await imagesService.deleteProductVariantImage(imageId);
+    return c.json({ success: true, message: "Variant image deleted successfully" });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete variant image";
+    return c.json({ success: false, error: message }, 400);
+  }
+});
+
 // ==================== PRODUCTS BY ID ROUTES ====================
 // NOTE: These MUST come LAST to avoid catching specific routes above
 
@@ -844,21 +1059,6 @@ productsRoutes.post("/", zValidator("json", createProductSchema), async (c) => {
     return c.json({ success: true, data: product }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create product";
-    return c.json({ success: false, error: message }, 400);
-  }
-});
-
-/**
- * POST /products/with-variants
- * Create product with variants
- */
-productsRoutes.post("/with-variants", async (c) => {
-  try {
-    const data = await c.req.json();
-    const product = await productsService.createWithVariants(data);
-    return c.json({ success: true, data: product }, 201);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create product with variants";
     return c.json({ success: false, error: message }, 400);
   }
 });

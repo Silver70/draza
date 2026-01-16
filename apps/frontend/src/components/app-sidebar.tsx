@@ -3,21 +3,23 @@
 import * as React from "react"
 import {
   AudioWaveform,
-  BookOpen,
-  Bot,
   Box,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  FileText
+  FileText,
+  FolderTree,
+  LayoutGrid,
+  Users,
+  Cog,
+  BoltIcon,
+  TicketPercentIcon,
+  MegaphoneIcon,
+  ShoppingCart,
+  Code2,
+  BookOpen,
+  Terminal
 } from "lucide-react"
 
+import { NavFlat } from "~/components/nav-flat"
 import { NavMain } from "~/components/nav-main"
-import { NavProjects } from "~/components/nav-projects"
 import { NavUser } from "~/components/nav-user"
 import { TeamSwitcher } from "~/components/team-switcher"
 import {
@@ -27,7 +29,73 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "~/components/ui/sidebar"
-import { file } from "zod"
+
+// Navigation config for Store Management
+const storeNavigation = [
+  {
+    title: "overview",
+    url: "/",
+    icon: BoltIcon,
+  },
+  {
+    title: "Products",
+    url: "/inventory/products",
+    icon: Box,
+  },
+  {
+    title: "Categories",
+    url: "/inventory/categories",
+    icon: FolderTree,
+  },
+  {
+    title: "Collections",
+    url: "/inventory/collections",
+    icon: LayoutGrid,
+  },
+  {
+    title: "Discounts",
+    url: "/discounts",
+    icon: TicketPercentIcon,
+  },
+  {
+    title: "Customers",
+    url: "/customers",
+    icon: Users,
+  },
+  {
+    title: "Orders",
+    url: "/orders",
+    icon: FileText,
+  },
+  {
+    title: "Carts",
+    url: "/carts/",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Campaigns",
+    url: "/campaigns",
+    icon: MegaphoneIcon,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: Cog,
+  },
+]
+
+
+
+// Team configurations with their respective navigation
+const teams = [
+  {
+    name: "Store Management",
+    logo: AudioWaveform,
+    plan: "Production",
+    navigation: storeNavigation,
+  }
+ 
+]
 
 // This is sample data.
 const data = {
@@ -36,74 +104,21 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Inventory",
-      url: "#",
-      icon: Box,
-      isActive: true,
-      items: [
-        {
-          title: "Products",
-          url: "/inventory/products",
-        },
-        {
-          title: "Categories",
-          url: "/inventory/categories",
-        },
-        {
-          title: "Collections",
-          url: "/inventory/collections",
-        },
-      ],
-    },
-    {
-      title: "Orders",
-      url: "#",
-      icon: FileText,
-      items: [
-        {
-          title: "Orders",
-          url: "/orders",
-        },
-        {
-          title: "Returns",
-          url: "/orders/returns",
-        },
-      ],
-    },
-   
-   
-  ],
- 
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const isDeveloperPortal = activeTeam.name === "Developer Portal"
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <TeamSwitcher teams={teams} onTeamChange={setActiveTeam} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-   
+      
+          <NavFlat items={activeTeam.navigation || []} label="Platform" />
+    
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

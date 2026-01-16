@@ -14,6 +14,7 @@ export const customersTable = pgTable('customers_table', {
   email: text('email').notNull().unique(),
   phone_number: varchar('phone_number', {length: 20}).notNull().unique(),
   is_guest: boolean('is_guest').notNull().default(false),
+  acquisition_campaign_id: uuid('acquisition_campaign_id'), // First campaign that acquired this customer
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

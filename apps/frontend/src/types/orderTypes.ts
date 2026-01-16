@@ -60,6 +60,7 @@ export type Order = {
   billingAddressId: string
   status: OrderStatus
   subtotal: string
+  discountAmount: string
   tax: string
   shippingCost: string
   total: string
@@ -118,6 +119,7 @@ export type CreateOrderInput = {
   billingAddressId: string
   items: CreateOrderItemInput[]
   shippingMethodId: string // Selected shipping method - tax and shipping calculated by backend
+  discountCode?: string // Optional discount code
   notes?: string
 }
 

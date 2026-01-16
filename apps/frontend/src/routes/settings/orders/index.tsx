@@ -2,7 +2,6 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Settings } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/components/ui/card'
 import { Button } from '~/components/ui/button'
 import { Combobox } from '~/components/ui/combobox'
@@ -13,7 +12,7 @@ import { shippingMethodsQueryOptions } from '~/utils/orders'
 import { getOrderSettings, saveOrderSettings } from '~/utils/orderSettings'
 
 export const Route = createFileRoute('/settings/orders/')({
-  loader: async ({ context: { queryClient } }) => {
+    loader: async ({ context: { queryClient } }) => {
     await queryClient.ensureQueryData(shippingMethodsQueryOptions())
   },
   pendingComponent: PendingComponent,
@@ -54,18 +53,7 @@ function RouteComponent() {
   const selectedMethod = shippingMethods.find(m => m.id === defaultShippingMethodId)
 
   return (
-    <div className="w-full max-w-4xl mx-auto py-8 px-4 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Settings className="h-6 w-6" />
-          <h1 className="text-3xl font-bold tracking-tight">Order Settings</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Configure default settings for manual order creation.
-        </p>
-      </div>
-
+    <div className="space-y-6">
       {/* Default Shipping Method */}
       <Card>
         <CardHeader>

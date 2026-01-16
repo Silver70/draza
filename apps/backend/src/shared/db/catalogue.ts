@@ -7,9 +7,19 @@ import {
   integer,
   numeric,
   primaryKey,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { orderItemsTable } from "./order";
+
+// Image type enum - for different use cases
+export const imageTypeEnum = pgEnum("image_type", [
+  "thumbnail",  // Small preview image
+  "gallery",    // Main gallery images
+  "hero",       // Large hero/banner images
+  "zoom",       // High-resolution zoomable images
+]);
+
 //@ts-ignore
 export const categoriesTable = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -114,6 +124,40 @@ export const collectionProductsTable = pgTable(
   })
 );
 
+// Product-level images (general/marketing images)
+export const productImagesTable = pgTable("product_images", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productId: uuid("product_id")
+    .notNull()
+    .references(() => productsTable.id, { onDelete: "cascade" }),
+  url: text("url").notNull(), // Image URL or path
+  altText: text("alt_text"), // Accessibility text
+  type: imageTypeEnum("type").default("gallery"),
+  position: integer("position").notNull().default(0), // Display order
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+// Variant-level images (variant-specific images, e.g., different colors)
+export const productVariantImagesTable = pgTable("product_variant_images", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  productVariantId: uuid("product_variant_id")
+    .notNull()
+    .references(() => productVariantsTable.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  altText: text("alt_text"),
+  type: imageTypeEnum("type").default("gallery"),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 // Relations
 export const categoriesRelations = relations(categoriesTable, ({ one, many }) => ({
   parent: one(categoriesTable, {
@@ -133,6 +177,7 @@ export const productsRelations = relations(productsTable, ({ one, many }) => ({
     references: [categoriesTable.id],
   }),
   variants: many(productVariantsTable),
+  images: many(productImagesTable),
 }));
 
 export const productVariantsRelations = relations(
@@ -144,6 +189,7 @@ export const productVariantsRelations = relations(
     }),
     attributes: many(productVariantAttributesTable),
     orderItems: many(orderItemsTable),
+    images: many(productVariantImagesTable),
   })
 );
 
@@ -190,6 +236,26 @@ export const collectionProductsRelations = relations(
     product: one(productsTable, {
       fields: [collectionProductsTable.productId],
       references: [productsTable.id],
+    }),
+  })
+);
+
+export const productImagesRelations = relations(
+  productImagesTable,
+  ({ one }) => ({
+    product: one(productsTable, {
+      fields: [productImagesTable.productId],
+      references: [productsTable.id],
+    }),
+  })
+);
+
+export const productVariantImagesRelations = relations(
+  productVariantImagesTable,
+  ({ one }) => ({
+    productVariant: one(productVariantsTable, {
+      fields: [productVariantImagesTable.productVariantId],
+      references: [productVariantsTable.id],
     }),
   })
 );

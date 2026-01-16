@@ -31,6 +31,7 @@ export const ordersTable = pgTable('orders', {
 
   // Order amounts
   subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
+  discountAmount: numeric('discount_amount', { precision: 10, scale: 2 }).notNull().default('0'),
   tax: numeric('tax', { precision: 10, scale: 2 }).notNull().default('0'),
   shippingCost: numeric('shipping_cost', { precision: 10, scale: 2 }).notNull().default('0'),
   total: numeric('total', { precision: 10, scale: 2 }).notNull(),
@@ -45,6 +46,10 @@ export const ordersTable = pgTable('orders', {
   shippingMethodName: text('shipping_method_name'), // Snapshot: "Standard Shipping"
   shippingCarrier: text('shipping_carrier'), // Snapshot: "USPS", "FedEx", etc.
   estimatedDeliveryDate: timestamp('estimated_delivery_date'), // Calculated at order time
+
+  // Campaign tracking - for attribution
+  campaignId: uuid('campaign_id'),
+  visitId: uuid('visit_id'),
 
   notes: text('notes'),
   createdAt: timestamp('created_at').notNull().defaultNow(),

@@ -1,12 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { DataTable } from '@/components/data-table'
-import { columns } from '@/components/products-columns'
+import { createColumns } from '@/components/products-columns'
 import { useNavigate } from '@tanstack/react-router'
 import { productsQueryOptions } from '@/utils/products'
 import { PendingComponent } from '~/components/Pending'
 import { ErrorComponent } from '~/components/Error'
 import { Link } from '@tanstack/react-router'
+import { ProductDetailsSheet } from '~/components/products/ProductDetailsSheet'
+import type { Product } from '../../../types/productTypes'
 
 export const Route = createFileRoute('/inventory/products/')({
   component: RouteComponent,
@@ -21,10 +24,22 @@ export const Route = createFileRoute('/inventory/products/')({
 function RouteComponent() {
   const { data: products } = useSuspenseQuery(productsQueryOptions())
   const navigate = useNavigate()
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+
   const handleAddProduct = () => {
     // TODO: Navigate to add product page or open modal
     navigate({ to: '/inventory/products/create' })
   }
+
+  const handleViewDetails = (product: Product) => {
+    setSelectedProduct(product)
+    setSheetOpen(true)
+  }
+
+  const columns = createColumns({
+    onViewDetails: handleViewDetails,
+  })
 
 
   return (
@@ -35,6 +50,12 @@ function RouteComponent() {
           Manage your product inventory
         </p>
       </div>
+
+      <ProductDetailsSheet
+        product={selectedProduct}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
       {products.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 px-4 border rounded-lg bg-muted/50">
           <div className="text-center space-y-2">

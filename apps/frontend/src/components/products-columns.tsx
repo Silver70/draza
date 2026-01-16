@@ -1,20 +1,17 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Eye, Pencil, ImageIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import type { Product } from "@/utils/products"
+import type { Product } from "../types/productTypes"
+import { EditableProductStatus } from "~/components/products/EditableProductStatus"
 
-export const columns: ColumnDef<Product>[] = [
+type ColumnActions = {
+  onViewDetails: (product: Product) => void
+}
+
+export const createColumns = (actions: ColumnActions): ColumnDef<Product>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -36,6 +33,31 @@ export const columns: ColumnDef<Product>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+  },
+  {
+    id: "image",
+    header: "Image",
+    cell: ({ row }) => {
+      const product = row.original
+      const thumbnailImage = product.images?.find(img => img.type === 'thumbnail' || img.type === 'hero')
+      const fallbackImage = product.images?.[0]
+      const imageUrl = thumbnailImage?.url || fallbackImage?.url
+
+      return (
+        <div className="w-12 h-12 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={thumbnailImage?.altText || fallbackImage?.altText || product.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImageIcon className="w-6 h-6 text-muted-foreground" />
+          )}
+        </div>
+      )
+    },
+    enableSorting: false,
   },
   {
     accessorKey: "name",
@@ -77,17 +99,12 @@ export const columns: ColumnDef<Product>[] = [
     accessorKey: "isActive",
     header: "Status",
     cell: ({ row }) => {
-      const isActive = row.getValue("isActive") as boolean
+      const product = row.original
       return (
-        <div
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            isActive
-              ? "bg-green-100 text-green-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          {isActive ? "Active" : "Inactive"}
-        </div>
+        <EditableProductStatus
+          productId={product.id}
+          isActive={product.isActive}
+        />
       )
     },
   },
@@ -120,25 +137,27 @@ export const columns: ColumnDef<Product>[] = [
       const product = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id)}
-            >
-              Copy product ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>Edit product</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => actions.onViewDetails(product)}
+            title="View details"
+          >
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">View details</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            title="Edit product"
+          >
+            <Pencil className="h-4 w-4" />
+            <span className="sr-only">Edit product</span>
+          </Button>
+        </div>
       )
     },
   },

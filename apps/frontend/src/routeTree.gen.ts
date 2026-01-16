@@ -9,16 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteRouteImport } from './routes/settings/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as DiscountsIndexRouteImport } from './routes/discounts/index'
+import { Route as CustomersIndexRouteImport } from './routes/customers/index'
+import { Route as CartsIndexRouteImport } from './routes/carts/index'
+import { Route as CampaignsIndexRouteImport } from './routes/campaigns/index'
 import { Route as OrdersCreateRouteImport } from './routes/orders/create'
+import { Route as DiscountsCreateRouteImport } from './routes/discounts/create'
+import { Route as CustomersCreateRouteImport } from './routes/customers/create'
+import { Route as CampaignsCreateRouteImport } from './routes/campaigns/create'
+import { Route as CampaignsCampaignIdRouteImport } from './routes/campaigns/$campaignId'
+import { Route as SettingsTaxIndexRouteImport } from './routes/settings/tax/index'
 import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/orders/index'
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
 import { Route as InventoryCategoriesIndexRouteImport } from './routes/inventory/categories/index'
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
+import { Route as DiscountsDiscountIdEditRouteImport } from './routes/discounts/$discountId/edit'
+import { Route as DiscountsDiscountIdCodesRouteImport } from './routes/discounts/$discountId/codes'
 import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
+const SettingsRouteRoute = SettingsRouteRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -29,15 +46,60 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscountsIndexRoute = DiscountsIndexRouteImport.update({
+  id: '/discounts/',
+  path: '/discounts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersIndexRoute = CustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartsIndexRoute = CartsIndexRouteImport.update({
+  id: '/carts/',
+  path: '/carts/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignsIndexRoute = CampaignsIndexRouteImport.update({
+  id: '/campaigns/',
+  path: '/campaigns/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OrdersCreateRoute = OrdersCreateRouteImport.update({
   id: '/orders/create',
   path: '/orders/create',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsOrdersIndexRoute = SettingsOrdersIndexRouteImport.update({
-  id: '/settings/orders/',
-  path: '/settings/orders/',
+const DiscountsCreateRoute = DiscountsCreateRouteImport.update({
+  id: '/discounts/create',
+  path: '/discounts/create',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CustomersCreateRoute = CustomersCreateRouteImport.update({
+  id: '/customers/create',
+  path: '/customers/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignsCreateRoute = CampaignsCreateRouteImport.update({
+  id: '/campaigns/create',
+  path: '/campaigns/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CampaignsCampaignIdRoute = CampaignsCampaignIdRouteImport.update({
+  id: '/campaigns/$campaignId',
+  path: '/campaigns/$campaignId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsTaxIndexRoute = SettingsTaxIndexRouteImport.update({
+  id: '/tax/',
+  path: '/tax/',
+  getParentRoute: () => SettingsRouteRoute,
+} as any)
+const SettingsOrdersIndexRoute = SettingsOrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => SettingsRouteRoute,
 } as any)
 const InventoryProductsIndexRoute = InventoryProductsIndexRouteImport.update({
   id: '/inventory/products/',
@@ -61,6 +123,17 @@ const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
   path: '/inventory/products/create',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiscountsDiscountIdEditRoute = DiscountsDiscountIdEditRouteImport.update({
+  id: '/discounts/$discountId/edit',
+  path: '/discounts/$discountId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscountsDiscountIdCodesRoute =
+  DiscountsDiscountIdCodesRouteImport.update({
+    id: '/discounts/$discountId/codes',
+    path: '/discounts/$discountId/codes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const InventoryCollectionsCollectionIdAddProductsRoute =
   InventoryCollectionsCollectionIdAddProductsRouteImport.update({
     id: '/inventory/collections/$collectionId/add-products',
@@ -70,88 +143,177 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/create': typeof CampaignsCreateRoute
+  '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/campaigns': typeof CampaignsIndexRoute
+  '/carts': typeof CartsIndexRoute
+  '/customers': typeof CustomersIndexRoute
+  '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
+  '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
+  '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/create': typeof CampaignsCreateRoute
+  '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/campaigns': typeof CampaignsIndexRoute
+  '/carts': typeof CartsIndexRoute
+  '/customers': typeof CustomersIndexRoute
+  '/discounts': typeof DiscountsIndexRoute
   '/orders': typeof OrdersIndexRoute
+  '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
+  '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
   '/settings/orders': typeof SettingsOrdersIndexRoute
+  '/settings/tax': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRouteRouteWithChildren
+  '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
+  '/campaigns/create': typeof CampaignsCreateRoute
+  '/customers/create': typeof CustomersCreateRoute
+  '/discounts/create': typeof DiscountsCreateRoute
   '/orders/create': typeof OrdersCreateRoute
+  '/campaigns/': typeof CampaignsIndexRoute
+  '/carts/': typeof CartsIndexRoute
+  '/customers/': typeof CustomersIndexRoute
+  '/discounts/': typeof DiscountsIndexRoute
   '/orders/': typeof OrdersIndexRoute
+  '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
+  '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
   '/inventory/collections/': typeof InventoryCollectionsIndexRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
   '/settings/orders/': typeof SettingsOrdersIndexRoute
+  '/settings/tax/': typeof SettingsTaxIndexRoute
   '/inventory/collections/$collectionId/add-products': typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/create'
+    | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
+    | '/campaigns'
+    | '/carts'
+    | '/customers'
+    | '/discounts'
     | '/orders'
+    | '/discounts/$discountId/codes'
+    | '/discounts/$discountId/edit'
     | '/inventory/products/create'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
+    | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/create'
+    | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
+    | '/campaigns'
+    | '/carts'
+    | '/customers'
+    | '/discounts'
     | '/orders'
+    | '/discounts/$discountId/codes'
+    | '/discounts/$discountId/edit'
     | '/inventory/products/create'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
     | '/settings/orders'
+    | '/settings/tax'
     | '/inventory/collections/$collectionId/add-products'
   id:
     | '__root__'
     | '/'
+    | '/settings'
+    | '/campaigns/$campaignId'
+    | '/campaigns/create'
+    | '/customers/create'
+    | '/discounts/create'
     | '/orders/create'
+    | '/campaigns/'
+    | '/carts/'
+    | '/customers/'
+    | '/discounts/'
     | '/orders/'
+    | '/discounts/$discountId/codes'
+    | '/discounts/$discountId/edit'
     | '/inventory/products/create'
     | '/inventory/categories/'
     | '/inventory/collections/'
     | '/inventory/products/'
     | '/settings/orders/'
+    | '/settings/tax/'
     | '/inventory/collections/$collectionId/add-products'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
+  CampaignsCreateRoute: typeof CampaignsCreateRoute
+  CustomersCreateRoute: typeof CustomersCreateRoute
+  DiscountsCreateRoute: typeof DiscountsCreateRoute
   OrdersCreateRoute: typeof OrdersCreateRoute
+  CampaignsIndexRoute: typeof CampaignsIndexRoute
+  CartsIndexRoute: typeof CartsIndexRoute
+  CustomersIndexRoute: typeof CustomersIndexRoute
+  DiscountsIndexRoute: typeof DiscountsIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
+  DiscountsDiscountIdCodesRoute: typeof DiscountsDiscountIdCodesRoute
+  DiscountsDiscountIdEditRoute: typeof DiscountsDiscountIdEditRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
-  SettingsOrdersIndexRoute: typeof SettingsOrdersIndexRoute
   InventoryCollectionsCollectionIdAddProductsRoute: typeof InventoryCollectionsCollectionIdAddProductsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -166,6 +328,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discounts/': {
+      id: '/discounts/'
+      path: '/discounts'
+      fullPath: '/discounts'
+      preLoaderRoute: typeof DiscountsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers/': {
+      id: '/customers/'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof CustomersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/carts/': {
+      id: '/carts/'
+      path: '/carts'
+      fullPath: '/carts'
+      preLoaderRoute: typeof CartsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaigns/': {
+      id: '/campaigns/'
+      path: '/campaigns'
+      fullPath: '/campaigns'
+      preLoaderRoute: typeof CampaignsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/orders/create': {
       id: '/orders/create'
       path: '/orders/create'
@@ -173,12 +363,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discounts/create': {
+      id: '/discounts/create'
+      path: '/discounts/create'
+      fullPath: '/discounts/create'
+      preLoaderRoute: typeof DiscountsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customers/create': {
+      id: '/customers/create'
+      path: '/customers/create'
+      fullPath: '/customers/create'
+      preLoaderRoute: typeof CustomersCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaigns/create': {
+      id: '/campaigns/create'
+      path: '/campaigns/create'
+      fullPath: '/campaigns/create'
+      preLoaderRoute: typeof CampaignsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/campaigns/$campaignId': {
+      id: '/campaigns/$campaignId'
+      path: '/campaigns/$campaignId'
+      fullPath: '/campaigns/$campaignId'
+      preLoaderRoute: typeof CampaignsCampaignIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings/tax/': {
+      id: '/settings/tax/'
+      path: '/tax'
+      fullPath: '/settings/tax'
+      preLoaderRoute: typeof SettingsTaxIndexRouteImport
+      parentRoute: typeof SettingsRouteRoute
+    }
     '/settings/orders/': {
       id: '/settings/orders/'
-      path: '/settings/orders'
+      path: '/orders'
       fullPath: '/settings/orders'
       preLoaderRoute: typeof SettingsOrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof SettingsRouteRoute
     }
     '/inventory/products/': {
       id: '/inventory/products/'
@@ -208,6 +433,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryProductsCreateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/discounts/$discountId/edit': {
+      id: '/discounts/$discountId/edit'
+      path: '/discounts/$discountId/edit'
+      fullPath: '/discounts/$discountId/edit'
+      preLoaderRoute: typeof DiscountsDiscountIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discounts/$discountId/codes': {
+      id: '/discounts/$discountId/codes'
+      path: '/discounts/$discountId/codes'
+      fullPath: '/discounts/$discountId/codes'
+      preLoaderRoute: typeof DiscountsDiscountIdCodesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory/collections/$collectionId/add-products': {
       id: '/inventory/collections/$collectionId/add-products'
       path: '/inventory/collections/$collectionId/add-products'
@@ -218,15 +457,39 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SettingsRouteRouteChildren {
+  SettingsOrdersIndexRoute: typeof SettingsOrdersIndexRoute
+  SettingsTaxIndexRoute: typeof SettingsTaxIndexRoute
+}
+
+const SettingsRouteRouteChildren: SettingsRouteRouteChildren = {
+  SettingsOrdersIndexRoute: SettingsOrdersIndexRoute,
+  SettingsTaxIndexRoute: SettingsTaxIndexRoute,
+}
+
+const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
+  SettingsRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
+  CampaignsCreateRoute: CampaignsCreateRoute,
+  CustomersCreateRoute: CustomersCreateRoute,
+  DiscountsCreateRoute: DiscountsCreateRoute,
   OrdersCreateRoute: OrdersCreateRoute,
+  CampaignsIndexRoute: CampaignsIndexRoute,
+  CartsIndexRoute: CartsIndexRoute,
+  CustomersIndexRoute: CustomersIndexRoute,
+  DiscountsIndexRoute: DiscountsIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
+  DiscountsDiscountIdCodesRoute: DiscountsDiscountIdCodesRoute,
+  DiscountsDiscountIdEditRoute: DiscountsDiscountIdEditRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
   InventoryCollectionsIndexRoute: InventoryCollectionsIndexRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,
-  SettingsOrdersIndexRoute: SettingsOrdersIndexRoute,
   InventoryCollectionsCollectionIdAddProductsRoute:
     InventoryCollectionsCollectionIdAddProductsRoute,
 }

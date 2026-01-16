@@ -1,30 +1,18 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, Eye, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import type { Order } from "@/types/orderTypes"
+import { EditableOrderStatus } from "~/components/orders/EditableOrderStatus"
+import { toast } from "sonner"
 
-// Status badge styling
-const statusStyles = {
-  pending: "bg-yellow-100 text-yellow-800",
-  processing: "bg-blue-100 text-blue-800",
-  shipped: "bg-purple-100 text-purple-800",
-  delivered: "bg-green-100 text-green-800",
-  cancelled: "bg-gray-100 text-gray-800",
-  refunded: "bg-red-100 text-red-800",
+type ColumnActions = {
+  onViewDetails: (order: Order) => void
 }
 
-export const columns: ColumnDef<Order>[] = [
+export const createColumns = (actions: ColumnActions): ColumnDef<Order>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -80,13 +68,12 @@ export const columns: ColumnDef<Order>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.getValue("status") as keyof typeof statusStyles
+      const order = row.original
       return (
-        <div
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[status]}`}
-        >
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </div>
+        <EditableOrderStatus
+          orderId={order.id}
+          currentStatus={order.status as any}
+        />
       )
     },
   },
@@ -148,52 +135,38 @@ export const columns: ColumnDef<Order>[] = [
   },
   {
     id: "actions",
+    header: "Actions",
     enableHiding: false,
     cell: ({ row }) => {
       const order = row.original
 
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order.id)}
-            >
-              Copy order ID
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(order.orderNumber)}
-            >
-              Copy order number
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            {order.status === "pending" && (
-              <DropdownMenuItem>Mark as processing</DropdownMenuItem>
-            )}
-            {order.status === "processing" && (
-              <DropdownMenuItem>Mark as shipped</DropdownMenuItem>
-            )}
-            {order.status === "shipped" && (
-              <DropdownMenuItem>Mark as delivered</DropdownMenuItem>
-            )}
-            {(order.status === "pending" || order.status === "processing") && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  Cancel order
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+        
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => actions.onViewDetails(order)}
+            title="View details"
+          >
+            <Eye className="h-4 w-4" />
+            <span className="sr-only">View details</span>
+          </Button>
+            <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => {
+              navigator.clipboard.writeText(order.orderNumber)
+              toast.success("Order number copied to clipboard")
+            }}
+            title="Copy order number"
+          >
+            <Copy className="h-4 w-4" />
+            <span className="sr-only">Copy order number</span>
+          </Button>
+        </div>
       )
     },
   },

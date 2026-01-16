@@ -49,7 +49,7 @@ export const collectionsService = {
   /**
    * Get collection with its products
    */
-  findByIdWithProducts: async (id: string) => {
+  findByIdWithProducts: async (id: string, activeOnly: boolean = false) => {
     const collection = await collectionsRepo.getCollectionById(id);
 
     if (!collection) {
@@ -61,7 +61,12 @@ export const collectionsService = {
     // Get full product details
     const productIds = collectionProducts.map((cp) => cp.productId);
     const products = await productsRepo.getAllProducts();
-    const collectionProductDetails = products.filter((p) => productIds.includes(p.id));
+    let collectionProductDetails = products.filter((p) => productIds.includes(p.id));
+
+    // Filter by active status if requested
+    if (activeOnly) {
+      collectionProductDetails = collectionProductDetails.filter((p) => p.isActive);
+    }
 
     return {
       ...collection,
