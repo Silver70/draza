@@ -26,6 +26,7 @@ import { Route as SettingsOrdersIndexRouteImport } from './routes/settings/order
 import { Route as InventoryProductsIndexRouteImport } from './routes/inventory/products/index'
 import { Route as InventoryCollectionsIndexRouteImport } from './routes/inventory/collections/index'
 import { Route as InventoryCategoriesIndexRouteImport } from './routes/inventory/categories/index'
+import { Route as CampaignsAnalyticsIndexRouteImport } from './routes/campaigns/analytics/index'
 import { Route as InventoryProductsCreateRouteImport } from './routes/inventory/products/create'
 import { Route as DiscountsDiscountIdEditRouteImport } from './routes/discounts/$discountId/edit'
 import { Route as DiscountsDiscountIdCodesRouteImport } from './routes/discounts/$discountId/codes'
@@ -118,6 +119,11 @@ const InventoryCategoriesIndexRoute =
     path: '/inventory/categories/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CampaignsAnalyticsIndexRoute = CampaignsAnalyticsIndexRouteImport.update({
+  id: '/campaigns/analytics/',
+  path: '/campaigns/analytics/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InventoryProductsCreateRoute = InventoryProductsCreateRouteImport.update({
   id: '/inventory/products/create',
   path: '/inventory/products/create',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
+  '/campaigns/analytics': typeof CampaignsAnalyticsIndexRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
+  '/campaigns/analytics': typeof CampaignsAnalyticsIndexRoute
   '/inventory/categories': typeof InventoryCategoriesIndexRoute
   '/inventory/collections': typeof InventoryCollectionsIndexRoute
   '/inventory/products': typeof InventoryProductsIndexRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/discounts/$discountId/codes': typeof DiscountsDiscountIdCodesRoute
   '/discounts/$discountId/edit': typeof DiscountsDiscountIdEditRoute
   '/inventory/products/create': typeof InventoryProductsCreateRoute
+  '/campaigns/analytics/': typeof CampaignsAnalyticsIndexRoute
   '/inventory/categories/': typeof InventoryCategoriesIndexRoute
   '/inventory/collections/': typeof InventoryCollectionsIndexRoute
   '/inventory/products/': typeof InventoryProductsIndexRoute
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
+    | '/campaigns/analytics'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
+    | '/campaigns/analytics'
     | '/inventory/categories'
     | '/inventory/collections'
     | '/inventory/products'
@@ -275,6 +286,7 @@ export interface FileRouteTypes {
     | '/discounts/$discountId/codes'
     | '/discounts/$discountId/edit'
     | '/inventory/products/create'
+    | '/campaigns/analytics/'
     | '/inventory/categories/'
     | '/inventory/collections/'
     | '/inventory/products/'
@@ -299,6 +311,7 @@ export interface RootRouteChildren {
   DiscountsDiscountIdCodesRoute: typeof DiscountsDiscountIdCodesRoute
   DiscountsDiscountIdEditRoute: typeof DiscountsDiscountIdEditRoute
   InventoryProductsCreateRoute: typeof InventoryProductsCreateRoute
+  CampaignsAnalyticsIndexRoute: typeof CampaignsAnalyticsIndexRoute
   InventoryCategoriesIndexRoute: typeof InventoryCategoriesIndexRoute
   InventoryCollectionsIndexRoute: typeof InventoryCollectionsIndexRoute
   InventoryProductsIndexRoute: typeof InventoryProductsIndexRoute
@@ -426,6 +439,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InventoryCategoriesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/campaigns/analytics/': {
+      id: '/campaigns/analytics/'
+      path: '/campaigns/analytics'
+      fullPath: '/campaigns/analytics'
+      preLoaderRoute: typeof CampaignsAnalyticsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/inventory/products/create': {
       id: '/inventory/products/create'
       path: '/inventory/products/create'
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscountsDiscountIdCodesRoute: DiscountsDiscountIdCodesRoute,
   DiscountsDiscountIdEditRoute: DiscountsDiscountIdEditRoute,
   InventoryProductsCreateRoute: InventoryProductsCreateRoute,
+  CampaignsAnalyticsIndexRoute: CampaignsAnalyticsIndexRoute,
   InventoryCategoriesIndexRoute: InventoryCategoriesIndexRoute,
   InventoryCollectionsIndexRoute: InventoryCollectionsIndexRoute,
   InventoryProductsIndexRoute: InventoryProductsIndexRoute,

@@ -13,9 +13,7 @@ import {
   TicketPercentIcon,
   MegaphoneIcon,
   ShoppingCart,
-  Code2,
-  BookOpen,
-  Terminal
+  ChartNoAxesColumnIncreasing
 } from "lucide-react"
 
 import { NavFlat } from "~/components/nav-flat"
@@ -76,6 +74,11 @@ const storeNavigation = [
     title: "Campaigns",
     url: "/campaigns",
     icon: MegaphoneIcon,
+  },
+   {
+    title: "Analytics",
+    url: "/campaigns/analytics",
+    icon: ChartNoAxesColumnIncreasing,
   },
   {
     title: "Settings",
