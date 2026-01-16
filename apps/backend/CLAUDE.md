@@ -134,8 +134,9 @@ S3 Bucket: draza-product-images
 ### CORS Configuration
 
 Frontend allowed origins:
-- `http://localhost:3001`
-- `http://localhost:5173`
+- `http://localhost:3001` (old frontend)
+- `http://localhost:3002` (current frontend)
+- `http://localhost:5173` (vite dev server)
 
 Configured in `src/index.ts` with credentials enabled.
 

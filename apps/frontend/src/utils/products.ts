@@ -643,7 +643,29 @@ export const uploadProductImages = async (
     })
   )
 
-  return await Promise.all(uploadPromises)
+  const results = await Promise.allSettled(uploadPromises)
+
+  const successful: ProductImage[] = []
+  const failed: string[] = []
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      successful.push(result.value)
+    } else {
+      failed.push(`Image ${index + 1}: ${result.reason?.message || 'Unknown error'}`)
+    }
+  })
+
+  if (failed.length > 0) {
+    console.error('Some images failed to upload:', failed)
+    if (successful.length === 0) {
+      throw new Error(`All ${files.length} images failed to upload: ${failed.join(', ')}`)
+    } else {
+      throw new Error(`${failed.length} of ${files.length} images failed to upload: ${failed.join(', ')}`)
+    }
+  }
+
+  return successful
 }
 
 /**
@@ -700,7 +722,29 @@ export const uploadVariantImages = async (
     })
   })
 
-  return await Promise.all(uploadPromises)
+  const results = await Promise.allSettled(uploadPromises)
+
+  const successful: ProductVariantImage[] = []
+  const failed: string[] = []
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      successful.push(result.value)
+    } else {
+      failed.push(`Variant image ${index + 1}: ${result.reason?.message || 'Unknown error'}`)
+    }
+  })
+
+  if (failed.length > 0) {
+    console.error('Some variant images failed to upload:', failed)
+    if (successful.length === 0) {
+      throw new Error(`All ${uploadPromises.length} variant images failed to upload: ${failed.join(', ')}`)
+    } else {
+      throw new Error(`${failed.length} of ${uploadPromises.length} variant images failed to upload: ${failed.join(', ')}`)
+    }
+  }
+
+  return successful
 }
 
 /**
