@@ -1,9 +1,9 @@
-import { storageService } from '../../../shared/supabase';
+import { storageService } from '../../../shared/storage';
 import { productImagesRepo, productVariantImagesRepo } from '../repo';
 import { productsRepo, productVariantsRepo } from '../repo/products.repo';
 import type { NewProductImage, NewProductVariantImage } from '../products.types';
 
-const BUCKET_NAME = 'product-images';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'draza-product-images';
 
 export type UploadProductImageData = {
   productId: string;

@@ -1,4 +1,4 @@
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, sum, avg, count } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import { ordersTable, orderItemsTable } from "../../../shared/db/order";
 import { customersTable } from "../../../shared/db/customer";
@@ -14,10 +14,10 @@ export const analyticsRepo = {
   async getTotalRevenue() {
     const result = await db
       .select({
-        totalRevenue: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
-        totalSubtotal: sql<string>`COALESCE(SUM(CAST(${ordersTable.subtotal} AS DECIMAL)), 0)`,
-        totalTax: sql<string>`COALESCE(SUM(CAST(${ordersTable.tax} AS DECIMAL)), 0)`,
-        totalShipping: sql<string>`COALESCE(SUM(CAST(${ordersTable.shippingCost} AS DECIMAL)), 0)`,
+        totalRevenue: sql<string>`COALESCE(${sum(ordersTable.total)}, 0)`,
+        totalSubtotal: sql<string>`COALESCE(${sum(ordersTable.subtotal)}, 0)`,
+        totalTax: sql<string>`COALESCE(${sum(ordersTable.tax)}, 0)`,
+        totalShipping: sql<string>`COALESCE(${sum(ordersTable.shippingCost)}, 0)`,
       })
       .from(ordersTable);
 
@@ -31,7 +31,7 @@ export const analyticsRepo = {
     const result = await db
       .select({
         status: ordersTable.status,
-        revenue: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
+        revenue: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)`,
       })
       .from(ordersTable)
       .groupBy(ordersTable.status);
@@ -153,7 +153,7 @@ export const analyticsRepo = {
     const result = await db
       .select({
         date: sql<string>`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)})`,
-        revenue: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
+        revenue: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)`,
         orderCount: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
@@ -238,12 +238,12 @@ export const analyticsRepo = {
         lastName: customersTable.last_name,
         email: customersTable.email,
         totalOrders: sql<number>`COUNT(${ordersTable.id})::int`,
-        totalSpent: sql<string>`COALESCE(SUM(CAST(${ordersTable.total} AS DECIMAL)), 0)`,
+        totalSpent: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)`,
       })
       .from(customersTable)
       .innerJoin(ordersTable, eq(customersTable.id, ordersTable.customerId))
       .groupBy(customersTable.id, customersTable.first_name, customersTable.last_name, customersTable.email)
-      .orderBy(desc(sql`SUM(CAST(${ordersTable.total} AS DECIMAL))`))
+      .orderBy(desc(sql`SUM(${ordersTable.total})`))
       .limit(limit);
 
     return result;
@@ -261,7 +261,7 @@ export const analyticsRepo = {
         db
           .select({
             customerId: ordersTable.customerId,
-            customer_total: sql<number>`SUM(CAST(${ordersTable.total} AS DECIMAL))`,
+            customer_total: sql<number>`SUM(${ordersTable.total})`,
           })
           .from(ordersTable)
           .groupBy(ordersTable.customerId)
@@ -305,7 +305,7 @@ export const analyticsRepo = {
     const variantCount = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
-        averagePrice: sql<string>`COALESCE(AVG(CAST(${productVariantsTable.price} AS DECIMAL)), 0)`,
+        averagePrice: sql<string>`COALESCE(AVG(${productVariantsTable.price}), 0)`,
       })
       .from(productVariantsTable);
 
@@ -323,7 +323,7 @@ export const analyticsRepo = {
   async getTopSellingProducts(limit: number = 10, sortBy: "quantity" | "revenue" = "revenue") {
     const orderByClause = sortBy === "quantity"
       ? desc(sql`SUM(${orderItemsTable.quantity})`)
-      : desc(sql`SUM(CAST(${orderItemsTable.totalPrice} AS DECIMAL))`);
+      : desc(sql`SUM(${orderItemsTable.totalPrice})`);
 
     const result = await db
       .select({
@@ -332,7 +332,7 @@ export const analyticsRepo = {
         variantId: productVariantsTable.id,
         sku: productVariantsTable.sku,
         quantitySold: sql<number>`COALESCE(SUM(${orderItemsTable.quantity}), 0)::int`,
-        revenue: sql<string>`COALESCE(SUM(CAST(${orderItemsTable.totalPrice} AS DECIMAL)), 0)`,
+        revenue: sql<string>`COALESCE(SUM(${orderItemsTable.totalPrice}), 0)`,
       })
       .from(orderItemsTable)
       .innerJoin(productVariantsTable, eq(orderItemsTable.productVariantId, productVariantsTable.id))
@@ -399,7 +399,7 @@ export const analyticsRepo = {
   async getTotalInventoryValue() {
     const result = await db
       .select({
-        totalValue: sql<string>`COALESCE(SUM(CAST(${productVariantsTable.price} AS DECIMAL) * ${productVariantsTable.quantityInStock}), 0)`,
+        totalValue: sql<string>`COALESCE(SUM(${productVariantsTable.price} * ${productVariantsTable.quantityInStock}), 0)`,
       })
       .from(productVariantsTable);
 
@@ -415,13 +415,13 @@ export const analyticsRepo = {
     const result = await db
       .select({
         jurisdictionName: ordersTable.taxJurisdictionName,
-        taxCollected: sql<string>`COALESCE(SUM(CAST(${ordersTable.tax} AS DECIMAL)), 0)`,
+        taxCollected: sql<string>`COALESCE(SUM(${ordersTable.tax}), 0)`,
         orderCount: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
       .where(sql`${ordersTable.taxJurisdictionName} IS NOT NULL`)
       .groupBy(ordersTable.taxJurisdictionName)
-      .orderBy(desc(sql`SUM(CAST(${ordersTable.tax} AS DECIMAL))`));
+      .orderBy(desc(sql`SUM(${ordersTable.tax})`));
 
     return result;
   },
@@ -434,7 +434,7 @@ export const analyticsRepo = {
       .select({
         methodName: ordersTable.shippingMethodName,
         orderCount: sql<number>`COUNT(*)::int`,
-        revenue: sql<string>`COALESCE(SUM(CAST(${ordersTable.shippingCost} AS DECIMAL)), 0)`,
+        revenue: sql<string>`COALESCE(SUM(${ordersTable.shippingCost}), 0)`,
       })
       .from(ordersTable)
       .where(sql`${ordersTable.shippingMethodName} IS NOT NULL`)
@@ -464,7 +464,7 @@ export const analyticsRepo = {
   async getAverageShippingCost() {
     const result = await db
       .select({
-        average: sql<string>`COALESCE(AVG(CAST(${ordersTable.shippingCost} AS DECIMAL)), 0)`,
+        average: sql<string>`COALESCE(AVG(${ordersTable.shippingCost}), 0)`,
       })
       .from(ordersTable);
 

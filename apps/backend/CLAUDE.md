@@ -31,7 +31,7 @@ bun run db:push            # Push schema changes directly to database (bypasses 
 - **Database**: PostgreSQL (Neon serverless)
 - **ORM**: Drizzle ORM
 - **Validation**: Zod
-- **File Storage**: Supabase Storage (for product images)
+- **File Storage**: AWS S3 (for product images)
 
 ### Project Structure
 
@@ -49,9 +49,10 @@ src/
     │   ├── index.ts      # Drizzle instance
     │   ├── schema.ts     # Re-exports all schemas
     │   └── *.ts          # Individual schema files
-    └── supabase/         # Supabase client and storage service
-        ├── client.ts     # Supabase client instance
-        └── storage.service.ts  # Image upload/delete operations
+    └── storage/          # AWS S3 storage service
+        ├── s3-client.ts  # S3 client instance
+        ├── storage.service.ts  # Image upload/delete operations
+        └── index.ts      # Re-exports
 ```
 
 ### Module Organization Pattern
@@ -94,13 +95,13 @@ All schemas are re-exported through `schema.ts` for use with Drizzle.
 
 **Orders Module**: Handles order creation with automatic tax calculation, shipping options, discount application, and campaign attribution via session IDs.
 
-**Products Module**: Product catalog with variant generation, attribute management, and inventory tracking. Includes category and collection organization. Integrated image management with Supabase Storage for product and variant images.
+**Products Module**: Product catalog with variant generation, attribute management, and inventory tracking. Includes category and collection organization. Integrated image management with AWS S3 for product and variant images.
 
 **Discounts Module**: Flexible discount system supporting percentage/fixed discounts, minimum requirements, usage limits, and product-specific discounts.
 
 ### Image Management System
 
-Product images are stored using Supabase Storage with metadata in PostgreSQL:
+Product images are stored using AWS S3 with metadata in PostgreSQL:
 
 **Schema**:
 - `product_images` - Product-level images (general/marketing photos)
@@ -109,7 +110,7 @@ Product images are stored using Supabase Storage with metadata in PostgreSQL:
 
 **Storage Structure**:
 ```
-Supabase Bucket: product-images
+S3 Bucket: draza-product-images
 ├── products/{productId}/
 │   └── {filename}-{timestamp}-{random}.jpg
 └── variants/{variantId}/
@@ -117,8 +118,8 @@ Supabase Bucket: product-images
 ```
 
 **Image Service** (`images.service.ts`):
-- `uploadProductImage()` - Upload to Supabase + save URL to DB
-- `deleteProductImage()` - Delete from DB + remove from Supabase
+- `uploadProductImage()` - Upload to S3 + save URL to DB
+- `deleteProductImage()` - Delete from DB + remove from S3
 - `reorderProductImages()` - Update display order
 - Automatic cascade deletion when product/variant is deleted
 
@@ -146,16 +147,18 @@ Required environment variables in `.env`:
 # Database
 DATABASE_URL=postgresql://...  # Neon serverless PostgreSQL connection string
 
-# Supabase Storage (for product images)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
+# AWS S3 Storage (for product images)
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=draza-product-images
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
 
-**Setting up Supabase Storage**:
-1. Create a Supabase project at https://supabase.com
-2. Go to Storage → Create a new bucket named `product-images`
-3. Set bucket to **public** (or configure RLS policies as needed)
-4. Copy your project URL and anon key to `.env`
+**Setting up AWS S3 Storage**:
+1. Create an S3 bucket in AWS Console
+2. Configure bucket for public read access (or use signed URLs)
+3. Create IAM user with S3 permissions
+4. Add credentials to `.env`
 
 ## Important Notes
 
