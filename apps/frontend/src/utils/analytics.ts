@@ -14,6 +14,9 @@ import {
   CampaignLeaderboardResponse,
   TrackVisitRequest,
   TrackVisitResponse,
+  SalesTrendsResponse,
+  TopCustomersResponse,
+  TopSellingProductsResponse,
 } from '../types/analyticsTypes'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -491,3 +494,124 @@ export const deleteCampaign = async (id: string) => {
     throw error
   }
 }
+
+// ==================== SALES TRENDS ====================
+
+/**
+ * Fetch sales trends over time
+ * @param period - 'day' | 'week' | 'month'
+ * @param limit - Number of data points to return
+ */
+export const fetchSalesTrends = createServerFn({ method: 'GET' })
+  .inputValidator((d?: { period?: 'day' | 'week' | 'month'; limit?: number }) => d)
+  .handler(async ({ data }) => {
+    console.info('Fetching sales trends...', data)
+    try {
+      const params = new URLSearchParams()
+      if (data?.period) params.append('period', data.period)
+      if (data?.limit) params.append('limit', data.limit.toString())
+
+      const queryString = params.toString()
+      const url = `${API_BASE_URL}/analytics/sales/trends${queryString ? `?${queryString}` : ''}`
+
+      const response = await axios.get<SalesTrendsResponse>(url)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch sales trends')
+    } catch (error) {
+      console.error('Error fetching sales trends:', error)
+      throw error
+    }
+  })
+
+export const salesTrendsQueryOptions = (filters?: {
+  period?: 'day' | 'week' | 'month'
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: ['analytics', 'sales', 'trends', filters],
+    queryFn: () => fetchSalesTrends({ data: filters }),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
+
+// ==================== TOP CUSTOMERS ====================
+
+/**
+ * Fetch top customers by spending
+ * @param limit - Number of customers to return (default: 10)
+ */
+export const fetchTopCustomers = createServerFn({ method: 'GET' })
+  .inputValidator((d?: { limit?: number }) => d)
+  .handler(async ({ data }) => {
+    console.info('Fetching top customers...', data)
+    try {
+      const params = new URLSearchParams()
+      if (data?.limit) params.append('limit', data.limit.toString())
+
+      const queryString = params.toString()
+      const url = `${API_BASE_URL}/analytics/customers/top${queryString ? `?${queryString}` : ''}`
+
+      const response = await axios.get<TopCustomersResponse>(url)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch top customers')
+    } catch (error) {
+      console.error('Error fetching top customers:', error)
+      throw error
+    }
+  })
+
+export const topCustomersQueryOptions = (limit?: number) =>
+  queryOptions({
+    queryKey: ['analytics', 'customers', 'top', limit],
+    queryFn: () => fetchTopCustomers({ data: { limit } }),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })
+
+// ==================== TOP SELLING PRODUCTS ====================
+
+/**
+ * Fetch top selling products
+ * @param limit - Number of products to return (default: 10)
+ * @param sortBy - Sort by 'quantity' or 'revenue' (default: 'revenue')
+ */
+export const fetchTopSellingProducts = createServerFn({ method: 'GET' })
+  .inputValidator((d?: { limit?: number; sortBy?: 'quantity' | 'revenue' }) => d)
+  .handler(async ({ data }) => {
+    console.info('Fetching top selling products...', data)
+    try {
+      const params = new URLSearchParams()
+      if (data?.limit) params.append('limit', data.limit.toString())
+      if (data?.sortBy) params.append('sortBy', data.sortBy)
+
+      const queryString = params.toString()
+      const url = `${API_BASE_URL}/analytics/products/top-selling${queryString ? `?${queryString}` : ''}`
+
+      const response = await axios.get<TopSellingProductsResponse>(url)
+
+      if (response.data.success) {
+        return response.data.data
+      }
+
+      throw new Error('Failed to fetch top selling products')
+    } catch (error) {
+      console.error('Error fetching top selling products:', error)
+      throw error
+    }
+  })
+
+export const topSellingProductsQueryOptions = (filters?: {
+  limit?: number
+  sortBy?: 'quantity' | 'revenue'
+}) =>
+  queryOptions({
+    queryKey: ['analytics', 'products', 'top-selling', filters],
+    queryFn: () => fetchTopSellingProducts({ data: filters }),
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  })

@@ -276,3 +276,48 @@ export type TrackVisitResponse = {
     campaignId: string
   }
 }
+
+// ==================== SALES TRENDS TYPES ====================
+
+export type SalesTrend = {
+  period: string
+  revenue: string
+  orders: number
+  averageOrderValue: string
+}
+
+export type SalesTrendsResponse = {
+  success: boolean
+  data: SalesTrend[]
+}
+
+// ==================== CUSTOMER ANALYTICS TYPES ====================
+
+export type TopCustomer = {
+  id: string
+  name: string
+  email: string
+  totalOrders: number
+  totalSpent: string
+}
+
+export type TopCustomersResponse = {
+  success: boolean
+  data: TopCustomer[]
+}
+
+// ==================== PRODUCT ANALYTICS TYPES ====================
+
+export type TopSellingProduct = {
+  productId: string
+  productName: string
+  variantId: string
+  sku: string
+  quantitySold: number
+  revenue: string
+}
+
+export type TopSellingProductsResponse = {
+  success: boolean
+  data: TopSellingProduct[]
+}
