@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   dashboardOverviewQueryOptions,
@@ -10,9 +10,17 @@ import { SalesTrendChart } from '~/components/dashboard/SalesTrendChart'
 import { CustomerGrowthChart } from '~/components/dashboard/CustomerGrowthChart'
 import { RecentOrdersTable } from '~/components/dashboard/RecentOrdersTable'
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
+import { authClient } from '~/lib/auth.client'
 
 export const Route = createFileRoute('/')({
   component: Home,
+  beforeLoad: async () => {
+    // Check if user is authenticated
+    const session = await authClient.getSession()
+    if (!session?.data) {
+      throw redirect({ to: '/login' })
+    }
+  },
   loader: ({ context }) => {
     // Prefetch all dashboard data
     context.queryClient.ensureQueryData(dashboardOverviewQueryOptions())

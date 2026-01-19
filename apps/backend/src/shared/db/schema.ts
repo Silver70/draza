@@ -1,3 +1,7 @@
+// Better Auth tables
+export * from '../../../auth-schema';
+
+// Application tables
 export * from './catalogue';
 export * from './user';
 export * from './customer';

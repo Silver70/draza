@@ -29,6 +29,7 @@ export const discountScopeEnum = pgEnum("discount_scope", [
 // Core discounts table
 export const discountsTable = pgTable("discounts", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   name: text("name").notNull(),
   description: text("description"),
   discountType: discountTypeEnum("discount_type").notNull(),
@@ -48,6 +49,7 @@ export const discountsTable = pgTable("discounts", {
 // Discount codes table (for code-based discounts)
 export const discountCodesTable = pgTable("discount_codes", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   discountId: uuid("discount_id")
     .notNull()
     .references(() => discountsTable.id, { onDelete: "cascade" }),

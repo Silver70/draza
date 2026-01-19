@@ -23,15 +23,21 @@ export interface ShippingOption {
  * Calculate available shipping options and their costs for an order
  */
 export async function calculateShippingOptions(
-  input: ShippingCalculationInput
+  input: ShippingCalculationInput,
+  organizationId: string
 ): Promise<ShippingOption[]> {
   const { subtotal, totalWeight = 0 } = input;
 
-  // Get all active shipping methods
+  // Get all active shipping methods for this organization
   const shippingMethods = await db
     .select()
     .from(shippingMethodsTable)
-    .where(eq(shippingMethodsTable.isActive, true))
+    .where(
+      and(
+        eq(shippingMethodsTable.isActive, true),
+        eq(shippingMethodsTable.organizationId, organizationId)
+      )
+    )
     .orderBy(shippingMethodsTable.displayOrder);
 
   const options: ShippingOption[] = [];
@@ -53,7 +59,7 @@ export async function calculateShippingOptions(
       cost: isFree ? 0 : cost,
       estimatedDaysMin: method.estimatedDaysMin,
       estimatedDaysMax: method.estimatedDaysMax,
-      isFree,
+      isFree: !!isFree,
     });
   }
 
@@ -165,11 +171,16 @@ async function calculatePriceTierShipping(
 /**
  * Get details for a specific shipping method
  */
-export async function getShippingMethod(methodId: string) {
+export async function getShippingMethod(methodId: string, organizationId: string) {
   const method = await db
     .select()
     .from(shippingMethodsTable)
-    .where(eq(shippingMethodsTable.id, methodId))
+    .where(
+      and(
+        eq(shippingMethodsTable.id, methodId),
+        eq(shippingMethodsTable.organizationId, organizationId)
+      )
+    )
     .limit(1);
 
   return method.length > 0 ? method[0] : null;
@@ -178,11 +189,16 @@ export async function getShippingMethod(methodId: string) {
 /**
  * Get all active shipping methods
  */
-export async function getAllActiveShippingMethods() {
+export async function getAllActiveShippingMethods(organizationId: string) {
   return await db
     .select()
     .from(shippingMethodsTable)
-    .where(eq(shippingMethodsTable.isActive, true))
+    .where(
+      and(
+        eq(shippingMethodsTable.isActive, true),
+        eq(shippingMethodsTable.organizationId, organizationId)
+      )
+    )
     .orderBy(shippingMethodsTable.displayOrder);
 }
 

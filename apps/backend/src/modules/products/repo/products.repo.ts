@@ -4,16 +4,16 @@ import { productsTable, productVariantsTable, categoriesTable, productImagesTabl
 import { NewProduct, UpdateProduct, NewProductVariant, UpdateProductVariant } from "../products.types";
 
 export const productsRepo = {
-  async createProduct(data: NewProduct) {
+  async createProduct(data: Omit<NewProduct, "organizationId">, organizationId: string) {
     const [newProduct] = await db
       .insert(productsTable)
-      .values(data)
+      .values({ ...data, organizationId })
       .returning();
     return newProduct;
   },
 
-  async getProductById(id: string) {
-    // Fetch product with category
+  async getProductById(id: string, organizationId: string) {
+    // Fetch product with category (filtered by organization)
     const productResult = await db
       .select({
         id: productsTable.id,
@@ -32,7 +32,7 @@ export const productsRepo = {
       })
       .from(productsTable)
       .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
-      .where(eq(productsTable.id, id))
+      .where(sql`${productsTable.id} = ${id} AND ${productsTable.organizationId} = ${organizationId}`)
       .limit(1);
 
     if (!productResult[0]) {
@@ -52,8 +52,8 @@ export const productsRepo = {
     };
   },
 
-  async getAllProducts() {
-    // Fetch all products with categories
+  async getAllProducts(organizationId: string) {
+    // Fetch all products with categories (filtered by organization)
     const products = await db
       .select({
         id: productsTable.id,
@@ -71,7 +71,8 @@ export const productsRepo = {
         },
       })
       .from(productsTable)
-      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id));
+      .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+      .where(eq(productsTable.organizationId, organizationId));
 
     // Fetch all images for all products in one query
     const allImages = await db
@@ -113,10 +114,10 @@ export const productsRepo = {
 
 // Product Variants Repository
 export const productVariantsRepo = {
-  async createProductVariant(data: NewProductVariant) {
+  async createProductVariant(data: NewProductVariant, organizationId?: string) {
     const [newVariant] = await db
       .insert(productVariantsTable)
-      .values(data)
+      .values(organizationId ? { ...data, organizationId } : data)
       .returning();
     return newVariant;
   },

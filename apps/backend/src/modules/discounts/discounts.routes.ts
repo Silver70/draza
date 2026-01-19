@@ -11,6 +11,7 @@ import {
   validateDiscountCodeSchema,
 } from "./discounts.types";
 import { z } from "zod";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 
 export const discountsRoutes = new Hono();
 
@@ -22,6 +23,7 @@ export const discountsRoutes = new Hono();
  */
 discountsRoutes.get("/", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { scope, isActive, search } = c.req.query();
 
     const filters = {
@@ -31,7 +33,7 @@ discountsRoutes.get("/", async (c) => {
       search: search || undefined,
     };
 
-    const discounts = await discountsService.findAll(filters);
+    const discounts = await discountsService.findAll(organizationId, filters);
     return c.json({ success: true, data: discounts });
   } catch (error) {
     const message =
@@ -46,7 +48,8 @@ discountsRoutes.get("/", async (c) => {
  */
 discountsRoutes.get("/active", async (c) => {
   try {
-    const discounts = await discountsService.findActiveDiscounts();
+    const organizationId = getOrganizationId(c);
+    const discounts = await discountsService.findActiveDiscounts(organizationId);
     return c.json({ success: true, data: discounts });
   } catch (error) {
     const message =
@@ -63,8 +66,9 @@ discountsRoutes.get("/active", async (c) => {
  */
 discountsRoutes.get("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const discount = await discountsService.findById(id);
+    const discount = await discountsService.findById(organizationId, id);
     return c.json({ success: true, data: discount });
   } catch (error) {
     const message =
@@ -79,8 +83,9 @@ discountsRoutes.get("/:id", async (c) => {
  */
 discountsRoutes.get("/:id/details", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const discount = await discountsService.findByIdWithDetails(id);
+    const discount = await discountsService.findByIdWithDetails(organizationId, id);
     return c.json({ success: true, data: discount });
   } catch (error) {
     const message =
@@ -100,9 +105,12 @@ discountsRoutes.post(
   zValidator("json", createDiscountSchema),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const data = c.req.valid("json");
       const discount = await discountsService.create({
         ...data,
+        organizationId,
+        value: data.value.toString(),
         startsAt: data.startsAt ? new Date(data.startsAt) : new Date(),
         endsAt: data.endsAt ? new Date(data.endsAt) : null,
       });
@@ -124,10 +132,12 @@ discountsRoutes.put(
   zValidator("json", updateDiscountSchema),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const id = c.req.param("id");
       const data = c.req.valid("json");
-      const discount = await discountsService.update(id, {
+      const discount = await discountsService.update(organizationId, id, {
         ...data,
+        value: data.value !== undefined ? data.value.toString() : undefined,
         startsAt: data.startsAt ? new Date(data.startsAt) : undefined,
         endsAt:
           data.endsAt !== undefined
@@ -151,8 +161,9 @@ discountsRoutes.put(
  */
 discountsRoutes.delete("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await discountsService.delete(id);
+    await discountsService.delete(organizationId, id);
     return c.json({ success: true, message: "Discount deleted successfully" });
   } catch (error) {
     const message =
@@ -177,9 +188,10 @@ discountsRoutes.post(
   ),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const id = c.req.param("id");
       const { productIds } = c.req.valid("json");
-      const result = await discountsService.addProducts(id, productIds);
+      const result = await discountsService.addProducts(organizationId, id, productIds);
       return c.json({ success: true, data: result }, 201);
     } catch (error) {
       const message =
@@ -229,9 +241,10 @@ discountsRoutes.post(
   ),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const id = c.req.param("id");
       const { collectionIds } = c.req.valid("json");
-      const result = await discountsService.addCollections(id, collectionIds);
+      const result = await discountsService.addCollections(organizationId, id, collectionIds);
       return c.json({ success: true, data: result }, 201);
     } catch (error) {
       const message =
@@ -281,9 +294,10 @@ discountsRoutes.post(
   ),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const id = c.req.param("id");
       const { variantIds } = c.req.valid("json");
-      const result = await discountsService.addVariants(id, variantIds);
+      const result = await discountsService.addVariants(organizationId, id, variantIds);
       return c.json({ success: true, data: result }, 201);
     } catch (error) {
       const message =
@@ -325,8 +339,9 @@ discountsRoutes.delete("/:id/variants/:variantId", async (c) => {
  */
 discountsRoutes.get("/:id/codes", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const codes = await discountCodesService.findByDiscountId(id);
+    const codes = await discountCodesService.findByDiscountId(organizationId, id);
     return c.json({ success: true, data: codes });
   } catch (error) {
     const message =
@@ -344,11 +359,16 @@ discountsRoutes.post(
   zValidator("json", createDiscountCodeSchema.omit({ discountId: true })),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const discountId = c.req.param("id");
       const data = c.req.valid("json");
-      const code = await discountCodesService.create({
+      const code = await discountCodesService.create(organizationId, {
         ...data,
+        organizationId,
         discountId,
+        minimumOrderValue: data.minimumOrderValue !== null && data.minimumOrderValue !== undefined
+          ? data.minimumOrderValue.toString()
+          : null,
       });
       return c.json({ success: true, data: code }, 201);
     } catch (error) {
@@ -368,9 +388,15 @@ discountsRoutes.put(
   zValidator("json", updateDiscountCodeSchema),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const codeId = c.req.param("codeId");
       const data = c.req.valid("json");
-      const code = await discountCodesService.update(codeId, data);
+      const code = await discountCodesService.update(organizationId, codeId, {
+        ...data,
+        minimumOrderValue: data.minimumOrderValue !== null && data.minimumOrderValue !== undefined
+          ? data.minimumOrderValue.toString()
+          : undefined,
+      });
       return c.json({ success: true, data: code });
     } catch (error) {
       const message =
@@ -386,8 +412,9 @@ discountsRoutes.put(
  */
 discountsRoutes.delete("/codes/:codeId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const codeId = c.req.param("codeId");
-    await discountCodesService.delete(codeId);
+    await discountCodesService.delete(organizationId, codeId);
     return c.json({
       success: true,
       message: "Discount code deleted successfully",
@@ -410,8 +437,10 @@ discountsRoutes.post(
   zValidator("json", validateDiscountCodeSchema),
   async (c) => {
     try {
+      const organizationId = getOrganizationId(c);
       const { code, orderTotal } = c.req.valid("json");
       const result = await discountCodesService.calculateCodeDiscount(
+        organizationId,
         code,
         orderTotal
       );
@@ -442,8 +471,9 @@ discountsRoutes.post(
  */
 discountsRoutes.get("/products/:productId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const productId = c.req.param("productId");
-    const discounts = await discountsService.getProductDiscounts(productId);
+    const discounts = await discountsService.getProductDiscounts(organizationId, productId);
     return c.json({ success: true, data: discounts });
   } catch (error) {
     const message =
@@ -460,9 +490,10 @@ discountsRoutes.get("/products/:productId", async (c) => {
  */
 discountsRoutes.get("/collections/:collectionId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const collectionId = c.req.param("collectionId");
     const discounts =
-      await discountsService.getCollectionDiscounts(collectionId);
+      await discountsService.getCollectionDiscounts(organizationId, collectionId);
     return c.json({ success: true, data: discounts });
   } catch (error) {
     const message =

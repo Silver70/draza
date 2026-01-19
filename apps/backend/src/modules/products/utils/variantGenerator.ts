@@ -149,7 +149,8 @@ export interface BulkVariantCreationResult {
  */
 export const bulkCreateVariants = async (
   productId: string,
-  variants: GeneratedVariant[]
+  variants: GeneratedVariant[],
+  organizationId?: string
 ): Promise<BulkVariantCreationResult> => {
   const createdVariants: Array<{ id: string; sku: string }> = [];
   const errors: string[] = [];
@@ -160,7 +161,13 @@ export const bulkCreateVariants = async (
       // Insert the variant
       const insertedVariants = await db
         .insert(productVariantsTable)
-        .values({
+        .values(organizationId ? {
+          productId,
+          sku: variant.sku,
+          price: variant.price.toString(),
+          quantityInStock: variant.quantityInStock,
+          organizationId,
+        } : {
           productId,
           sku: variant.sku,
           price: variant.price.toString(),

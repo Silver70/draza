@@ -32,27 +32,36 @@ export const discountsRepo = {
     return newDiscount;
   },
 
-  async getDiscountById(id: string) {
+  async getDiscountById(organizationId: string, id: string) {
     const discount = await db
       .select()
       .from(discountsTable)
-      .where(eq(discountsTable.id, id))
+      .where(
+        and(
+          eq(discountsTable.id, id),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
     return discount[0];
   },
 
-  async getAllDiscounts() {
-    const discounts = await db.select().from(discountsTable);
+  async getAllDiscounts(organizationId: string) {
+    const discounts = await db
+      .select()
+      .from(discountsTable)
+      .where(eq(discountsTable.organizationId, organizationId));
     return discounts;
   },
 
-  async getActiveDiscounts() {
+  async getActiveDiscounts(organizationId: string) {
     const now = new Date();
     const discounts = await db
       .select()
       .from(discountsTable)
       .where(
         and(
+          eq(discountsTable.organizationId, organizationId),
           eq(discountsTable.isActive, true),
           lte(discountsTable.startsAt, now),
           or(isNull(discountsTable.endsAt), gte(discountsTable.endsAt, now))
@@ -61,32 +70,54 @@ export const discountsRepo = {
     return discounts;
   },
 
-  async getDiscountsByScope(scope: "store_wide" | "collection" | "product" | "variant" | "code") {
+  async getDiscountsByScope(organizationId: string, scope: "store_wide" | "collection" | "product" | "variant" | "code") {
     const discounts = await db
       .select()
       .from(discountsTable)
-      .where(eq(discountsTable.scope, scope));
+      .where(
+        and(
+          eq(discountsTable.organizationId, organizationId),
+          eq(discountsTable.scope, scope)
+        )
+      );
     return discounts;
   },
 
-  async updateDiscount(id: string, data: UpdateDiscount) {
+  async updateDiscount(organizationId: string, id: string, data: UpdateDiscount) {
     const [updatedDiscount] = await db
       .update(discountsTable)
       .set(data)
-      .where(eq(discountsTable.id, id))
+      .where(
+        and(
+          eq(discountsTable.id, id),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      )
       .returning();
     return updatedDiscount;
   },
 
-  async deleteDiscount(id: string) {
-    await db.delete(discountsTable).where(eq(discountsTable.id, id));
+  async deleteDiscount(organizationId: string, id: string) {
+    await db
+      .delete(discountsTable)
+      .where(
+        and(
+          eq(discountsTable.id, id),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      );
   },
 
-  async getDiscountWithDetails(id: string) {
+  async getDiscountWithDetails(organizationId: string, id: string) {
     const discount = await db
       .select()
       .from(discountsTable)
-      .where(eq(discountsTable.id, id))
+      .where(
+        and(
+          eq(discountsTable.id, id),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
 
     if (!discount[0]) return null;
@@ -94,7 +125,12 @@ export const discountsRepo = {
     const codes = await db
       .select()
       .from(discountCodesTable)
-      .where(eq(discountCodesTable.discountId, id));
+      .where(
+        and(
+          eq(discountCodesTable.discountId, id),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      );
 
     const discountProducts = await db
       .select({
@@ -167,50 +203,82 @@ export const discountCodesRepo = {
     return newCode;
   },
 
-  async getDiscountCodeById(id: string) {
+  async getDiscountCodeById(organizationId: string, id: string) {
     const code = await db
       .select()
       .from(discountCodesTable)
-      .where(eq(discountCodesTable.id, id))
+      .where(
+        and(
+          eq(discountCodesTable.id, id),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
     return code[0];
   },
 
-  async getDiscountCodeByCode(code: string) {
+  async getDiscountCodeByCode(organizationId: string, code: string) {
     const discountCode = await db
       .select()
       .from(discountCodesTable)
-      .where(eq(discountCodesTable.code, code))
+      .where(
+        and(
+          eq(discountCodesTable.code, code),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
     return discountCode[0];
   },
 
-  async getDiscountCodesByDiscountId(discountId: string) {
+  async getDiscountCodesByDiscountId(organizationId: string, discountId: string) {
     const codes = await db
       .select()
       .from(discountCodesTable)
-      .where(eq(discountCodesTable.discountId, discountId));
+      .where(
+        and(
+          eq(discountCodesTable.discountId, discountId),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      );
     return codes;
   },
 
-  async updateDiscountCode(id: string, data: UpdateDiscountCode) {
+  async updateDiscountCode(organizationId: string, id: string, data: UpdateDiscountCode) {
     const [updatedCode] = await db
       .update(discountCodesTable)
       .set(data)
-      .where(eq(discountCodesTable.id, id))
+      .where(
+        and(
+          eq(discountCodesTable.id, id),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      )
       .returning();
     return updatedCode;
   },
 
-  async deleteDiscountCode(id: string) {
-    await db.delete(discountCodesTable).where(eq(discountCodesTable.id, id));
+  async deleteDiscountCode(organizationId: string, id: string) {
+    await db
+      .delete(discountCodesTable)
+      .where(
+        and(
+          eq(discountCodesTable.id, id),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      );
   },
 
-  async incrementUsageCount(id: string) {
+  async incrementUsageCount(organizationId: string, id: string) {
     const [updatedCode] = await db
       .update(discountCodesTable)
       .set({ usageCount: sql`${discountCodesTable.usageCount} + 1` })
-      .where(eq(discountCodesTable.id, id))
+      .where(
+        and(
+          eq(discountCodesTable.id, id),
+          eq(discountCodesTable.organizationId, organizationId)
+        )
+      )
       .returning();
     return updatedCode;
   },
@@ -252,7 +320,7 @@ export const discountProductsRepo = {
     return products;
   },
 
-  async getDiscountsByProductId(productId: string) {
+  async getDiscountsByProductId(organizationId: string, productId: string) {
     const discounts = await db
       .select({
         discount: discountsTable,
@@ -262,7 +330,12 @@ export const discountProductsRepo = {
         discountsTable,
         eq(discountProductsTable.discountId, discountsTable.id)
       )
-      .where(eq(discountProductsTable.productId, productId));
+      .where(
+        and(
+          eq(discountProductsTable.productId, productId),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      );
     return discounts;
   },
 };
@@ -306,7 +379,7 @@ export const discountCollectionsRepo = {
     return collections;
   },
 
-  async getDiscountsByCollectionId(collectionId: string) {
+  async getDiscountsByCollectionId(organizationId: string, collectionId: string) {
     const discounts = await db
       .select({
         discount: discountsTable,
@@ -316,7 +389,12 @@ export const discountCollectionsRepo = {
         discountsTable,
         eq(discountCollectionsTable.discountId, discountsTable.id)
       )
-      .where(eq(discountCollectionsTable.collectionId, collectionId));
+      .where(
+        and(
+          eq(discountCollectionsTable.collectionId, collectionId),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      );
     return discounts;
   },
 };
@@ -357,7 +435,7 @@ export const discountVariantsRepo = {
     return variants;
   },
 
-  async getDiscountsByVariantId(variantId: string) {
+  async getDiscountsByVariantId(organizationId: string, variantId: string) {
     const discounts = await db
       .select({
         discount: discountsTable,
@@ -367,7 +445,12 @@ export const discountVariantsRepo = {
         discountsTable,
         eq(discountVariantsTable.discountId, discountsTable.id)
       )
-      .where(eq(discountVariantsTable.variantId, variantId));
+      .where(
+        and(
+          eq(discountVariantsTable.variantId, variantId),
+          eq(discountsTable.organizationId, organizationId)
+        )
+      );
     return discounts;
   },
 };

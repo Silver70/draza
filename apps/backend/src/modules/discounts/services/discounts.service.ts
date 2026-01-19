@@ -10,12 +10,12 @@ export const discountsService = {
   /**
    * Get all discounts with optional filtering
    */
-  findAll: async (filters?: {
+  findAll: async (organizationId: string, filters?: {
     scope?: string;
     isActive?: boolean;
     search?: string;
   }) => {
-    const discounts = await discountsRepo.getAllDiscounts();
+    const discounts = await discountsRepo.getAllDiscounts(organizationId);
 
     if (!discounts || discounts.length === 0) {
       return [];
@@ -50,15 +50,15 @@ export const discountsService = {
   /**
    * Get active discounts (within date range)
    */
-  findActiveDiscounts: async () => {
-    return await discountsRepo.getActiveDiscounts();
+  findActiveDiscounts: async (organizationId: string) => {
+    return await discountsRepo.getActiveDiscounts(organizationId);
   },
 
   /**
    * Get a single discount by ID
    */
-  findById: async (id: string) => {
-    const discount = await discountsRepo.getDiscountById(id);
+  findById: async (organizationId: string, id: string) => {
+    const discount = await discountsRepo.getDiscountById(organizationId, id);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -68,8 +68,8 @@ export const discountsService = {
   /**
    * Get discount with all details (codes, products, collections)
    */
-  findByIdWithDetails: async (id: string) => {
-    const discount = await discountsRepo.getDiscountWithDetails(id);
+  findByIdWithDetails: async (organizationId: string, id: string) => {
+    const discount = await discountsRepo.getDiscountWithDetails(organizationId, id);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -108,8 +108,8 @@ export const discountsService = {
   /**
    * Update a discount
    */
-  update: async (id: string, data: UpdateDiscount) => {
-    const existingDiscount = await discountsRepo.getDiscountById(id);
+  update: async (organizationId: string, id: string, data: UpdateDiscount) => {
+    const existingDiscount = await discountsRepo.getDiscountById(organizationId, id);
     if (!existingDiscount) {
       throw new Error("Discount not found");
     }
@@ -132,25 +132,25 @@ export const discountsService = {
       }
     }
 
-    return await discountsRepo.updateDiscount(id, data);
+    return await discountsRepo.updateDiscount(organizationId, id, data);
   },
 
   /**
    * Delete a discount
    */
-  delete: async (id: string) => {
-    const existingDiscount = await discountsRepo.getDiscountById(id);
+  delete: async (organizationId: string, id: string) => {
+    const existingDiscount = await discountsRepo.getDiscountById(organizationId, id);
     if (!existingDiscount) {
       throw new Error("Discount not found");
     }
-    await discountsRepo.deleteDiscount(id);
+    await discountsRepo.deleteDiscount(organizationId, id);
   },
 
   /**
    * Add products to a discount
    */
-  addProducts: async (discountId: string, productIds: string[]) => {
-    const discount = await discountsRepo.getDiscountById(discountId);
+  addProducts: async (organizationId: string, discountId: string, productIds: string[]) => {
+    const discount = await discountsRepo.getDiscountById(organizationId, discountId);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -184,8 +184,8 @@ export const discountsService = {
   /**
    * Add collections to a discount
    */
-  addCollections: async (discountId: string, collectionIds: string[]) => {
-    const discount = await discountsRepo.getDiscountById(discountId);
+  addCollections: async (organizationId: string, discountId: string, collectionIds: string[]) => {
+    const discount = await discountsRepo.getDiscountById(organizationId, discountId);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -221,8 +221,8 @@ export const discountsService = {
   /**
    * Add product variants to a discount
    */
-  addVariants: async (discountId: string, variantIds: string[]) => {
-    const discount = await discountsRepo.getDiscountById(discountId);
+  addVariants: async (organizationId: string, discountId: string, variantIds: string[]) => {
+    const discount = await discountsRepo.getDiscountById(organizationId, discountId);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -258,17 +258,18 @@ export const discountsService = {
   /**
    * Get applicable discounts for a product
    */
-  getProductDiscounts: async (productId: string) => {
+  getProductDiscounts: async (organizationId: string, productId: string) => {
     const now = new Date();
 
     // Get store-wide discounts
-    const storeWideDiscounts = await discountsRepo.getActiveDiscounts();
+    const storeWideDiscounts = await discountsRepo.getActiveDiscounts(organizationId);
     const activeStoreWide = storeWideDiscounts.filter(
       (d) => d.scope === "store_wide"
     );
 
     // Get product-specific discounts
     const productDiscounts = await discountProductsRepo.getDiscountsByProductId(
+      organizationId,
       productId
     );
     const activeProductDiscounts = productDiscounts
@@ -292,18 +293,18 @@ export const discountsService = {
   /**
    * Get applicable discounts for a collection
    */
-  getCollectionDiscounts: async (collectionId: string) => {
+  getCollectionDiscounts: async (organizationId: string, collectionId: string) => {
     const now = new Date();
 
     // Get store-wide discounts
-    const storeWideDiscounts = await discountsRepo.getActiveDiscounts();
+    const storeWideDiscounts = await discountsRepo.getActiveDiscounts(organizationId);
     const activeStoreWide = storeWideDiscounts.filter(
       (d) => d.scope === "store_wide"
     );
 
     // Get collection-specific discounts
     const collectionDiscounts =
-      await discountCollectionsRepo.getDiscountsByCollectionId(collectionId);
+      await discountCollectionsRepo.getDiscountsByCollectionId(organizationId, collectionId);
     const activeCollectionDiscounts = collectionDiscounts
       .filter((cd) => {
         const discount = cd.discount;
@@ -341,8 +342,8 @@ export const discountsService = {
   /**
    * Get the best applicable discount for a product
    */
-  getBestDiscountForProduct: async (productId: string, price: number) => {
-    const discounts = await discountsService.getProductDiscounts(productId);
+  getBestDiscountForProduct: async (organizationId: string, productId: string, price: number) => {
+    const discounts = await discountsService.getProductDiscounts(organizationId, productId);
 
     if (discounts.length === 0) {
       return null;

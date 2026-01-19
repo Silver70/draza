@@ -21,6 +21,7 @@ export const shippingCarrierEnum = pgEnum('shipping_carrier', [
 // Shipping methods (Standard, Express, Overnight, etc.)
 export const shippingMethodsTable = pgTable('shipping_methods', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   name: text('name').notNull(), // e.g., "Standard Shipping", "Express", "Overnight"
   displayName: text('display_name').notNull(), // User-facing name
   description: text('description'),

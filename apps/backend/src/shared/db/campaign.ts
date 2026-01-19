@@ -34,6 +34,7 @@ export const deviceTypeEnum = pgEnum('device_type', [
 
 export const campaignsTable = pgTable('campaigns', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   parentCampaignId: uuid('parent_campaign_id').references((): any => campaignsTable.id, {
     onDelete: 'cascade',
   }),
@@ -60,6 +61,7 @@ export const campaignsTable = pgTable('campaigns', {
 
 export const campaignVisitsTable = pgTable('campaign_visits', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   campaignId: uuid('campaign_id')
     .notNull()
     .references(() => campaignsTable.id, { onDelete: 'cascade' }),
@@ -94,6 +96,7 @@ export const campaignVisitsTable = pgTable('campaign_visits', {
 
 export const campaignConversionsTable = pgTable('campaign_conversions', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   campaignId: uuid('campaign_id')
     .notNull()
     .references(() => campaignsTable.id, { onDelete: 'cascade' }),

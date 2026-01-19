@@ -29,7 +29,7 @@ export const campaignsRepo = {
     startsAt?: Date;
     endsAt?: Date;
     metadata?: any;
-  }) {
+  }, organizationId: string) {
     const result = await db
       .insert(campaignsTable)
       .values({
@@ -45,6 +45,7 @@ export const campaignsRepo = {
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         metadata: data.metadata,
+        organizationId,
       })
       .returning();
 
@@ -54,9 +55,12 @@ export const campaignsRepo = {
   /**
    * Get campaign by ID
    */
-  async getCampaignById(id: string) {
+  async getCampaignById(id: string, organizationId: string) {
     const result = await db.query.campaignsTable.findFirst({
-      where: eq(campaignsTable.id, id),
+      where: and(
+        eq(campaignsTable.id, id),
+        eq(campaignsTable.organizationId, organizationId)
+      ),
     });
 
     return result;
@@ -65,9 +69,12 @@ export const campaignsRepo = {
   /**
    * Get campaign by tracking code
    */
-  async getCampaignByTrackingCode(trackingCode: string) {
+  async getCampaignByTrackingCode(trackingCode: string, organizationId: string) {
     const result = await db.query.campaignsTable.findFirst({
-      where: eq(campaignsTable.trackingCode, trackingCode),
+      where: and(
+        eq(campaignsTable.trackingCode, trackingCode),
+        eq(campaignsTable.organizationId, organizationId)
+      ),
     });
 
     return result;
@@ -81,8 +88,8 @@ export const campaignsRepo = {
     isActive?: boolean;
     parentCampaignId?: string;
     search?: string;
-  }) {
-    const conditions = [];
+  }, organizationId: string) {
+    const conditions = [eq(campaignsTable.organizationId, organizationId)];
 
     if (filters.platform) {
       conditions.push(eq(campaignsTable.platform, filters.platform as any));
@@ -111,7 +118,7 @@ export const campaignsRepo = {
     }
 
     const result = await db.query.campaignsTable.findMany({
-      where: conditions.length > 0 ? and(...conditions) : undefined,
+      where: and(...conditions),
       orderBy: desc(campaignsTable.createdAt),
     });
 
@@ -121,9 +128,12 @@ export const campaignsRepo = {
   /**
    * Get child campaigns
    */
-  async getChildCampaigns(parentCampaignId: string) {
+  async getChildCampaigns(parentCampaignId: string, organizationId: string) {
     const result = await db.query.campaignsTable.findMany({
-      where: eq(campaignsTable.parentCampaignId, parentCampaignId),
+      where: and(
+        eq(campaignsTable.parentCampaignId, parentCampaignId),
+        eq(campaignsTable.organizationId, organizationId)
+      ),
       orderBy: desc(campaignsTable.createdAt),
     });
 
@@ -145,12 +155,18 @@ export const campaignsRepo = {
       endsAt?: Date;
       isActive?: boolean;
       metadata?: any;
-    }
+    },
+    organizationId: string
   ) {
     const result = await db
       .update(campaignsTable)
       .set(data)
-      .where(eq(campaignsTable.id, id))
+      .where(
+        and(
+          eq(campaignsTable.id, id),
+          eq(campaignsTable.organizationId, organizationId)
+        )
+      )
       .returning();
 
     return result[0];
@@ -159,8 +175,13 @@ export const campaignsRepo = {
   /**
    * Delete campaign
    */
-  async deleteCampaign(id: string) {
-    await db.delete(campaignsTable).where(eq(campaignsTable.id, id));
+  async deleteCampaign(id: string, organizationId: string) {
+    await db.delete(campaignsTable).where(
+      and(
+        eq(campaignsTable.id, id),
+        eq(campaignsTable.organizationId, organizationId)
+      )
+    );
   },
 
   // ==================== VISIT TRACKING ====================
@@ -178,7 +199,7 @@ export const campaignsRepo = {
     country?: string;
     city?: string;
     deviceType?: string;
-  }) {
+  }, organizationId: string) {
     const result = await db
       .insert(campaignVisitsTable)
       .values({
@@ -191,6 +212,7 @@ export const campaignsRepo = {
         country: data.country,
         city: data.city,
         deviceType: data.deviceType as any,
+        organizationId,
       })
       .returning();
 
@@ -200,9 +222,10 @@ export const campaignsRepo = {
   /**
    * Find active visit by session ID
    */
-  async findActiveVisitBySessionId(sessionId: string) {
+  async findActiveVisitBySessionId(organizationId: string, sessionId: string) {
     const result = await db.query.campaignVisitsTable.findFirst({
       where: and(
+        eq(campaignVisitsTable.organizationId, organizationId),
         eq(campaignVisitsTable.sessionId, sessionId),
         gte(campaignVisitsTable.expiresAt, new Date())
       ),
@@ -230,7 +253,7 @@ export const campaignsRepo = {
   /**
    * Update visit activity
    */
-  async updateVisitActivity(id: string) {
+  async updateVisitActivity(organizationId: string, id: string) {
     const now = new Date();
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30); // Extend by 30 days
@@ -241,7 +264,12 @@ export const campaignsRepo = {
         lastActivityAt: now,
         expiresAt: expiresAt,
       })
-      .where(eq(campaignVisitsTable.id, id))
+      .where(
+        and(
+          eq(campaignVisitsTable.id, id),
+          eq(campaignVisitsTable.organizationId, organizationId)
+        )
+      )
       .returning();
 
     return result[0];
@@ -272,9 +300,12 @@ export const campaignsRepo = {
   /**
    * Get visits for a campaign
    */
-  async getVisitsForCampaign(campaignId: string) {
+  async getVisitsForCampaign(campaignId: string, organizationId: string) {
     const result = await db.query.campaignVisitsTable.findMany({
-      where: eq(campaignVisitsTable.campaignId, campaignId),
+      where: and(
+        eq(campaignVisitsTable.campaignId, campaignId),
+        eq(campaignVisitsTable.organizationId, organizationId)
+      ),
       orderBy: desc(campaignVisitsTable.visitedAt),
     });
 
@@ -284,10 +315,11 @@ export const campaignsRepo = {
   /**
    * Get active visits for a campaign
    */
-  async getActiveVisitsForCampaign(campaignId: string) {
+  async getActiveVisitsForCampaign(campaignId: string, organizationId: string) {
     const result = await db.query.campaignVisitsTable.findMany({
       where: and(
         eq(campaignVisitsTable.campaignId, campaignId),
+        eq(campaignVisitsTable.organizationId, organizationId),
         gte(campaignVisitsTable.expiresAt, new Date())
       ),
       orderBy: desc(campaignVisitsTable.visitedAt),
@@ -307,10 +339,13 @@ export const campaignsRepo = {
     orderId: string;
     customerId: string;
     revenue: string;
-  }) {
+  }, organizationId: string) {
     const result = await db
       .insert(campaignConversionsTable)
-      .values(data)
+      .values({
+        ...data,
+        organizationId,
+      })
       .returning();
 
     return result[0];
@@ -319,9 +354,12 @@ export const campaignsRepo = {
   /**
    * Get conversions for a campaign
    */
-  async getConversionsForCampaign(campaignId: string) {
+  async getConversionsForCampaign(campaignId: string, organizationId: string) {
     const result = await db.query.campaignConversionsTable.findMany({
-      where: eq(campaignConversionsTable.campaignId, campaignId),
+      where: and(
+        eq(campaignConversionsTable.campaignId, campaignId),
+        eq(campaignConversionsTable.organizationId, organizationId)
+      ),
       with: {
         order: true,
         customer: true,
@@ -337,8 +375,11 @@ export const campaignsRepo = {
   /**
    * Get campaign metrics
    */
-  async getCampaignMetrics(campaignId: string, startDate?: Date, endDate?: Date) {
-    const conditions = [eq(campaignVisitsTable.campaignId, campaignId)];
+  async getCampaignMetrics(campaignId: string, organizationId: string, startDate?: Date, endDate?: Date) {
+    const conditions = [
+      eq(campaignVisitsTable.campaignId, campaignId),
+      eq(campaignVisitsTable.organizationId, organizationId)
+    ];
 
     if (startDate) {
       conditions.push(gte(campaignVisitsTable.visitedAt, startDate));
@@ -369,10 +410,14 @@ export const campaignsRepo = {
    */
   async getCampaignTimeline(
     campaignId: string,
+    organizationId: string,
     startDate?: Date,
     endDate?: Date
   ) {
-    const conditions = [eq(campaignVisitsTable.campaignId, campaignId)];
+    const conditions = [
+      eq(campaignVisitsTable.campaignId, campaignId),
+      eq(campaignVisitsTable.organizationId, organizationId)
+    ];
 
     if (startDate) {
       conditions.push(gte(campaignVisitsTable.visitedAt, startDate));
@@ -403,7 +448,7 @@ export const campaignsRepo = {
   /**
    * Get top products from campaign conversions
    */
-  async getTopProductsFromCampaign(campaignId: string, limit: number = 10) {
+  async getTopProductsFromCampaign(campaignId: string, organizationId: string, limit: number = 10) {
     const result = await db
       .select({
         productId: productsTable.id,
@@ -421,7 +466,12 @@ export const campaignsRepo = {
         eq(orderItemsTable.productVariantId, productVariantsTable.id)
       )
       .innerJoin(productsTable, eq(productVariantsTable.productId, productsTable.id))
-      .where(eq(campaignConversionsTable.campaignId, campaignId))
+      .where(
+        and(
+          eq(campaignConversionsTable.campaignId, campaignId),
+          eq(campaignConversionsTable.organizationId, organizationId)
+        )
+      )
       .groupBy(productsTable.id, productsTable.name)
       .orderBy(desc(sql`SUM(${orderItemsTable.totalPrice})`))
       .limit(limit);
@@ -432,7 +482,7 @@ export const campaignsRepo = {
   /**
    * Get device breakdown
    */
-  async getDeviceBreakdown(campaignId: string) {
+  async getDeviceBreakdown(campaignId: string, organizationId: string) {
     const result = await db
       .select({
         deviceType: campaignVisitsTable.deviceType,
@@ -440,7 +490,12 @@ export const campaignsRepo = {
         conversions: sql<number>`COUNT(*) FILTER (WHERE ${campaignVisitsTable.converted} = true)::int`,
       })
       .from(campaignVisitsTable)
-      .where(eq(campaignVisitsTable.campaignId, campaignId))
+      .where(
+        and(
+          eq(campaignVisitsTable.campaignId, campaignId),
+          eq(campaignVisitsTable.organizationId, organizationId)
+        )
+      )
       .groupBy(campaignVisitsTable.deviceType)
       .orderBy(desc(sql`COUNT(*)`));
 
@@ -450,7 +505,7 @@ export const campaignsRepo = {
   /**
    * Get geographic breakdown
    */
-  async getGeographicBreakdown(campaignId: string) {
+  async getGeographicBreakdown(campaignId: string, organizationId: string) {
     const result = await db
       .select({
         country: campaignVisitsTable.country,
@@ -463,7 +518,12 @@ export const campaignsRepo = {
         ), 0)`,
       })
       .from(campaignVisitsTable)
-      .where(eq(campaignVisitsTable.campaignId, campaignId))
+      .where(
+        and(
+          eq(campaignVisitsTable.campaignId, campaignId),
+          eq(campaignVisitsTable.organizationId, organizationId)
+        )
+      )
       .groupBy(campaignVisitsTable.country)
       .orderBy(desc(sql`COUNT(*)`));
 
@@ -473,13 +533,18 @@ export const campaignsRepo = {
   /**
    * Get campaign leaderboard
    */
-  async getCampaignLeaderboard(metric: 'roi' | 'revenue' | 'conversions' | 'visits', limit: number = 10) {
+  async getCampaignLeaderboard(organizationId: string, metric: 'roi' | 'revenue' | 'conversions' | 'visits', limit: number = 10) {
     // First, get all campaigns with their metrics
-    const campaigns = await db.select().from(campaignsTable).where(eq(campaignsTable.isActive, true));
+    const campaigns = await db.select().from(campaignsTable).where(
+      and(
+        eq(campaignsTable.isActive, true),
+        eq(campaignsTable.organizationId, organizationId)
+      )
+    );
 
     const campaignStats = await Promise.all(
       campaigns.map(async (campaign) => {
-        const metrics = await this.getCampaignMetrics(campaign.id);
+        const metrics = await this.getCampaignMetrics(campaign.id, organizationId);
         const cost = parseFloat(campaign.cost);
         const revenue = parseFloat(metrics.totalRevenue);
         const roi = cost > 0 ? ((revenue - cost) / cost) * 100 : 0;

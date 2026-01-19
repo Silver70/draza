@@ -18,16 +18,16 @@ export const attributesService = {
   /**
    * Get all attributes
    */
-  findAllAttributes: async () => {
-    const attributes = await attributesRepo.getAllAttributes();
+  findAllAttributes: async (organizationId: string) => {
+    const attributes = await attributesRepo.getAllAttributes(organizationId);
     return attributes;
   },
 
   /**
    * Get attribute by ID
    */
-  findAttributeById: async (id: string) => {
-    const attribute = await attributesRepo.getAttributeById(id);
+  findAttributeById: async (id: string, organizationId: string) => {
+    const attribute = await attributesRepo.getAttributeById(id, organizationId);
 
     if (!attribute) {
       throw new Error("Attribute not found");
@@ -39,8 +39,8 @@ export const attributesService = {
   /**
    * Get attribute by name
    */
-  findAttributeByName: async (name: string) => {
-    const attribute = await attributesRepo.getAttributeByName(name);
+  findAttributeByName: async (name: string, organizationId: string) => {
+    const attribute = await attributesRepo.getAttributeByName(name, organizationId);
 
     if (!attribute) {
       throw new Error("Attribute not found");
@@ -52,8 +52,8 @@ export const attributesService = {
   /**
    * Get attribute with all its values
    */
-  findAttributeWithValues: async (id: string) => {
-    const attribute = await attributesRepo.getAttributeById(id);
+  findAttributeWithValues: async (id: string, organizationId: string) => {
+    const attribute = await attributesRepo.getAttributeById(id, organizationId);
 
     if (!attribute) {
       throw new Error("Attribute not found");
@@ -71,8 +71,8 @@ export const attributesService = {
   /**
    * Get all attributes with their values
    */
-  findAllAttributesWithValues: async () => {
-    const attributes = await attributesRepo.getAllAttributes();
+  findAllAttributesWithValues: async (organizationId: string) => {
+    const attributes = await attributesRepo.getAllAttributes(organizationId);
 
     const attributesWithValues = await Promise.all(
       attributes.map(async (attribute) => {
@@ -91,31 +91,31 @@ export const attributesService = {
   /**
    * Create a new attribute
    */
-  createAttribute: async (data: NewAttribute) => {
+  createAttribute: async (data: Omit<NewAttribute, "organizationId">, organizationId: string) => {
     // Check if attribute name already exists
-    const existingAttribute = await attributesRepo.getAttributeByName(data.name);
+    const existingAttribute = await attributesRepo.getAttributeByName(data.name, organizationId);
     if (existingAttribute) {
       throw new Error("Attribute with this name already exists");
     }
 
-    return await attributesRepo.createAttribute(data);
+    return await attributesRepo.createAttribute(data, organizationId);
   },
 
   /**
    * Create attribute with values in one operation
    */
   createAttributeWithValues: async (data: {
-    attribute: NewAttribute;
+    attribute: Omit<NewAttribute, "organizationId">;
     values: string[];
-  }) => {
+  }, organizationId: string) => {
     // Check if attribute name already exists
-    const existingAttribute = await attributesRepo.getAttributeByName(data.attribute.name);
+    const existingAttribute = await attributesRepo.getAttributeByName(data.attribute.name, organizationId);
     if (existingAttribute) {
       throw new Error("Attribute with this name already exists");
     }
 
     // Create attribute
-    const attribute = await attributesRepo.createAttribute(data.attribute);
+    const attribute = await attributesRepo.createAttribute(data.attribute, organizationId);
 
     // Create values
     const createdValues = [];
@@ -136,29 +136,29 @@ export const attributesService = {
   /**
    * Update an attribute
    */
-  updateAttribute: async (id: string, data: UpdateAttribute) => {
+  updateAttribute: async (id: string, data: UpdateAttribute, organizationId: string) => {
     // Check if attribute exists
-    const existingAttribute = await attributesRepo.getAttributeById(id);
+    const existingAttribute = await attributesRepo.getAttributeById(id, organizationId);
     if (!existingAttribute) {
       throw new Error("Attribute not found");
     }
 
     // If updating name, check it's not already taken
     if (data.name && data.name !== existingAttribute.name) {
-      const nameExists = await attributesRepo.getAttributeByName(data.name);
+      const nameExists = await attributesRepo.getAttributeByName(data.name, organizationId);
       if (nameExists && nameExists.id !== id) {
         throw new Error("Attribute with this name already exists");
       }
     }
 
-    return await attributesRepo.updateAttribute(id, data);
+    return await attributesRepo.updateAttribute(id, data, organizationId);
   },
 
   /**
    * Delete an attribute
    */
-  deleteAttribute: async (id: string) => {
-    const attribute = await attributesRepo.getAttributeById(id);
+  deleteAttribute: async (id: string, organizationId: string) => {
+    const attribute = await attributesRepo.getAttributeById(id, organizationId);
     if (!attribute) {
       throw new Error("Attribute not found");
     }
@@ -180,7 +180,7 @@ export const attributesService = {
       await attributeValuesRepo.deleteAttributeValue(value.id);
     }
 
-    return await attributesRepo.deleteAttribute(id);
+    return await attributesRepo.deleteAttribute(id, organizationId);
   },
 
   // ==================== ATTRIBUTE VALUES ====================
@@ -188,9 +188,9 @@ export const attributesService = {
   /**
    * Get all values for an attribute
    */
-  findValuesByAttributeId: async (attributeId: string) => {
+  findValuesByAttributeId: async (attributeId: string, organizationId: string) => {
     // Verify attribute exists
-    const attribute = await attributesRepo.getAttributeById(attributeId);
+    const attribute = await attributesRepo.getAttributeById(attributeId, organizationId);
     if (!attribute) {
       throw new Error("Attribute not found");
     }
@@ -214,9 +214,9 @@ export const attributesService = {
   /**
    * Create a new attribute value
    */
-  createAttributeValue: async (data: NewAttributeValue) => {
+  createAttributeValue: async (data: NewAttributeValue, organizationId: string) => {
     // Verify attribute exists
-    const attribute = await attributesRepo.getAttributeById(data.attributeId);
+    const attribute = await attributesRepo.getAttributeById(data.attributeId, organizationId);
     if (!attribute) {
       throw new Error("Attribute not found");
     }
@@ -237,9 +237,9 @@ export const attributesService = {
   /**
    * Create multiple attribute values at once
    */
-  createMultipleAttributeValues: async (attributeId: string, values: string[]) => {
+  createMultipleAttributeValues: async (attributeId: string, values: string[], organizationId: string) => {
     // Verify attribute exists
-    const attribute = await attributesRepo.getAttributeById(attributeId);
+    const attribute = await attributesRepo.getAttributeById(attributeId, organizationId);
     if (!attribute) {
       throw new Error("Attribute not found");
     }
@@ -332,7 +332,7 @@ export const attributesService = {
   /**
    * Link attribute value to product variant
    */
-  linkAttributeToVariant: async (data: NewProductVariantAttribute) => {
+  linkAttributeToVariant: async (data: NewProductVariantAttribute, organizationId: string) => {
     // Verify variant exists
     const variant = await productVariantsRepo.getProductVariantById(data.productVariantId);
     if (!variant) {
@@ -351,7 +351,7 @@ export const attributesService = {
     );
 
     // Get the attribute for this value
-    const attribute = await attributesRepo.getAttributeById(attributeValue.attributeId);
+    const attribute = await attributesRepo.getAttributeById(attributeValue.attributeId, organizationId);
 
     // Check if variant already has a value for this attribute
     for (const va of variantAttributes) {
@@ -369,7 +369,7 @@ export const attributesService = {
   /**
    * Get all attributes for a product variant
    */
-  getVariantAttributes: async (productVariantId: string) => {
+  getVariantAttributes: async (productVariantId: string, organizationId: string) => {
     // Verify variant exists
     const variant = await productVariantsRepo.getProductVariantById(productVariantId);
     if (!variant) {
@@ -385,7 +385,7 @@ export const attributesService = {
       variantAttributes.map(async (va) => {
         const attributeValue = await attributeValuesRepo.getAttributeValueById(va.attributeValueId);
         const attribute = attributeValue
-          ? await attributesRepo.getAttributeById(attributeValue.attributeId)
+          ? await attributesRepo.getAttributeById(attributeValue.attributeId, organizationId)
           : null;
 
         return {
@@ -488,11 +488,11 @@ export const attributesService = {
    * Get attributes formatted for variant generation
    * Returns attributes with their values in the format needed by variant generator
    */
-  getAttributesForVariantGeneration: async (attributeIds: string[]) => {
+  getAttributesForVariantGeneration: async (attributeIds: string[], organizationId: string) => {
     const attributes = [];
 
     for (const attributeId of attributeIds) {
-      const attribute = await attributesRepo.getAttributeById(attributeId);
+      const attribute = await attributesRepo.getAttributeById(attributeId, organizationId);
       if (!attribute) {
         throw new Error(`Attribute with ID ${attributeId} not found`);
       }
@@ -520,7 +520,7 @@ export const attributesService = {
    * Validate attribute combination for variant creation
    * Ensures no duplicate attributes are used
    */
-  validateAttributeCombination: async (attributeValueIds: string[]) => {
+  validateAttributeCombination: async (attributeValueIds: string[], organizationId: string) => {
     const attributeIds = new Set<string>();
 
     for (const valueId of attributeValueIds) {
@@ -530,7 +530,7 @@ export const attributesService = {
       }
 
       if (attributeIds.has(value.attributeId)) {
-        const attribute = await attributesRepo.getAttributeById(value.attributeId);
+        const attribute = await attributesRepo.getAttributeById(value.attributeId, organizationId);
         throw new Error(
           `Duplicate attribute detected: "${attribute?.name}". Each attribute can only have one value per variant.`
         );

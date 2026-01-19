@@ -5,21 +5,21 @@ export const addressesService = {
   /**
    * Get all addresses for a customer
    */
-  findByCustomerId: async (customerId: string) => {
+  findByCustomerId: async (customerId: string, organizationId: string) => {
     // Verify customer exists
-    const customer = await customersRepo.getCustomerById(customerId);
+    const customer = await customersRepo.getCustomerById(customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
-    return await addressesRepo.getAddressesByCustomerId(customerId);
+    return await addressesRepo.getAddressesByCustomerId(customerId, organizationId);
   },
 
   /**
    * Get a single address by ID
    */
-  findById: async (id: string) => {
-    const address = await addressesRepo.getAddressById(id);
+  findById: async (id: string, organizationId: string) => {
+    const address = await addressesRepo.getAddressById(id, organizationId);
 
     if (!address) {
       throw new Error("Address not found");
@@ -31,14 +31,14 @@ export const addressesService = {
   /**
    * Get customer's default address
    */
-  findDefaultByCustomerId: async (customerId: string) => {
+  findDefaultByCustomerId: async (customerId: string, organizationId: string) => {
     // Verify customer exists
-    const customer = await customersRepo.getCustomerById(customerId);
+    const customer = await customersRepo.getCustomerById(customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
-    const address = await addressesRepo.getDefaultAddressByCustomerId(customerId);
+    const address = await addressesRepo.getDefaultAddressByCustomerId(customerId, organizationId);
 
     if (!address) {
       throw new Error("No default address found for this customer");
@@ -50,16 +50,17 @@ export const addressesService = {
   /**
    * Create a new address for a customer
    */
-  create: async (data: NewAddress) => {
+  create: async (data: NewAddress, organizationId: string) => {
     // Verify customer exists
-    const customer = await customersRepo.getCustomerById(data.customerId);
+    const customer = await customersRepo.getCustomerById(data.customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
     // Get existing addresses for this customer
     const existingAddresses = await addressesRepo.getAddressesByCustomerId(
-      data.customerId
+      data.customerId,
+      organizationId
     );
 
     // If this is the first address, make it default
@@ -74,11 +75,11 @@ export const addressesService = {
     const newAddress = await addressesRepo.createAddress({
       ...data,
       isDefault: shouldBeDefault,
-    });
+    }, organizationId);
 
     // If this should be default and it's not the first address, use setDefaultAddress
     if (shouldBeDefault && !isFirstAddress) {
-      return await addressesRepo.setDefaultAddress(data.customerId, newAddress.id);
+      return await addressesRepo.setDefaultAddress(data.customerId, newAddress.id, organizationId);
     }
 
     return newAddress;
@@ -87,8 +88,8 @@ export const addressesService = {
   /**
    * Update an address
    */
-  update: async (id: string, data: UpdateAddress) => {
-    const existingAddress = await addressesRepo.getAddressById(id);
+  update: async (id: string, data: UpdateAddress, organizationId: string) => {
+    const existingAddress = await addressesRepo.getAddressById(id, organizationId);
     if (!existingAddress) {
       throw new Error("Address not found");
     }
@@ -97,7 +98,8 @@ export const addressesService = {
     if (data.isDefault === true) {
       return await addressesRepo.setDefaultAddress(
         existingAddress.customerId,
-        id
+        id,
+        organizationId
       );
     }
 
@@ -108,21 +110,21 @@ export const addressesService = {
       );
     }
 
-    return await addressesRepo.updateAddress(id, data);
+    return await addressesRepo.updateAddress(id, data, organizationId);
   },
 
   /**
    * Set an address as the default for a customer
    */
-  setAsDefault: async (customerId: string, addressId: string) => {
+  setAsDefault: async (customerId: string, addressId: string, organizationId: string) => {
     // Verify customer exists
-    const customer = await customersRepo.getCustomerById(customerId);
+    const customer = await customersRepo.getCustomerById(customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
     // Verify address exists and belongs to customer
-    const address = await addressesRepo.getAddressById(addressId);
+    const address = await addressesRepo.getAddressById(addressId, organizationId);
     if (!address) {
       throw new Error("Address not found");
     }
@@ -131,14 +133,14 @@ export const addressesService = {
       throw new Error("Address does not belong to this customer");
     }
 
-    return await addressesRepo.setDefaultAddress(customerId, addressId);
+    return await addressesRepo.setDefaultAddress(customerId, addressId, organizationId);
   },
 
   /**
    * Delete an address
    */
-  delete: async (id: string) => {
-    const address = await addressesRepo.getAddressById(id);
+  delete: async (id: string, organizationId: string) => {
+    const address = await addressesRepo.getAddressById(id, organizationId);
     if (!address) {
       throw new Error("Address not found");
     }
@@ -146,7 +148,8 @@ export const addressesService = {
     // Don't allow deleting the only address if it's default
     if (address.isDefault) {
       const allAddresses = await addressesRepo.getAddressesByCustomerId(
-        address.customerId
+        address.customerId,
+        organizationId
       );
 
       if (allAddresses.length === 1) {
@@ -161,14 +164,14 @@ export const addressesService = {
       );
     }
 
-    return await addressesRepo.deleteAddress(id);
+    return await addressesRepo.deleteAddress(id, organizationId);
   },
 
   /**
    * Verify address belongs to customer (for security checks)
    */
-  verifyOwnership: async (addressId: string, customerId: string): Promise<boolean> => {
-    const address = await addressesRepo.getAddressById(addressId);
+  verifyOwnership: async (addressId: string, customerId: string, organizationId: string): Promise<boolean> => {
+    const address = await addressesRepo.getAddressById(addressId, organizationId);
     if (!address) {
       return false;
     }
@@ -179,8 +182,8 @@ export const addressesService = {
   /**
    * Get address statistics for a customer
    */
-  getCustomerAddressStats: async (customerId: string) => {
-    const addresses = await addressesRepo.getAddressesByCustomerId(customerId);
+  getCustomerAddressStats: async (customerId: string, organizationId: string) => {
+    const addresses = await addressesRepo.getAddressesByCustomerId(customerId, organizationId);
 
     const defaultAddress = addresses.find((a) => a.isDefault);
     const addressesByCountry = addresses.reduce((acc, addr) => {

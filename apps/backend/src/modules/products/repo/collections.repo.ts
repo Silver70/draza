@@ -1,45 +1,48 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import { collectionsTable, collectionProductsTable } from "../../../shared/db/catalogue";
 import { NewCollection, UpdateCollection, NewCollectionProduct } from "../products.types";
 
 export const collectionsRepo = {
-  async createCollection(data: NewCollection) {
+  async createCollection(data: NewCollection, organizationId: string) {
     const [newCollection] = await db
       .insert(collectionsTable)
-      .values(data)
+      .values({ ...data, organizationId })
       .returning();
     return newCollection;
   },
 
-  async getCollectionById(id: string) {
+  async getCollectionById(id: string, organizationId: string) {
     const collection = await db
       .select()
       .from(collectionsTable)
-      .where(eq(collectionsTable.id, id))
+      .where(and(eq(collectionsTable.id, id), eq(collectionsTable.organizationId, organizationId)))
       .limit(1);
     return collection[0];
   },
 
-  async getCollectionBySlug(slug: string) {
+  async getCollectionBySlug(slug: string, organizationId: string) {
     const collection = await db
       .select()
       .from(collectionsTable)
-      .where(eq(collectionsTable.slug, slug))
+      .where(and(eq(collectionsTable.slug, slug), eq(collectionsTable.organizationId, organizationId)))
       .limit(1);
     return collection[0];
   },
 
-  async getAllCollections() {
-    const collections = await db.select().from(collectionsTable);
-    return collections;
-  },
-
-  async getActiveCollections() {
+  async getAllCollections(organizationId: string) {
     const collections = await db
       .select()
       .from(collectionsTable)
-      .where(eq(collectionsTable.isActive, true));
+      .where(eq(collectionsTable.organizationId, organizationId));
+    return collections;
+  },
+
+  async getActiveCollections(organizationId: string) {
+    const collections = await db
+      .select()
+      .from(collectionsTable)
+      .where(and(eq(collectionsTable.isActive, true), eq(collectionsTable.organizationId, organizationId)));
     return collections;
   },
 

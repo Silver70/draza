@@ -17,6 +17,7 @@ export const orderStatusEnum = pgEnum('order_status', [
 
 export const ordersTable = pgTable('orders', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   orderNumber: text('order_number').notNull().unique(),
   customerId: uuid('customer_id')
     .notNull()
@@ -61,6 +62,7 @@ export const ordersTable = pgTable('orders', {
 
 export const orderItemsTable = pgTable('order_items', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   orderId: uuid('order_id')
     .notNull()
     .references(() => ordersTable.id, { onDelete: 'cascade' }),

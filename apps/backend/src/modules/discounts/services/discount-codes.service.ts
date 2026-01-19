@@ -8,9 +8,9 @@ export const discountCodesService = {
   /**
    * Create a new discount code
    */
-  create: async (data: NewDiscountCode) => {
+  create: async (organizationId: string, data: NewDiscountCode) => {
     // Check if discount exists
-    const discount = await discountsRepo.getDiscountById(data.discountId);
+    const discount = await discountsRepo.getDiscountById(organizationId, data.discountId);
     if (!discount) {
       throw new Error("Discount not found");
     }
@@ -22,6 +22,7 @@ export const discountCodesService = {
 
     // Check if code already exists
     const existingCode = await discountCodesRepo.getDiscountCodeByCode(
+      organizationId,
       data.code
     );
     if (existingCode) {
@@ -34,8 +35,8 @@ export const discountCodesService = {
   /**
    * Get discount code by ID
    */
-  findById: async (id: string) => {
-    const code = await discountCodesRepo.getDiscountCodeById(id);
+  findById: async (organizationId: string, id: string) => {
+    const code = await discountCodesRepo.getDiscountCodeById(organizationId, id);
     if (!code) {
       throw new Error("Discount code not found");
     }
@@ -45,15 +46,15 @@ export const discountCodesService = {
   /**
    * Get all codes for a discount
    */
-  findByDiscountId: async (discountId: string) => {
-    return await discountCodesRepo.getDiscountCodesByDiscountId(discountId);
+  findByDiscountId: async (organizationId: string, discountId: string) => {
+    return await discountCodesRepo.getDiscountCodesByDiscountId(organizationId, discountId);
   },
 
   /**
    * Update a discount code
    */
-  update: async (id: string, data: UpdateDiscountCode) => {
-    const existingCode = await discountCodesRepo.getDiscountCodeById(id);
+  update: async (organizationId: string, id: string, data: UpdateDiscountCode) => {
+    const existingCode = await discountCodesRepo.getDiscountCodeById(organizationId, id);
     if (!existingCode) {
       throw new Error("Discount code not found");
     }
@@ -61,6 +62,7 @@ export const discountCodesService = {
     // Check if new code already exists
     if (data.code && data.code !== existingCode.code) {
       const codeExists = await discountCodesRepo.getDiscountCodeByCode(
+        organizationId,
         data.code
       );
       if (codeExists) {
@@ -68,25 +70,25 @@ export const discountCodesService = {
       }
     }
 
-    return await discountCodesRepo.updateDiscountCode(id, data);
+    return await discountCodesRepo.updateDiscountCode(organizationId, id, data);
   },
 
   /**
    * Delete a discount code
    */
-  delete: async (id: string) => {
-    const existingCode = await discountCodesRepo.getDiscountCodeById(id);
+  delete: async (organizationId: string, id: string) => {
+    const existingCode = await discountCodesRepo.getDiscountCodeById(organizationId, id);
     if (!existingCode) {
       throw new Error("Discount code not found");
     }
-    await discountCodesRepo.deleteDiscountCode(id);
+    await discountCodesRepo.deleteDiscountCode(organizationId, id);
   },
 
   /**
    * Validate a discount code for use
    */
-  validateCode: async (code: string, orderTotal: number) => {
-    const discountCode = await discountCodesRepo.getDiscountCodeByCode(code);
+  validateCode: async (organizationId: string, code: string, orderTotal: number) => {
+    const discountCode = await discountCodesRepo.getDiscountCodeByCode(organizationId, code);
 
     if (!discountCode) {
       throw new Error("Invalid discount code");
@@ -116,6 +118,7 @@ export const discountCodesService = {
 
     // Get the associated discount
     const discount = await discountsRepo.getDiscountById(
+      organizationId,
       discountCode.discountId
     );
 
@@ -150,6 +153,7 @@ export const discountCodesService = {
    * Calculate discount amount from a code
    */
   calculateCodeDiscount: async (
+    organizationId: string,
     code: string,
     orderTotal: number
   ): Promise<{
@@ -159,7 +163,7 @@ export const discountCodesService = {
     finalTotal: number;
   }> => {
     const { discountCode, discount } =
-      await discountCodesService.validateCode(code, orderTotal);
+      await discountCodesService.validateCode(organizationId, code, orderTotal);
 
     let discountAmount = 0;
 
@@ -180,7 +184,7 @@ export const discountCodesService = {
   /**
    * Increment usage count for a code
    */
-  incrementUsage: async (id: string) => {
-    return await discountCodesRepo.incrementUsageCount(id);
+  incrementUsage: async (organizationId: string, id: string) => {
+    return await discountCodesRepo.incrementUsageCount(organizationId, id);
   },
 };

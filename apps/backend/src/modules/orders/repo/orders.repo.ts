@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import { ordersTable, orderItemsTable } from "../../../shared/db/order";
 import { NewOrder, UpdateOrder, NewOrderItem } from "../orders.types";
@@ -9,7 +9,7 @@ export const ordersRepo = {
     items: Omit<NewOrderItem, "orderId" | "id" | "createdAt">[]
   ) {
     return await db.transaction(async (tx) => {
-      // Create the order
+      // Create the order (organizationId is already in orderData)
       const [newOrder] = await tx
         .insert(ordersTable)
         .values(orderData)
@@ -33,27 +33,40 @@ export const ordersRepo = {
     });
   },
 
-  async getOrderById(id: string) {
+  async getOrderById(id: string, organizationId: string) {
     const order = await db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.id, id))
+      .where(
+        and(
+          eq(ordersTable.id, id),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
     return order[0];
   },
 
-  async getOrderByOrderNumber(orderNumber: string) {
+  async getOrderByOrderNumber(orderNumber: string, organizationId: string) {
     const order = await db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.orderNumber, orderNumber))
+      .where(
+        and(
+          eq(ordersTable.orderNumber, orderNumber),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .limit(1);
     return order[0];
   },
 
-  async getOrderWithItems(id: string) {
+  async getOrderWithItems(id: string, organizationId: string) {
     const order = await db.query.ordersTable.findFirst({
-      where: eq(ordersTable.id, id),
+      where: and(
+        eq(ordersTable.id, id),
+        eq(ordersTable.organizationId, organizationId)
+      ),
       with: {
         items: true,
       },
@@ -61,9 +74,12 @@ export const ordersRepo = {
     return order;
   },
 
-  async getOrderWithRelations(id: string) {
+  async getOrderWithRelations(id: string, organizationId: string) {
     const order = await db.query.ordersTable.findFirst({
-      where: eq(ordersTable.id, id),
+      where: and(
+        eq(ordersTable.id, id),
+        eq(ordersTable.organizationId, organizationId)
+      ),
       with: {
         customer: true,
         shippingAddress: true,
@@ -82,54 +98,80 @@ export const ordersRepo = {
     return order;
   },
 
-  async getOrdersByCustomerId(customerId: string) {
+  async getOrdersByCustomerId(customerId: string, organizationId: string) {
     const orders = await db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.customerId, customerId))
+      .where(
+        and(
+          eq(ordersTable.customerId, customerId),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .orderBy(desc(ordersTable.createdAt));
     return orders;
   },
 
-  async getOrdersByStatus(status: string) {
+  async getOrdersByStatus(status: string, organizationId: string) {
     const orders = await db
       .select()
       .from(ordersTable)
-      .where(eq(ordersTable.status, status as any))
+      .where(
+        and(
+          eq(ordersTable.status, status as any),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .orderBy(desc(ordersTable.createdAt));
     return orders;
   },
 
-  async getAllOrders() {
+  async getAllOrders(organizationId: string) {
     const orders = await db
       .select()
       .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId))
       .orderBy(desc(ordersTable.createdAt));
     return orders;
   },
 
-  async updateOrder(id: string, data: UpdateOrder) {
+  async updateOrder(id: string, data: UpdateOrder, organizationId: string) {
     const [updatedOrder] = await db
       .update(ordersTable)
       .set(data)
-      .where(eq(ordersTable.id, id))
+      .where(
+        and(
+          eq(ordersTable.id, id),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .returning();
     return updatedOrder;
   },
 
-  async updateOrderStatus(id: string, status: string) {
+  async updateOrderStatus(id: string, status: string, organizationId: string) {
     const [updatedOrder] = await db
       .update(ordersTable)
       .set({ status: status as any })
-      .where(eq(ordersTable.id, id))
+      .where(
+        and(
+          eq(ordersTable.id, id),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      )
       .returning();
     return updatedOrder;
   },
 
-  async deleteOrder(id: string) {
+  async deleteOrder(id: string, organizationId: string) {
     await db
       .delete(ordersTable)
-      .where(eq(ordersTable.id, id));
+      .where(
+        and(
+          eq(ordersTable.id, id),
+          eq(ordersTable.organizationId, organizationId)
+        )
+      );
   },
 };
 

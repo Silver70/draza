@@ -7,7 +7,7 @@ import { customersService } from "../../customers/services/customers.service";
 import { addressesRepo } from "../../customers/repo/addresses.repo";
 import { db } from "../../../shared/db";
 import { shippingMethodsTable } from "../../../shared/db/shipping";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type {
   CartTotals,
   CartTotalsBreakdown,
@@ -23,23 +23,24 @@ export const cartService = {
   /**
    * Get or create cart by sessionId
    */
-  async getOrCreateCart(sessionId: string, customerId?: string) {
-    let cart = await cartRepo.findBySessionId(sessionId);
+  async getOrCreateCart(organizationId: string, sessionId: string, customerId?: string) {
+    let cart = await cartRepo.findBySessionId(organizationId, sessionId);
 
     if (!cart) {
       // Create new cart
       const newCart = await cartRepo.create({
+        organizationId,
         sessionId,
         customerId: customerId || null,
         status: "active",
       });
 
       // Fetch cart with relations
-      cart = await cartRepo.findById(newCart.id);
+      cart = await cartRepo.findById(organizationId, newCart.id);
     } else if (customerId && cart.customerId !== customerId) {
       // Update customer ID if provided and different
-      await cartRepo.update(cart.id, { customerId });
-      cart = await cartRepo.findById(cart.id);
+      await cartRepo.update(organizationId, cart.id, { customerId });
+      cart = await cartRepo.findById(organizationId, cart.id);
     }
 
     return cart;
@@ -48,11 +49,11 @@ export const cartService = {
   /**
    * Add item to cart
    */
-  async addItem(input: AddItemInput) {
+  async addItem(organizationId: string, input: AddItemInput) {
     const { sessionId, customerId, variantId, quantity } = input;
 
     // Get or create cart
-    const cart = await this.getOrCreateCart(sessionId, customerId);
+    const cart = await this.getOrCreateCart(organizationId, sessionId, customerId);
     if (!cart) {
       throw new Error("Failed to create cart");
     }
@@ -70,7 +71,7 @@ export const cartService = {
     }
 
     // Check if item already exists in cart
-    const existingItem = await cartRepo.findItem(cart.id, variantId);
+    const existingItem = await cartRepo.findItem(organizationId, cart.id, variantId);
 
     if (existingItem) {
       // Update quantity
@@ -83,10 +84,11 @@ export const cartService = {
         );
       }
 
-      await cartRepo.updateItemQuantity(existingItem.id, newQuantity);
+      await cartRepo.updateItemQuantity(organizationId, existingItem.id, newQuantity);
     } else {
       // Add new item
       await cartRepo.addItem({
+        organizationId,
         cartId: cart.id,
         productVariantId: variantId,
         quantity,
@@ -95,16 +97,17 @@ export const cartService = {
     }
 
     // Recalculate totals
-    await this.calculateTotals({ sessionId });
+    await this.calculateTotals(organizationId, { sessionId });
 
     // Return updated cart
-    return await cartRepo.findById(cart.id);
+    return await cartRepo.findById(organizationId, cart.id);
   },
 
   /**
    * Update item quantity
    */
   async updateItemQuantity(
+    organizationId: string,
     sessionId: string,
     itemId: string,
     input: UpdateItemInput
@@ -112,20 +115,20 @@ export const cartService = {
     const { quantity } = input;
 
     // Get cart
-    const cart = await cartRepo.findBySessionId(sessionId);
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
 
     // Get item
-    const item = await cartRepo.findItemById(itemId);
+    const item = await cartRepo.findItemById(organizationId, itemId);
     if (!item || item.cartId !== cart.id) {
       throw new Error("Cart item not found");
     }
 
     // If quantity is 0, remove item
     if (quantity === 0) {
-      await cartRepo.removeItem(itemId);
+      await cartRepo.removeItem(organizationId, itemId);
     } else {
       // Validate stock
       const variant = await productVariantsRepo.getProductVariantById(
@@ -141,56 +144,56 @@ export const cartService = {
         );
       }
 
-      await cartRepo.updateItemQuantity(itemId, quantity);
+      await cartRepo.updateItemQuantity(organizationId, itemId, quantity);
     }
 
     // Recalculate totals
-    await this.calculateTotals({ sessionId });
+    await this.calculateTotals(organizationId, { sessionId });
 
     // Return updated cart
-    return await cartRepo.findById(cart.id);
+    return await cartRepo.findById(organizationId, cart.id);
   },
 
   /**
    * Remove item from cart
    */
-  async removeItem(sessionId: string, itemId: string) {
+  async removeItem(organizationId: string, sessionId: string, itemId: string) {
     // Get cart
-    const cart = await cartRepo.findBySessionId(sessionId);
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
 
     // Get item
-    const item = await cartRepo.findItemById(itemId);
+    const item = await cartRepo.findItemById(organizationId, itemId);
     if (!item || item.cartId !== cart.id) {
       throw new Error("Cart item not found");
     }
 
     // Remove item
-    await cartRepo.removeItem(itemId);
+    await cartRepo.removeItem(organizationId, itemId);
 
     // Recalculate totals
-    await this.calculateTotals({ sessionId });
+    await this.calculateTotals(organizationId, { sessionId });
 
     // Return updated cart
-    return await cartRepo.findById(cart.id);
+    return await cartRepo.findById(organizationId, cart.id);
   },
 
   /**
    * Clear all items from cart
    */
-  async clearCart(sessionId: string) {
-    const cart = await cartRepo.findBySessionId(sessionId);
+  async clearCart(organizationId: string, sessionId: string) {
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
 
     // Clear all items
-    await cartRepo.clearItems(cart.id);
+    await cartRepo.clearItems(organizationId, cart.id);
 
     // Reset totals and discount
-    await cartRepo.update(cart.id, {
+    await cartRepo.update(organizationId, cart.id, {
       subtotal: "0",
       discountTotal: "0",
       taxTotal: "0",
@@ -200,17 +203,17 @@ export const cartService = {
       lastActivityAt: new Date(),
     });
 
-    return await cartRepo.findById(cart.id);
+    return await cartRepo.findById(organizationId, cart.id);
   },
 
   /**
    * Apply discount code to cart
    */
-  async applyDiscountCode(input: ApplyDiscountInput) {
+  async applyDiscountCode(organizationId: string, input: ApplyDiscountInput) {
     const { sessionId, code } = input;
 
     // Get cart
-    const cart = await cartRepo.findBySessionId(sessionId);
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
@@ -220,22 +223,23 @@ export const cartService = {
 
     // Validate and calculate discount
     const discountResult = await discountCodesService.calculateCodeDiscount(
+      organizationId,
       code,
       subtotal
     );
 
     // Update cart with discount code
-    await cartRepo.update(cart.id, {
+    await cartRepo.update(organizationId, cart.id, {
       discountCodeId: discountResult.discountCode.id,
       discountTotal: discountResult.discountAmount.toString(),
       lastActivityAt: new Date(),
     });
 
     // Recalculate totals
-    await this.calculateTotals({ sessionId });
+    await this.calculateTotals(organizationId, { sessionId });
 
     return {
-      cart: await cartRepo.findById(cart.id),
+      cart: await cartRepo.findById(organizationId, cart.id),
       discount: discountResult.discount,
     };
   },
@@ -243,35 +247,36 @@ export const cartService = {
   /**
    * Remove discount code from cart
    */
-  async removeDiscountCode(sessionId: string) {
-    const cart = await cartRepo.findBySessionId(sessionId);
+  async removeDiscountCode(organizationId: string, sessionId: string) {
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
 
     // Remove discount
-    await cartRepo.update(cart.id, {
+    await cartRepo.update(organizationId, cart.id, {
       discountCodeId: null,
       discountTotal: "0",
       lastActivityAt: new Date(),
     });
 
     // Recalculate totals
-    await this.calculateTotals({ sessionId });
+    await this.calculateTotals(organizationId, { sessionId });
 
-    return await cartRepo.findById(cart.id);
+    return await cartRepo.findById(organizationId, cart.id);
   },
 
   /**
    * Calculate cart totals (with optional tax and shipping preview)
    */
   async calculateTotals(
+    organizationId: string,
     input: CalculateTotalsInput
   ): Promise<CartTotals | CartTotalsBreakdown> {
     const { sessionId, shippingAddressId, shippingMethodId } = input;
 
     // Get cart with items
-    const cart = await cartRepo.findBySessionId(sessionId);
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
@@ -287,6 +292,7 @@ export const cartService = {
 
     if (cart.discountCodeId && cart.discountCode && 'code' in cart.discountCode) {
       const discountResult = await discountCodesService.calculateCodeDiscount(
+        organizationId,
         cart.discountCode.code as string,
         subtotal
       );
@@ -303,7 +309,7 @@ export const cartService = {
     let taxBreakdown = null;
 
     if (shippingAddressId) {
-      const address = await addressesRepo.getAddressById(shippingAddressId);
+      const address = await addressesRepo.getAddressById(organizationId, shippingAddressId);
       if (address) {
         const taxResult = await calculateOrderTax({
           shippingState: address.state,
@@ -312,7 +318,7 @@ export const cartService = {
             productId: item.productVariant.product.id,
             subtotal: Number(item.unitPrice) * item.quantity,
           })),
-        });
+        }, organizationId);
 
         taxTotal = taxResult.taxAmount;
         taxBreakdown = {
@@ -329,7 +335,10 @@ export const cartService = {
 
     if (shippingMethodId) {
       const shippingMethod = await db.query.shippingMethodsTable.findFirst({
-        where: eq(shippingMethodsTable.id, shippingMethodId),
+        where: and(
+          eq(shippingMethodsTable.id, shippingMethodId),
+          eq(shippingMethodsTable.organizationId, organizationId)
+        ),
       });
 
       if (shippingMethod) {
@@ -345,7 +354,7 @@ export const cartService = {
     const total = subtotal - discountTotal + taxTotal + shippingTotal;
 
     // Update cart in database
-    await cartRepo.update(cart.id, {
+    await cartRepo.update(organizationId, cart.id, {
       subtotal: subtotal.toFixed(2),
       discountTotal: discountTotal.toFixed(2),
       taxTotal: taxTotal.toFixed(2),
@@ -388,7 +397,7 @@ export const cartService = {
   /**
    * Checkout - convert cart to order
    */
-  async checkout(input: CheckoutInput) {
+  async checkout(organizationId: string, input: CheckoutInput) {
     const {
       sessionId,
       customerId,
@@ -401,7 +410,7 @@ export const cartService = {
     } = input;
 
     // Get cart with items
-    const cart = await cartRepo.findBySessionId(sessionId);
+    const cart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!cart) {
       throw new Error("Cart not found");
     }
@@ -421,7 +430,7 @@ export const cartService = {
         last_name: "",
         phone_number: "",
         is_guest: true,
-      });
+      }, organizationId);
       finalCustomerId = newCustomer.id;
     }
 
@@ -430,14 +439,14 @@ export const cartService = {
     }
 
     // Calculate final totals
-    await this.calculateTotals({
+    await this.calculateTotals(organizationId, {
       sessionId,
       shippingAddressId,
       shippingMethodId,
     });
 
     // Refresh cart to get updated totals
-    const updatedCart = await cartRepo.findBySessionId(sessionId);
+    const updatedCart = await cartRepo.findBySessionId(organizationId, sessionId);
     if (!updatedCart) {
       throw new Error("Cart not found after totals calculation");
     }
@@ -460,10 +469,10 @@ export const cartService = {
         : undefined,
       sessionId: visitId || undefined, // For campaign attribution
       notes: notes || undefined,
-    });
+    }, organizationId);
 
     // Mark cart as converted
-    await cartRepo.update(updatedCart.id, {
+    await cartRepo.update(organizationId, updatedCart.id, {
       status: "converted",
       lastActivityAt: new Date(),
     });
@@ -474,23 +483,23 @@ export const cartService = {
   /**
    * Merge guest cart into user cart (optional feature)
    */
-  async mergeGuestCart(input: MergeCartsInput) {
+  async mergeGuestCart(organizationId: string, input: MergeCartsInput) {
     const { fromSessionId, toSessionId, customerId } = input;
 
     // Get guest cart
-    const guestCart = await cartRepo.findBySessionId(fromSessionId);
+    const guestCart = await cartRepo.findBySessionId(organizationId, fromSessionId);
 
     if (!guestCart || guestCart.items.length === 0) {
       // No guest cart or empty, just return/create user cart
-      return await this.getOrCreateCart(toSessionId, customerId);
+      return await this.getOrCreateCart(organizationId, toSessionId, customerId);
     }
 
     // Get or create user cart
-    await this.getOrCreateCart(toSessionId, customerId);
+    await this.getOrCreateCart(organizationId, toSessionId, customerId);
 
     // Transfer items from guest cart to user cart
     for (const item of guestCart.items) {
-      await this.addItem({
+      await this.addItem(organizationId, {
         sessionId: toSessionId,
         customerId,
         variantId: item.productVariantId,
@@ -499,24 +508,24 @@ export const cartService = {
     }
 
     // Mark guest cart as merged
-    await cartRepo.update(guestCart.id, {
+    await cartRepo.update(organizationId, guestCart.id, {
       status: "merged",
       lastActivityAt: new Date(),
     });
 
     // Return user cart
-    return await cartRepo.findBySessionId(toSessionId);
+    return await cartRepo.findBySessionId(organizationId, toSessionId);
   },
 
   /**
    * Mark expired carts as abandoned (run as scheduled job)
    */
-  async markExpiredCartsAsAbandoned(): Promise<number> {
-    const expiredCarts = await cartRepo.findExpiredCarts();
+  async markExpiredCartsAsAbandoned(organizationId: string): Promise<number> {
+    const expiredCarts = await cartRepo.findExpiredCarts(organizationId);
     const cartIds = expiredCarts.map((cart) => cart.id);
 
     if (cartIds.length > 0) {
-      await cartRepo.markCartsAsAbandoned(cartIds);
+      await cartRepo.markCartsAsAbandoned(organizationId, cartIds);
     }
 
     return cartIds.length;
@@ -525,21 +534,21 @@ export const cartService = {
   /**
    * Get abandoned carts (for admin)
    */
-  async getAbandonedCarts(hoursAgo: number = 24, minValue?: number) {
-    return await cartRepo.findAbandonedCarts(hoursAgo, minValue);
+  async getAbandonedCarts(organizationId: string, hoursAgo: number = 24, minValue?: number) {
+    return await cartRepo.findAbandonedCarts(organizationId, hoursAgo, minValue);
   },
 
   /**
    * Get active carts (for admin)
    */
-  async getActiveCarts() {
-    return await cartRepo.findActiveCarts();
+  async getActiveCarts(organizationId: string) {
+    return await cartRepo.findActiveCarts(organizationId);
   },
 
   /**
    * Get cart metrics (for admin dashboard)
    */
-  async getCartMetrics() {
-    return await cartRepo.getCartMetrics();
+  async getCartMetrics(organizationId: string) {
+    return await cartRepo.getCartMetrics(organizationId);
   },
 };

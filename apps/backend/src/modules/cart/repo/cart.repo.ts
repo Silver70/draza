@@ -5,9 +5,12 @@ import { NewCart, NewCartItem, UpdateCart } from "../cart.types";
 
 export const cartRepo = {
   // Cart operations
-  async findBySessionId(sessionId: string) {
+  async findBySessionId(organizationId: string, sessionId: string) {
     return await db.query.cartsTable.findFirst({
-      where: eq(cartsTable.sessionId, sessionId),
+      where: and(
+        eq(cartsTable.sessionId, sessionId),
+        eq(cartsTable.organizationId, organizationId)
+      ),
       with: {
         items: {
           with: {
@@ -28,9 +31,12 @@ export const cartRepo = {
     });
   },
 
-  async findById(cartId: string) {
+  async findById(organizationId: string, cartId: string) {
     return await db.query.cartsTable.findFirst({
-      where: eq(cartsTable.id, cartId),
+      where: and(
+        eq(cartsTable.id, cartId),
+        eq(cartsTable.organizationId, organizationId)
+      ),
       with: {
         items: {
           with: {
@@ -56,32 +62,42 @@ export const cartRepo = {
     return cart;
   },
 
-  async update(cartId: string, data: UpdateCart) {
+  async update(organizationId: string, cartId: string, data: UpdateCart) {
     const [cart] = await db
       .update(cartsTable)
       .set({ ...data, updatedAt: new Date() })
-      .where(eq(cartsTable.id, cartId))
+      .where(and(
+        eq(cartsTable.id, cartId),
+        eq(cartsTable.organizationId, organizationId)
+      ))
       .returning();
     return cart;
   },
 
-  async delete(cartId: string) {
-    await db.delete(cartsTable).where(eq(cartsTable.id, cartId));
+  async delete(organizationId: string, cartId: string) {
+    await db.delete(cartsTable).where(and(
+      eq(cartsTable.id, cartId),
+      eq(cartsTable.organizationId, organizationId)
+    ));
   },
 
   // Cart item operations
-  async findItem(cartId: string, variantId: string) {
+  async findItem(organizationId: string, cartId: string, variantId: string) {
     return await db.query.cartItemsTable.findFirst({
       where: and(
         eq(cartItemsTable.cartId, cartId),
-        eq(cartItemsTable.productVariantId, variantId)
+        eq(cartItemsTable.productVariantId, variantId),
+        eq(cartItemsTable.organizationId, organizationId)
       ),
     });
   },
 
-  async findItemById(itemId: string) {
+  async findItemById(organizationId: string, itemId: string) {
     return await db.query.cartItemsTable.findFirst({
-      where: eq(cartItemsTable.id, itemId),
+      where: and(
+        eq(cartItemsTable.id, itemId),
+        eq(cartItemsTable.organizationId, organizationId)
+      ),
     });
   },
 
@@ -90,26 +106,38 @@ export const cartRepo = {
     return item;
   },
 
-  async updateItemQuantity(itemId: string, quantity: number) {
+  async updateItemQuantity(organizationId: string, itemId: string, quantity: number) {
     const [item] = await db
       .update(cartItemsTable)
       .set({ quantity, updatedAt: new Date() })
-      .where(eq(cartItemsTable.id, itemId))
+      .where(and(
+        eq(cartItemsTable.id, itemId),
+        eq(cartItemsTable.organizationId, organizationId)
+      ))
       .returning();
     return item;
   },
 
-  async removeItem(itemId: string) {
-    await db.delete(cartItemsTable).where(eq(cartItemsTable.id, itemId));
+  async removeItem(organizationId: string, itemId: string) {
+    await db.delete(cartItemsTable).where(and(
+      eq(cartItemsTable.id, itemId),
+      eq(cartItemsTable.organizationId, organizationId)
+    ));
   },
 
-  async clearItems(cartId: string) {
-    await db.delete(cartItemsTable).where(eq(cartItemsTable.cartId, cartId));
+  async clearItems(organizationId: string, cartId: string) {
+    await db.delete(cartItemsTable).where(and(
+      eq(cartItemsTable.cartId, cartId),
+      eq(cartItemsTable.organizationId, organizationId)
+    ));
   },
 
-  async getCartItems(cartId: string) {
+  async getCartItems(organizationId: string, cartId: string) {
     return await db.query.cartItemsTable.findMany({
-      where: eq(cartItemsTable.cartId, cartId),
+      where: and(
+        eq(cartItemsTable.cartId, cartId),
+        eq(cartItemsTable.organizationId, organizationId)
+      ),
       with: {
         productVariant: {
           with: {
@@ -121,22 +149,24 @@ export const cartRepo = {
   },
 
   // Query operations for admin
-  async findExpiredCarts() {
+  async findExpiredCarts(organizationId: string) {
     return await db.query.cartsTable.findMany({
       where: and(
         eq(cartsTable.status, 'active'),
-        lt(cartsTable.expiresAt, new Date())
+        lt(cartsTable.expiresAt, new Date()),
+        eq(cartsTable.organizationId, organizationId)
       ),
     });
   },
 
-  async findAbandonedCarts(hoursAgo: number, minValue?: number) {
+  async findAbandonedCarts(organizationId: string, hoursAgo: number, minValue?: number) {
     const cutoffTime = new Date();
     cutoffTime.setHours(cutoffTime.getHours() - hoursAgo);
 
     const conditions = [
       eq(cartsTable.status, 'abandoned'),
       lt(cartsTable.lastActivityAt, cutoffTime),
+      eq(cartsTable.organizationId, organizationId),
     ];
 
     if (minValue !== undefined) {
@@ -163,9 +193,12 @@ export const cartRepo = {
     });
   },
 
-  async findActiveCarts() {
+  async findActiveCarts(organizationId: string) {
     return await db.query.cartsTable.findMany({
-      where: eq(cartsTable.status, 'active'),
+      where: and(
+        eq(cartsTable.status, 'active'),
+        eq(cartsTable.organizationId, organizationId)
+      ),
       with: {
         items: {
           with: {
@@ -182,46 +215,55 @@ export const cartRepo = {
     });
   },
 
-  async getCartCount(status?: 'active' | 'abandoned' | 'converted' | 'merged') {
-    const condition = status ? eq(cartsTable.status, status) : undefined;
+  async getCartCount(organizationId: string, status?: 'active' | 'abandoned' | 'converted' | 'merged') {
+    const conditions = [eq(cartsTable.organizationId, organizationId)];
+    if (status) {
+      conditions.push(eq(cartsTable.status, status));
+    }
 
     const result = await db
       .select({
         count: sql<number>`count(*)::int`,
       })
       .from(cartsTable)
-      .where(condition);
+      .where(and(...conditions));
 
     return result[0]?.count || 0;
   },
 
-  async getAverageCartValue() {
+  async getAverageCartValue(organizationId: string) {
     const result = await db
       .select({
         avgValue: sql<string>`COALESCE(AVG(CAST(${cartsTable.total} AS DECIMAL)), 0)`,
       })
       .from(cartsTable)
-      .where(eq(cartsTable.status, 'active'));
+      .where(and(
+        eq(cartsTable.status, 'active'),
+        eq(cartsTable.organizationId, organizationId)
+      ));
 
     return result[0]?.avgValue || '0';
   },
 
-  async markCartsAsAbandoned(cartIds: string[]) {
+  async markCartsAsAbandoned(organizationId: string, cartIds: string[]) {
     if (cartIds.length === 0) return 0;
 
     await db
       .update(cartsTable)
       .set({ status: 'abandoned', updatedAt: new Date() })
-      .where(sql`${cartsTable.id} = ANY(${cartIds})`);
+      .where(and(
+        sql`${cartsTable.id} = ANY(${cartIds})`,
+        eq(cartsTable.organizationId, organizationId)
+      ));
 
     return cartIds.length;
   },
 
-  async getCartMetrics() {
+  async getCartMetrics(organizationId: string) {
     const [activeCount, abandonedCount, avgValue] = await Promise.all([
-      this.getCartCount('active'),
-      this.getCartCount('abandoned'),
-      this.getAverageCartValue(),
+      this.getCartCount(organizationId, 'active'),
+      this.getCartCount(organizationId, 'abandoned'),
+      this.getAverageCartValue(organizationId),
     ]);
 
     return {

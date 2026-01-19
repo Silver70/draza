@@ -5,6 +5,7 @@ import { ordersTable } from './order';
 
 export const addressesTable = pgTable('addresses', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   customerId: uuid('customer_id')
     .notNull()
     .references(() => customersTable.id, { onDelete: 'cascade' }),

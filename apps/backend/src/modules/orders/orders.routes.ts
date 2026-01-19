@@ -5,6 +5,7 @@ import {
   updateOrderStatusSchema,
   updateOrderSchema,
 } from "./orders.types";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 
 export const ordersRoutes = new Hono();
 
@@ -16,6 +17,7 @@ export const ordersRoutes = new Hono();
  */
 ordersRoutes.get("/", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { customerId, status } = c.req.query();
 
     const filters = {
@@ -23,7 +25,7 @@ ordersRoutes.get("/", async (c) => {
       status: status || undefined,
     };
 
-    const orders = await ordersService.findAll(filters);
+    const orders = await ordersService.findAll(organizationId, filters);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch orders";
@@ -37,7 +39,8 @@ ordersRoutes.get("/", async (c) => {
  */
 ordersRoutes.get("/pending", async (c) => {
   try {
-    const orders = await ordersService.findPendingOrders();
+    const organizationId = getOrganizationId(c);
+    const orders = await ordersService.findPendingOrders(organizationId);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch pending orders";
@@ -51,7 +54,8 @@ ordersRoutes.get("/pending", async (c) => {
  */
 ordersRoutes.get("/processing", async (c) => {
   try {
-    const orders = await ordersService.findProcessingOrders();
+    const organizationId = getOrganizationId(c);
+    const orders = await ordersService.findProcessingOrders(organizationId);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch processing orders";
@@ -65,8 +69,9 @@ ordersRoutes.get("/processing", async (c) => {
  */
 ordersRoutes.get("/status/:status", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const status = c.req.param("status");
-    const orders = await ordersService.findByStatus(status);
+    const orders = await ordersService.findByStatus(status, organizationId);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch orders";
@@ -80,8 +85,9 @@ ordersRoutes.get("/status/:status", async (c) => {
  */
 ordersRoutes.get("/customer/:customerId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
-    const orders = await ordersService.findByCustomerId(customerId);
+    const orders = await ordersService.findByCustomerId(customerId, organizationId);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch customer orders";
@@ -95,8 +101,9 @@ ordersRoutes.get("/customer/:customerId", async (c) => {
  */
 ordersRoutes.get("/customer/:customerId/stats", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
-    const stats = await ordersService.getCustomerOrderStats(customerId);
+    const stats = await ordersService.getCustomerOrderStats(customerId, organizationId);
     return c.json({ success: true, data: stats });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch customer stats";
@@ -111,7 +118,8 @@ ordersRoutes.get("/customer/:customerId/stats", async (c) => {
  */
 ordersRoutes.get("/shipping-methods", async (c) => {
   try {
-    const methods = await ordersService.getAllShippingMethods();
+    const organizationId = getOrganizationId(c);
+    const methods = await ordersService.getAllShippingMethods(organizationId);
     return c.json({ success: true, data: methods });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get shipping methods";
@@ -125,8 +133,9 @@ ordersRoutes.get("/shipping-methods", async (c) => {
  */
 ordersRoutes.get("/number/:orderNumber", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const orderNumber = c.req.param("orderNumber");
-    const order = await ordersService.findByOrderNumber(orderNumber);
+    const order = await ordersService.findByOrderNumber(orderNumber, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Order not found";
@@ -140,8 +149,9 @@ ordersRoutes.get("/number/:orderNumber", async (c) => {
  */
 ordersRoutes.get("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.findById(id);
+    const order = await ordersService.findById(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Order not found";
@@ -155,8 +165,9 @@ ordersRoutes.get("/:id", async (c) => {
  */
 ordersRoutes.get("/:id/items", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.findByIdWithItems(id);
+    const order = await ordersService.findByIdWithItems(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Order not found";
@@ -170,8 +181,9 @@ ordersRoutes.get("/:id/items", async (c) => {
  */
 ordersRoutes.get("/:id/details", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.findByIdWithRelations(id);
+    const order = await ordersService.findByIdWithRelations(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Order not found";
@@ -185,8 +197,9 @@ ordersRoutes.get("/:id/details", async (c) => {
  */
 ordersRoutes.get("/:id/stats", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const stats = await ordersService.getStats(id);
+    const stats = await ordersService.getStats(id, organizationId);
     return c.json({ success: true, data: stats });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Order not found";
@@ -200,8 +213,9 @@ ordersRoutes.get("/:id/stats", async (c) => {
  */
 ordersRoutes.get("/:id/discounts", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const discounts = await ordersService.getOrderDiscounts(id);
+    const discounts = await ordersService.getOrderDiscounts(id, organizationId);
     return c.json({ success: true, data: discounts });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch order discounts";
@@ -216,8 +230,9 @@ ordersRoutes.get("/:id/discounts", async (c) => {
  */
 ordersRoutes.post("/shipping-options", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const options = await ordersService.getAvailableShippingOptions(data);
+    const options = await ordersService.getAvailableShippingOptions(data, organizationId);
     return c.json({ success: true, data: options });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get shipping options";
@@ -232,8 +247,9 @@ ordersRoutes.post("/shipping-options", async (c) => {
  */
 ordersRoutes.post("/", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const order = await ordersService.create(data);
+    const order = await ordersService.create(data, organizationId);
     return c.json({ success: true, data: order }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create order";
@@ -247,9 +263,10 @@ ordersRoutes.post("/", async (c) => {
  */
 ordersRoutes.put("/:id/status", zValidator("json", updateOrderStatusSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { status } = c.req.valid("json");
-    const order = await ordersService.updateStatus(id, status);
+    const order = await ordersService.updateStatus(id, status, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update order status";
@@ -263,18 +280,19 @@ ordersRoutes.put("/:id/status", zValidator("json", updateOrderStatusSchema), asy
  */
 ordersRoutes.put("/:id", zValidator("json", updateOrderSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
 
     // If only status is being updated, use updateStatus
     if (data.status && Object.keys(data).length === 1) {
-      const order = await ordersService.updateStatus(id, data.status);
+      const order = await ordersService.updateStatus(id, data.status, organizationId);
       return c.json({ success: true, data: order });
     }
 
     // For notes updates, use addNotes
     if (data.notes) {
-      const order = await ordersService.addNotes(id, data.notes);
+      const order = await ordersService.addNotes(id, data.notes, organizationId);
       return c.json({ success: true, data: order });
     }
 
@@ -291,8 +309,9 @@ ordersRoutes.put("/:id", zValidator("json", updateOrderSchema), async (c) => {
  */
 ordersRoutes.put("/:id/process", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.markAsProcessing(id);
+    const order = await ordersService.markAsProcessing(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to process order";
@@ -306,8 +325,9 @@ ordersRoutes.put("/:id/process", async (c) => {
  */
 ordersRoutes.put("/:id/ship", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.markAsShipped(id);
+    const order = await ordersService.markAsShipped(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to ship order";
@@ -321,8 +341,9 @@ ordersRoutes.put("/:id/ship", async (c) => {
  */
 ordersRoutes.put("/:id/deliver", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const order = await ordersService.markAsDelivered(id);
+    const order = await ordersService.markAsDelivered(id, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to deliver order";
@@ -336,9 +357,10 @@ ordersRoutes.put("/:id/deliver", async (c) => {
  */
 ordersRoutes.post("/:id/cancel", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { reason } = await c.req.json();
-    const order = await ordersService.cancel(id, reason);
+    const order = await ordersService.cancel(id, organizationId, reason);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to cancel order";
@@ -352,9 +374,10 @@ ordersRoutes.post("/:id/cancel", async (c) => {
  */
 ordersRoutes.post("/:id/refund", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { reason } = await c.req.json();
-    const order = await ordersService.refund(id, reason);
+    const order = await ordersService.refund(id, organizationId, reason);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to refund order";
@@ -368,6 +391,7 @@ ordersRoutes.post("/:id/refund", async (c) => {
  */
 ordersRoutes.post("/:id/notes", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { notes } = await c.req.json();
 
@@ -375,7 +399,7 @@ ordersRoutes.post("/:id/notes", async (c) => {
       return c.json({ success: false, error: "Notes cannot be empty" }, 400);
     }
 
-    const order = await ordersService.addNotes(id, notes);
+    const order = await ordersService.addNotes(id, notes, organizationId);
     return c.json({ success: true, data: order });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to add notes";
@@ -389,8 +413,9 @@ ordersRoutes.post("/:id/notes", async (c) => {
  */
 ordersRoutes.delete("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await ordersService.delete(id);
+    await ordersService.delete(id, organizationId);
     return c.json({ success: true, message: "Order deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete order";

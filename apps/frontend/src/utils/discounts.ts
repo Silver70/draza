@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import {
   Discount,
   DiscountResponse,
@@ -23,8 +23,6 @@ import {
   DiscountFilters,
 } from '../types/discountTypes'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 // ==================== DISCOUNTS ====================
 
 /**
@@ -41,8 +39,8 @@ export const fetchDiscounts = createServerFn({ method: 'GET' })
         params.append('isActive', String(data.isActive))
       if (data?.search) params.append('search', data.search)
 
-      const url = `${API_BASE_URL}/discounts${params.toString() ? `?${params.toString()}` : ''}`
-      const response = await axios.get<DiscountsResponse>(url)
+      const url = `/discounts${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await apiClient.get<DiscountsResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -68,8 +66,8 @@ export const fetchActiveDiscounts = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching active discounts...')
     try {
-      const response = await axios.get<DiscountsResponse>(
-        `${API_BASE_URL}/discounts/active`,
+      const response = await apiClient.get<DiscountsResponse>(
+        `/discounts/active`,
       )
 
       if (response.data.success) {
@@ -98,8 +96,8 @@ export const fetchDiscount = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching discount ${data}...`)
     try {
-      const response = await axios.get<DiscountResponse>(
-        `${API_BASE_URL}/discounts/${data}`,
+      const response = await apiClient.get<DiscountResponse>(
+        `/discounts/${data}`,
       )
 
       if (response.data.success) {
@@ -127,8 +125,8 @@ export const fetchDiscountWithDetails = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching discount details ${data}...`)
     try {
-      const response = await axios.get<DiscountWithDetailsResponse>(
-        `${API_BASE_URL}/discounts/${data}/details`,
+      const response = await apiClient.get<DiscountWithDetailsResponse>(
+        `/discounts/${data}/details`,
       )
 
       if (response.data.success) {
@@ -156,8 +154,8 @@ export const createDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating discount...', data)
     try {
-      const response = await axios.post<DiscountResponse>(
-        `${API_BASE_URL}/discounts`,
+      const response = await apiClient.post<DiscountResponse>(
+        `/discounts`,
         data,
       )
 
@@ -180,8 +178,8 @@ export const updateDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Updating discount ${data.id}...`, data.data)
     try {
-      const response = await axios.put<DiscountResponse>(
-        `${API_BASE_URL}/discounts/${data.id}`,
+      const response = await apiClient.put<DiscountResponse>(
+        `/discounts/${data.id}`,
         data.data,
       )
 
@@ -204,8 +202,8 @@ export const deleteDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting discount ${data}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/discounts/${data}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/discounts/${data}`,
       )
 
       if (response.data.success) {
@@ -229,8 +227,8 @@ export const fetchDiscountCodes = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching codes for discount ${data}...`)
     try {
-      const response = await axios.get<DiscountCodesResponse>(
-        `${API_BASE_URL}/discounts/${data}/codes`,
+      const response = await apiClient.get<DiscountCodesResponse>(
+        `/discounts/${data}/codes`,
       )
 
       if (response.data.success) {
@@ -258,8 +256,8 @@ export const createDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Creating code for discount ${data.discountId}...`, data.data)
     try {
-      const response = await axios.post<DiscountCodeResponse>(
-        `${API_BASE_URL}/discounts/${data.discountId}/codes`,
+      const response = await apiClient.post<DiscountCodeResponse>(
+        `/discounts/${data.discountId}/codes`,
         data.data,
       )
 
@@ -282,8 +280,8 @@ export const updateDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Updating discount code ${data.codeId}...`, data.data)
     try {
-      const response = await axios.put<DiscountCodeResponse>(
-        `${API_BASE_URL}/discounts/codes/${data.codeId}`,
+      const response = await apiClient.put<DiscountCodeResponse>(
+        `/discounts/codes/${data.codeId}`,
         data.data,
       )
 
@@ -306,8 +304,8 @@ export const deleteDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting discount code ${data}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/discounts/codes/${data}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/discounts/codes/${data}`,
       )
 
       if (response.data.success) {
@@ -331,8 +329,8 @@ export const addProductsToDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Adding products to discount ${data.discountId}...`, data.data)
     try {
-      const response = await axios.post<{ success: boolean; data: any }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/products`,
+      const response = await apiClient.post<{ success: boolean; data: any }>(
+        `/discounts/${data.discountId}/products`,
         data.data,
       )
 
@@ -355,8 +353,8 @@ export const removeProductFromDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Removing product ${data.productId} from discount ${data.discountId}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/products/${data.productId}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/discounts/${data.discountId}/products/${data.productId}`,
       )
 
       if (response.data.success) {
@@ -378,8 +376,8 @@ export const addCollectionsToDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Adding collections to discount ${data.discountId}...`, data.data)
     try {
-      const response = await axios.post<{ success: boolean; data: any }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/collections`,
+      const response = await apiClient.post<{ success: boolean; data: any }>(
+        `/discounts/${data.discountId}/collections`,
         data.data,
       )
 
@@ -402,8 +400,8 @@ export const removeCollectionFromDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Removing collection ${data.collectionId} from discount ${data.discountId}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/collections/${data.collectionId}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/discounts/${data.discountId}/collections/${data.collectionId}`,
       )
 
       if (response.data.success) {
@@ -427,8 +425,8 @@ export const addVariantsToDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Adding variants to discount ${data.discountId}...`, data.data)
     try {
-      const response = await axios.post<{ success: boolean; data: any }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/variants`,
+      const response = await apiClient.post<{ success: boolean; data: any }>(
+        `/discounts/${data.discountId}/variants`,
         data.data,
       )
 
@@ -451,8 +449,8 @@ export const removeVariantFromDiscount = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Removing variant ${data.variantId} from discount ${data.discountId}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/discounts/${data.discountId}/variants/${data.variantId}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/discounts/${data.discountId}/variants/${data.variantId}`,
       )
 
       if (response.data.success) {
@@ -476,8 +474,8 @@ export const validateDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Validating discount code...', data.code)
     try {
-      const response = await axios.post<ValidateCodeResponse>(
-        `${API_BASE_URL}/discounts/validate-code`,
+      const response = await apiClient.post<ValidateCodeResponse>(
+        `/discounts/validate-code`,
         data,
       )
 
@@ -502,8 +500,8 @@ export const fetchOrderDiscounts = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching discounts for order ${data}...`)
     try {
-      const response = await axios.get<OrderDiscountsResponse>(
-        `${API_BASE_URL}/orders/${data}/discounts`,
+      const response = await apiClient.get<OrderDiscountsResponse>(
+        `/orders/${data}/discounts`,
       )
 
       if (response.data.success) {

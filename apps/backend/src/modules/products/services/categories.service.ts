@@ -7,16 +7,16 @@ export const categoriesService = {
   /**
    * Get all categories
    */
-  findAll: async () => {
-    const categories = await categoriesRepo.getAllCategories();
+  findAll: async (organizationId: string) => {
+    const categories = await categoriesRepo.getAllCategories(organizationId);
     return categories;
   },
 
   /**
    * Get a single category by ID
    */
-  findById: async (id: string) => {
-    const category = await categoriesRepo.getCategoryById(id);
+  findById: async (id: string, organizationId: string) => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
 
     if (!category) {
       throw new Error("Category not found");
@@ -28,8 +28,8 @@ export const categoriesService = {
   /**
    * Get category by slug (for customer-facing URLs)
    */
-  findBySlug: async (slug: string) => {
-    const category = await categoriesRepo.getCategoryBySlug(slug);
+  findBySlug: async (slug: string, organizationId: string) => {
+    const category = await categoriesRepo.getCategoryBySlug(slug, organizationId);
 
     if (!category) {
       throw new Error("Category not found");
@@ -41,36 +41,36 @@ export const categoriesService = {
   /**
    * Get top-level categories (no parent)
    */
-  findRootCategories: async () => {
-    const categories = await categoriesRepo.getCategoriesByParentId(null);
+  findRootCategories: async (organizationId: string) => {
+    const categories = await categoriesRepo.getCategoriesByParentId(null, organizationId);
     return categories;
   },
 
   /**
    * Get subcategories of a parent category
    */
-  findSubcategories: async (parentId: string) => {
+  findSubcategories: async (parentId: string, organizationId: string) => {
     // Verify parent exists
-    const parent = await categoriesRepo.getCategoryById(parentId);
+    const parent = await categoriesRepo.getCategoryById(parentId, organizationId);
     if (!parent) {
       throw new Error("Parent category not found");
     }
 
-    const subcategories = await categoriesRepo.getCategoriesByParentId(parentId);
+    const subcategories = await categoriesRepo.getCategoriesByParentId(parentId, organizationId);
     return subcategories;
   },
 
   /**
    * Get category with its subcategories
    */
-  findByIdWithChildren: async (id: string) => {
-    const category = await categoriesRepo.getCategoryById(id);
+  findByIdWithChildren: async (id: string, organizationId: string) => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
 
     if (!category) {
       throw new Error("Category not found");
     }
 
-    const children = await categoriesRepo.getCategoriesByParentId(id);
+    const children = await categoriesRepo.getCategoriesByParentId(id, organizationId);
 
     return {
       ...category,
@@ -81,8 +81,8 @@ export const categoriesService = {
   /**
    * Get category tree (hierarchical structure)
    */
-  getCategoryTree: async () => {
-    const allCategories = await categoriesRepo.getAllCategories();
+  getCategoryTree: async (organizationId: string) => {
+    const allCategories = await categoriesRepo.getAllCategories(organizationId);
 
     // Build a map of categories by ID for quick lookup
     const categoryMap = new Map(allCategories.map((cat) => [cat.id, { ...cat, children: [] as any[] }]));
@@ -109,12 +109,12 @@ export const categoriesService = {
   /**
    * Get category breadcrumb path (for navigation)
    */
-  getBreadcrumb: async (id: string) => {
+  getBreadcrumb: async (id: string, organizationId: string) => {
     const breadcrumb = [];
     let currentId: string | null = id;
 
     while (currentId) {
-      const category = await categoriesRepo.getCategoryById(currentId);
+      const category = await categoriesRepo.getCategoryById(currentId, organizationId);
 
       if (!category) {
         break;
@@ -130,40 +130,40 @@ export const categoriesService = {
   /**
    * Create a new category
    */
-  create: async (data: NewCategory | (Omit<NewCategory, "slug"> & { slug?: string })) => {
+  create: async (data: NewCategory | (Omit<NewCategory, "slug"> & { slug?: string }), organizationId: string) => {
     // Auto-generate slug if not provided
     const slug = data.slug || generateSlug(data.name);
 
     // Check if slug already exists
-    const existingCategory = await categoriesRepo.getCategoryBySlug(slug);
+    const existingCategory = await categoriesRepo.getCategoryBySlug(slug, organizationId);
     if (existingCategory) {
       throw new Error("Category with this slug already exists");
     }
 
     // If parentId provided, verify parent exists
     if (data.parentId) {
-      const parent = await categoriesRepo.getCategoryById(data.parentId);
+      const parent = await categoriesRepo.getCategoryById(data.parentId, organizationId);
       if (!parent) {
         throw new Error("Parent category not found");
       }
     }
 
-    return await categoriesRepo.createCategory({ ...data, slug });
+    return await categoriesRepo.createCategory({ ...data, slug }, organizationId);
   },
 
   /**
    * Update a category
    */
-  update: async (id: string, data: UpdateCategory) => {
+  update: async (id: string, data: UpdateCategory, organizationId: string) => {
     // Check if category exists
-    const existingCategory = await categoriesRepo.getCategoryById(id);
+    const existingCategory = await categoriesRepo.getCategoryById(id, organizationId);
     if (!existingCategory) {
       throw new Error("Category not found");
     }
 
     // If updating slug, check it's not already taken by another category
     if (data.slug && data.slug !== existingCategory.slug) {
-      const slugExists = await categoriesRepo.getCategoryBySlug(data.slug);
+      const slugExists = await categoriesRepo.getCategoryBySlug(data.slug, organizationId);
       if (slugExists && slugExists.id !== id) {
         throw new Error("Category with this slug already exists");
       }
@@ -178,13 +178,13 @@ export const categoriesService = {
         }
 
         // Verify parent exists
-        const parent = await categoriesRepo.getCategoryById(data.parentId);
+        const parent = await categoriesRepo.getCategoryById(data.parentId, organizationId);
         if (!parent) {
           throw new Error("Parent category not found");
         }
 
         // Prevent circular references (category cannot be parent of its ancestor)
-        const isDescendant = await categoriesService.isDescendantOf(data.parentId, id);
+        const isDescendant = await categoriesService.isDescendantOf(data.parentId, id, organizationId);
         if (isDescendant) {
           throw new Error("Cannot set a descendant category as parent (circular reference)");
         }
@@ -197,14 +197,14 @@ export const categoriesService = {
   /**
    * Delete a category
    */
-  delete: async (id: string, options?: { deleteChildren?: boolean; moveChildrenTo?: string }) => {
-    const category = await categoriesRepo.getCategoryById(id);
+  delete: async (id: string, organizationId: string, options?: { deleteChildren?: boolean; moveChildrenTo?: string }) => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
 
     // Check if category has products
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const categoryProducts = products.filter((p) => p.categoryId === id);
 
     if (categoryProducts.length > 0) {
@@ -214,17 +214,17 @@ export const categoriesService = {
     }
 
     // Check if category has children
-    const children = await categoriesRepo.getCategoriesByParentId(id);
+    const children = await categoriesRepo.getCategoriesByParentId(id, organizationId);
 
     if (children.length > 0) {
       if (options?.deleteChildren) {
         // Delete all children recursively
         for (const child of children) {
-          await categoriesService.delete(child.id, { deleteChildren: true });
+          await categoriesService.delete(child.id, organizationId, { deleteChildren: true });
         }
       } else if (options?.moveChildrenTo) {
         // Move children to another parent
-        const newParent = await categoriesRepo.getCategoryById(options.moveChildrenTo);
+        const newParent = await categoriesRepo.getCategoryById(options.moveChildrenTo, organizationId);
         if (!newParent) {
           throw new Error("Target parent category not found");
         }
@@ -245,14 +245,14 @@ export const categoriesService = {
   /**
    * Get category with product count
    */
-  findByIdWithProductCount: async (id: string) => {
-    const category = await categoriesRepo.getCategoryById(id);
+  findByIdWithProductCount: async (id: string, organizationId: string) => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
 
     if (!category) {
       throw new Error("Category not found");
     }
 
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const productCount = products.filter((p) => p.categoryId === id).length;
 
     return {
@@ -264,9 +264,9 @@ export const categoriesService = {
   /**
    * Get all categories with product counts
    */
-  findAllWithProductCounts: async () => {
-    const categories = await categoriesRepo.getAllCategories();
-    const products = await productsRepo.getAllProducts();
+  findAllWithProductCounts: async (organizationId: string) => {
+    const categories = await categoriesRepo.getAllCategories(organizationId);
+    const products = await productsRepo.getAllProducts(organizationId);
 
     return categories.map((category) => ({
       ...category,
@@ -277,9 +277,9 @@ export const categoriesService = {
   /**
    * Get categories with active product counts (for customer-facing navigation)
    */
-  findAllWithActiveProductCounts: async () => {
-    const categories = await categoriesRepo.getAllCategories();
-    const products = await productsRepo.getAllProducts();
+  findAllWithActiveProductCounts: async (organizationId: string) => {
+    const categories = await categoriesRepo.getAllCategories(organizationId);
+    const products = await productsRepo.getAllProducts(organizationId);
     const activeProducts = products.filter((p) => p.isActive);
 
     return categories.map((category) => ({
@@ -291,9 +291,9 @@ export const categoriesService = {
   /**
    * Get categories that have products (filter out empty categories)
    */
-  findCategoriesWithProducts: async (activeOnly: boolean = false) => {
-    const categories = await categoriesRepo.getAllCategories();
-    const products = await productsRepo.getAllProducts();
+  findCategoriesWithProducts: async (organizationId: string, activeOnly: boolean = false) => {
+    const categories = await categoriesRepo.getAllCategories(organizationId);
+    const products = await productsRepo.getAllProducts(organizationId);
     const filteredProducts = activeOnly ? products.filter((p) => p.isActive) : products;
 
     const categoriesWithProducts = categories.filter((category) =>
@@ -309,8 +309,8 @@ export const categoriesService = {
   /**
    * Move category to a different parent
    */
-  moveCategory: async (id: string, newParentId: string | null) => {
-    const category = await categoriesRepo.getCategoryById(id);
+  moveCategory: async (id: string, newParentId: string | null, organizationId: string) => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
@@ -322,13 +322,13 @@ export const categoriesService = {
 
     // If new parent provided, verify it exists and prevent circular references
     if (newParentId !== null) {
-      const newParent = await categoriesRepo.getCategoryById(newParentId);
+      const newParent = await categoriesRepo.getCategoryById(newParentId, organizationId);
       if (!newParent) {
         throw new Error("New parent category not found");
       }
 
       // Prevent circular references
-      const isDescendant = await categoriesService.isDescendantOf(newParentId, id);
+      const isDescendant = await categoriesService.isDescendantOf(newParentId, id, organizationId);
       if (isDescendant) {
         throw new Error("Cannot move category to its own descendant (circular reference)");
       }
@@ -340,8 +340,8 @@ export const categoriesService = {
   /**
    * Check if a category is a descendant of another category
    */
-  isDescendantOf: async (categoryId: string, ancestorId: string): Promise<boolean> => {
-    const category = await categoriesRepo.getCategoryById(categoryId);
+  isDescendantOf: async (categoryId: string, ancestorId: string, organizationId: string): Promise<boolean> => {
+    const category = await categoriesRepo.getCategoryById(categoryId, organizationId);
 
     if (!category || !category.parentId) {
       return false;
@@ -351,14 +351,14 @@ export const categoriesService = {
       return true;
     }
 
-    return await categoriesService.isDescendantOf(category.parentId, ancestorId);
+    return await categoriesService.isDescendantOf(category.parentId, ancestorId, organizationId);
   },
 
   /**
    * Get category depth (level in hierarchy)
    */
-  getCategoryDepth: async (id: string): Promise<number> => {
-    const category = await categoriesRepo.getCategoryById(id);
+  getCategoryDepth: async (id: string, organizationId: string): Promise<number> => {
+    const category = await categoriesRepo.getCategoryById(id, organizationId);
 
     if (!category) {
       throw new Error("Category not found");
@@ -368,19 +368,19 @@ export const categoriesService = {
       return 0;
     }
 
-    const parentDepth = await categoriesService.getCategoryDepth(category.parentId);
+    const parentDepth = await categoriesService.getCategoryDepth(category.parentId, organizationId);
     return parentDepth + 1;
   },
 
   /**
    * Get all descendant categories (children, grandchildren, etc.)
    */
-  getAllDescendants: async (id: string): Promise<any[]> => {
-    const children = await categoriesRepo.getCategoriesByParentId(id);
+  getAllDescendants: async (id: string, organizationId: string): Promise<any[]> => {
+    const children = await categoriesRepo.getCategoriesByParentId(id, organizationId);
     const descendants = [...children];
 
     for (const child of children) {
-      const childDescendants = await categoriesService.getAllDescendants(child.id);
+      const childDescendants = await categoriesService.getAllDescendants(child.id, organizationId);
       descendants.push(...childDescendants);
     }
 
@@ -390,11 +390,11 @@ export const categoriesService = {
   /**
    * Reorder categories (update positions if you add a position field later)
    */
-  reorderCategories: async (categoryOrders: Array<{ id: string; position: number }>) => {
+  reorderCategories: async (categoryOrders: Array<{ id: string; position: number }>, organizationId: string) => {
     // This is a placeholder for when you add a position/order field to your schema
     // For now, we'll just validate the categories exist
     for (const { id } of categoryOrders) {
-      const category = await categoriesRepo.getCategoryById(id);
+      const category = await categoriesRepo.getCategoryById(id, organizationId);
       if (!category) {
         throw new Error(`Category with ID ${id} not found`);
       }

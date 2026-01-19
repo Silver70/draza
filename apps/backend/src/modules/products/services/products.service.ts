@@ -20,8 +20,8 @@ export const productsService = {
     categoryId?: string;
     isActive?: boolean;
     search?: string;
-  }) => {
-    const products = await productsRepo.getAllProducts();
+  }, organizationId?: string) => {
+    const products = await productsRepo.getAllProducts(organizationId!);
 
     if (!products || products.length === 0) {
       return [];
@@ -58,16 +58,16 @@ export const productsService = {
   /**
    * Get active products only (for customer-facing views)
    */
-  findActiveProducts: async () => {
-    const products = await productsRepo.getAllProducts();
+  findActiveProducts: async (organizationId: string) => {
+    const products = await productsRepo.getAllProducts(organizationId);
     return products.filter((p) => p.isActive);
   },
 
   /**
    * Get a single product by ID
    */
-  findById: async (id: string) => {
-    const product = await productsRepo.getProductById(id);
+  findById: async (id: string, organizationId: string) => {
+    const product = await productsRepo.getProductById(id, organizationId);
 
     if (!product) {
       throw new Error("Product not found");
@@ -79,8 +79,8 @@ export const productsService = {
   /**
    * Get product with its variants
    */
-  findByIdWithVariants: async (id: string) => {
-    const product = await productsRepo.getProductById(id);
+  findByIdWithVariants: async (id: string, organizationId: string) => {
+    const product = await productsRepo.getProductById(id, organizationId);
 
     if (!product) {
       throw new Error("Product not found");
@@ -97,8 +97,8 @@ export const productsService = {
   /**
    * Get product by slug (for customer-facing URLs)
    */
-  findBySlug: async (slug: string) => {
-    const products = await productsRepo.getAllProducts();
+  findBySlug: async (slug: string, organizationId: string) => {
+    const products = await productsRepo.getAllProducts(organizationId);
     const product = products.find((p) => p.slug === slug);
 
     if (!product) {
@@ -111,8 +111,8 @@ export const productsService = {
   /**
    * Get product by slug with variants (for product detail pages)
    */
-  findBySlugWithVariants: async (slug: string) => {
-    const products = await productsRepo.getAllProducts();
+  findBySlugWithVariants: async (slug: string, organizationId: string) => {
+    const products = await productsRepo.getAllProducts(organizationId);
     const product = products.find((p) => p.slug === slug);
 
     if (!product) {
@@ -132,9 +132,9 @@ export const productsService = {
   /**
    * Create a new product
    */
-  create: async (data: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string })) => {
+  create: async (data: Omit<NewProduct, "organizationId"> | (Omit<NewProduct, "slug" | "organizationId"> & { slug?: string }), organizationId: string) => {
     // Validate category exists
-    const category = await categoriesRepo.getCategoryById(data.categoryId);
+    const category = await categoriesRepo.getCategoryById(data.categoryId, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
@@ -143,13 +143,13 @@ export const productsService = {
     const slug = data.slug || generateSlug(data.name);
 
     // Check if slug already exists
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
-    return await productsRepo.createProduct({ ...data, slug });
+    return await productsRepo.createProduct({ ...data, slug }, organizationId);
   },
 
   /**
@@ -158,9 +158,9 @@ export const productsService = {
   createWithVariants: async (data: {
     product: NewProduct | (Omit<NewProduct, "slug"> & { slug?: string });
     variants?: Array<Omit<NewProductVariant, "productId"> & { sku?: string }>;
-  }) => {
+  }, organizationId: string) => {
     // Validate category exists
-    const category = await categoriesRepo.getCategoryById(data.product.categoryId);
+    const category = await categoriesRepo.getCategoryById(data.product.categoryId, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
@@ -169,14 +169,14 @@ export const productsService = {
     const slug = data.product.slug || generateSlug(data.product.name);
 
     // Check if slug already exists
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
     // Create the product
-    const product = await productsRepo.createProduct({ ...data.product, slug });
+    const product = await productsRepo.createProduct({ ...data.product, slug }, organizationId);
 
     // Create variants if provided
     const variants = [];
@@ -203,16 +203,16 @@ export const productsService = {
   /**
    * Update a product
    */
-  update: async (id: string, data: UpdateProduct) => {
+  update: async (id: string, data: UpdateProduct, organizationId: string) => {
     // Check if product exists
-    const existingProduct = await productsRepo.getProductById(id);
+    const existingProduct = await productsRepo.getProductById(id, organizationId);
     if (!existingProduct) {
       throw new Error("Product not found");
     }
 
     // If updating category, validate it exists
     if (data.categoryId) {
-      const category = await categoriesRepo.getCategoryById(data.categoryId);
+      const category = await categoriesRepo.getCategoryById(data.categoryId, organizationId);
       if (!category) {
         throw new Error("Category not found");
       }
@@ -220,7 +220,7 @@ export const productsService = {
 
     // If updating slug, check it's not already taken by another product
     if (data.slug && data.slug !== existingProduct.slug) {
-      const products = await productsRepo.getAllProducts();
+      const products = await productsRepo.getAllProducts(organizationId);
       const slugExists = products.find(
         (p) => p.slug === data.slug && p.id !== id
       );
@@ -235,8 +235,8 @@ export const productsService = {
   /**
    * Activate a product (make it visible to customers)
    */
-  activate: async (id: string) => {
-    const product = await productsRepo.getProductById(id);
+  activate: async (id: string, organizationId: string) => {
+    const product = await productsRepo.getProductById(id, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -258,8 +258,8 @@ export const productsService = {
   /**
    * Deactivate a product (hide from customers)
    */
-  deactivate: async (id: string) => {
-    const product = await productsRepo.getProductById(id);
+  deactivate: async (id: string, organizationId: string) => {
+    const product = await productsRepo.getProductById(id, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -268,10 +268,11 @@ export const productsService = {
   },
 
   /**
+   * 
    * Delete a product (soft delete by deactivating, or hard delete)
    */
-  delete: async (id: string, hard: boolean = false) => {
-    const product = await productsRepo.getProductById(id);
+  delete: async (id: string, organizationId: string, hard: boolean = false) => {
+    const product = await productsRepo.getProductById(id, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -295,8 +296,8 @@ export const productsService = {
   /**
    * Get products by category
    */
-  findByCategory: async (categoryId: string, activeOnly: boolean = true) => {
-    const products = await productsRepo.getAllProducts();
+  findByCategory: async (categoryId: string, organizationId: string, activeOnly: boolean = true) => {
+    const products = await productsRepo.getAllProducts(organizationId);
 
     let filtered = products.filter((p) => p.categoryId === categoryId);
 
@@ -310,8 +311,8 @@ export const productsService = {
   /**
    * Check product availability (has active variants with stock)
    */
-  checkAvailability: async (id: string) => {
-    const product = await productsRepo.getProductById(id);
+  checkAvailability: async (id: string, organizationId: string) => {
+    const product = await productsRepo.getProductById(id, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -349,8 +350,8 @@ export const productsService = {
   /**
    * Get low stock products (for inventory management)
    */
-  findLowStockProducts: async (threshold: number = 10) => {
-    const products = await productsRepo.getAllProducts();
+  findLowStockProducts: async (organizationId: string, threshold: number = 10) => {
+    const products = await productsRepo.getAllProducts(organizationId);
     const lowStockProducts = [];
 
     for (const product of products) {
@@ -374,8 +375,8 @@ export const productsService = {
   /**
    * Get out of stock products
    */
-  findOutOfStockProducts: async () => {
-    const products = await productsRepo.getAllProducts();
+  findOutOfStockProducts: async (organizationId: string) => {
+    const products = await productsRepo.getAllProducts(organizationId);
     const outOfStockProducts = [];
 
     for (const product of products) {
@@ -414,11 +415,12 @@ export const productsService = {
    */
   generateVariantCombinations: async (
     productId: string,
+    organizationId: string,
     attributes: AttributeWithValues[],
     defaultPrice: number,
     defaultQuantity: number = 0
   ) => {
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -431,11 +433,12 @@ export const productsService = {
    */
   generateAndCreateVariants: async (
     productId: string,
+    organizationId: string,
     attributes: AttributeWithValues[],
     defaultPrice: number,
     defaultQuantity: number = 0
   ) => {
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -453,7 +456,7 @@ export const productsService = {
     }
 
     // Bulk create variants
-    const result = await bulkCreateVariants(productId, variantCombinations);
+    const result = await bulkCreateVariants(productId, variantCombinations, organizationId);
 
     return result;
   },
@@ -470,9 +473,9 @@ export const productsService = {
       quantityInStock: number;
       attributeValueIds: string[];
     }>;
-  }) => {
+  }, organizationId: string) => {
     // Validate category exists
-    const category = await categoriesRepo.getCategoryById(data.product.categoryId);
+    const category = await categoriesRepo.getCategoryById(data.product.categoryId, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
@@ -481,14 +484,14 @@ export const productsService = {
     const slug = data.product.slug || generateSlug(data.product.name);
 
     // Check if slug already exists
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
     // Create the product
-    const product = await productsRepo.createProduct({ ...data.product, slug });
+    const product = await productsRepo.createProduct({ ...data.product, slug }, organizationId);
 
     // Transform variants to include empty attributeDetails for bulkCreateVariants
     const variantsWithDetails = data.variants.map(v => ({
@@ -497,7 +500,7 @@ export const productsService = {
     }));
 
     // Create variants with user-provided data
-    const variantResult = await bulkCreateVariants(product.id, variantsWithDetails);
+    const variantResult = await bulkCreateVariants(product.id, variantsWithDetails, organizationId);
 
     return {
       product,
@@ -514,9 +517,9 @@ export const productsService = {
     attributes: AttributeWithValues[];
     defaultPrice: number;
     defaultQuantity?: number;
-  }) => {
+  }, organizationId: string) => {
     // Validate category exists
-    const category = await categoriesRepo.getCategoryById(data.product.categoryId);
+    const category = await categoriesRepo.getCategoryById(data.product.categoryId, organizationId);
     if (!category) {
       throw new Error("Category not found");
     }
@@ -525,14 +528,14 @@ export const productsService = {
     const slug = data.product.slug || generateSlug(data.product.name);
 
     // Check if slug already exists
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     const existingProduct = products.find((p) => p.slug === slug);
     if (existingProduct) {
       throw new Error("Product with this slug already exists");
     }
 
     // Create the product
-    const product = await productsRepo.createProduct({ ...data.product, slug });
+    const product = await productsRepo.createProduct({ ...data.product, slug }, organizationId);
 
     // Generate and create variants
     const variantCombinations = generateVariantCombinations(
@@ -542,7 +545,7 @@ export const productsService = {
       data.defaultQuantity || 0
     );
 
-    const variantResult = await bulkCreateVariants(product.id, variantCombinations);
+    const variantResult = await bulkCreateVariants(product.id, variantCombinations, organizationId);
 
     return {
       product,
@@ -555,9 +558,10 @@ export const productsService = {
    */
   createVariantWithAutoSKU: async (
     productId: string,
+    organizationId: string,
     data: Omit<NewProductVariant, "productId" | "sku"> & { sku?: string; attributeValues?: string[] }
   ) => {
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -575,6 +579,7 @@ export const productsService = {
         sku: uniqueSKU,
         price: data.price,
         quantityInStock: data.quantityInStock,
+        organizationId,
       });
     }
 
@@ -583,6 +588,8 @@ export const productsService = {
       sku,
       price: data.price,
       quantityInStock: data.quantityInStock,
+      organizationId,
     });
+
   },
 };

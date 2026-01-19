@@ -1,10 +1,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import { Customer, Address, CustomerWithAddresses } from '../types/customerTypes'
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 
 // Fetch all customers
 export const fetchCustomers = createServerFn({ method: 'GET' })
@@ -17,9 +14,9 @@ export const fetchCustomers = createServerFn({ method: 'GET' })
       if (data?.isGuest !== undefined) params.append('isGuest', String(data.isGuest))
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/customers${queryString ? `?${queryString}` : ''}`
+      const url = `/customers${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<{ success: boolean; data: Customer[] }>(url)
+      const response = await apiClient.get<{ success: boolean; data: Customer[] }>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -44,8 +41,8 @@ export const searchCustomers = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Searching customers for "${data}"...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Customer[] }>(
-        `${API_BASE_URL}/customers/search?q=${encodeURIComponent(data)}`,
+      const response = await apiClient.get<{ success: boolean; data: Customer[] }>(
+        `/customers/search?q=${encodeURIComponent(data)}`,
       )
 
       if (response.data.success) {
@@ -65,8 +62,8 @@ export const fetchCustomerWithAddresses = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching customer ${data} with addresses...`)
     try {
-      const response = await axios.get<{ success: boolean; data: CustomerWithAddresses }>(
-        `${API_BASE_URL}/customers/${data}/addresses`,
+      const response = await apiClient.get<{ success: boolean; data: CustomerWithAddresses }>(
+        `/customers/${data}/addresses`,
       )
 
       if (response.data.success) {
@@ -92,8 +89,8 @@ export const fetchCustomerAddresses = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching addresses for customer ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Address[] }>(
-        `${API_BASE_URL}/customers/${data}/addresses/all`,
+      const response = await apiClient.get<{ success: boolean; data: Address[] }>(
+        `/customers/${data}/addresses/all`,
       )
 
       if (response.data.success) {
@@ -126,8 +123,8 @@ export const createCustomer = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating customer...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers`,
+      const response = await apiClient.post<{ success: boolean; data: Customer }>(
+        `/customers`,
         data,
       )
 
@@ -153,8 +150,8 @@ export const createGuestCustomer = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating guest customer...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers/guest`,
+      const response = await apiClient.post<{ success: boolean; data: Customer }>(
+        `/customers/guest`,
         data,
       )
 
@@ -181,10 +178,10 @@ export const getOrCreateCustomer = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Getting or creating customer...', data)
     try {
-      const response = await axios.post<{
+      const response = await apiClient.post<{
         success: boolean
         data: { customer: Customer; created: boolean }
-      }>(`${API_BASE_URL}/customers/get-or-create`, data)
+      }>(`/customers/get-or-create`, data)
 
       if (response.data.success) {
         return response.data.data
@@ -210,8 +207,8 @@ export const updateCustomer = createServerFn({ method: 'POST' })
     console.info(`Updating customer ${data.id}...`, data)
     try {
       const { id, ...updateData } = data
-      const response = await axios.put<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers/${id}`,
+      const response = await apiClient.put<{ success: boolean; data: Customer }>(
+        `/customers/${id}`,
         updateData,
       )
 
@@ -232,8 +229,8 @@ export const convertGuestToRegistered = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Converting guest customer ${data.customerId} to registered...`)
     try {
-      const response = await axios.put<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers/${data.customerId}/convert-to-registered`,
+      const response = await apiClient.put<{ success: boolean; data: Customer }>(
+        `/customers/${data.customerId}/convert-to-registered`,
         { userId: data.userId },
       )
 
@@ -254,8 +251,8 @@ export const deleteCustomer = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting customer ${data}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/customers/${data}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/customers/${data}`,
       )
 
       if (response.data.success) {
@@ -288,8 +285,8 @@ export const createAddress = createServerFn({ method: 'POST' })
     console.info(`Creating address for customer ${data.customerId}...`, data)
     try {
       const { customerId, ...addressData } = data
-      const response = await axios.post<{ success: boolean; data: Address }>(
-        `${API_BASE_URL}/customers/${customerId}/addresses`,
+      const response = await apiClient.post<{ success: boolean; data: Address }>(
+        `/customers/${customerId}/addresses`,
         addressData,
       )
 
@@ -323,8 +320,8 @@ export const updateAddress = createServerFn({ method: 'POST' })
     console.info(`Updating address ${data.addressId}...`, data)
     try {
       const { addressId, ...updateData } = data
-      const response = await axios.put<{ success: boolean; data: Address }>(
-        `${API_BASE_URL}/customers/addresses/${addressId}`,
+      const response = await apiClient.put<{ success: boolean; data: Address }>(
+        `/customers/addresses/${addressId}`,
         updateData,
       )
 
@@ -345,8 +342,8 @@ export const setDefaultAddress = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Setting address ${data.addressId} as default for customer ${data.customerId}...`)
     try {
-      const response = await axios.put<{ success: boolean; data: Address }>(
-        `${API_BASE_URL}/customers/${data.customerId}/addresses/${data.addressId}/set-default`,
+      const response = await apiClient.put<{ success: boolean; data: Address }>(
+        `/customers/${data.customerId}/addresses/${data.addressId}/set-default`,
       )
 
       if (response.data.success) {
@@ -366,8 +363,8 @@ export const deleteAddress = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting address ${data}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/customers/addresses/${data}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/customers/addresses/${data}`,
       )
 
       if (response.data.success) {
@@ -385,8 +382,8 @@ export const deleteAddress = createServerFn({ method: 'POST' })
 export const fetchRegisteredCustomers = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching registered customers...')
   try {
-    const response = await axios.get<{ success: boolean; data: Customer[] }>(
-      `${API_BASE_URL}/customers/registered`,
+    const response = await apiClient.get<{ success: boolean; data: Customer[] }>(
+      `/customers/registered`,
     )
 
     if (response.data.success) {
@@ -410,8 +407,8 @@ export const registeredCustomersQueryOptions = () =>
 export const fetchGuestCustomers = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching guest customers...')
   try {
-    const response = await axios.get<{ success: boolean; data: Customer[] }>(
-      `${API_BASE_URL}/customers/guests`,
+    const response = await apiClient.get<{ success: boolean; data: Customer[] }>(
+      `/customers/guests`,
     )
 
     if (response.data.success) {
@@ -437,8 +434,8 @@ export const fetchCustomerByEmail = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching customer by email ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers/email/${encodeURIComponent(data)}`,
+      const response = await apiClient.get<{ success: boolean; data: Customer }>(
+        `/customers/email/${encodeURIComponent(data)}`,
       )
 
       if (response.data.success) {
@@ -458,8 +455,8 @@ export const fetchCustomerByPhone = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching customer by phone ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Customer }>(
-        `${API_BASE_URL}/customers/phone/${encodeURIComponent(data)}`,
+      const response = await apiClient.get<{ success: boolean; data: Customer }>(
+        `/customers/phone/${encodeURIComponent(data)}`,
       )
 
       if (response.data.success) {
@@ -479,8 +476,8 @@ export const fetchDefaultAddress = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching default address for customer ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Address }>(
-        `${API_BASE_URL}/customers/${data}/addresses/default`,
+      const response = await apiClient.get<{ success: boolean; data: Address }>(
+        `/customers/${data}/addresses/default`,
       )
 
       if (response.data.success) {
@@ -506,14 +503,14 @@ export const fetchCustomerStats = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching stats for customer ${data}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: {
           customer: Customer
           addressCount: number
           hasDefaultAddress: boolean
         }
-      }>(`${API_BASE_URL}/customers/${data}/stats`)
+      }>(`/customers/${data}/stats`)
 
       if (response.data.success) {
         return response.data.data
@@ -538,7 +535,7 @@ export const fetchAddressStats = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching address stats for customer ${data}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: {
           totalAddresses: number
@@ -546,7 +543,7 @@ export const fetchAddressStats = createServerFn({ method: 'GET' })
           defaultAddressId?: string
           addressesByCountry: Record<string, number>
         }
-      }>(`${API_BASE_URL}/customers/${data}/addresses/stats`)
+      }>(`/customers/${data}/addresses/stats`)
 
       if (response.data.success) {
         return response.data.data
@@ -571,10 +568,10 @@ export const fetchCustomerOrders = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching orders for customer ${data}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: any[] // Using any for now - you can import Order type if available
-      }>(`${API_BASE_URL}/orders/customer/${data}`)
+      }>(`/orders/customer/${data}`)
 
       if (response.data.success) {
         return response.data.data
@@ -599,7 +596,7 @@ export const fetchCustomerOrderStats = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order stats for customer ${data}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: {
           totalOrders: number
@@ -607,7 +604,7 @@ export const fetchCustomerOrderStats = createServerFn({ method: 'GET' })
           averageOrderValue: number
           ordersByStatus: Record<string, number>
         }
-      }>(`${API_BASE_URL}/orders/customer/${data}/stats`)
+      }>(`/orders/customer/${data}/stats`)
 
       if (response.data.success) {
         return response.data.data

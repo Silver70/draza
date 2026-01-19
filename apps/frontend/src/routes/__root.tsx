@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
+  useLocation,
 } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
@@ -15,6 +16,7 @@ import { NotFound } from '~/components/NotFound'
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '~/components/ui/sidebar'
 import { AppSidebar } from '~/components/app-sidebar'
 import { ThemeProvider } from '~/components/theme-provider'
+import { AuthProvider } from '~/contexts/AuthContext'
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/components/ui/breadcrumb'
 import { Separator } from '~/components/ui/separator'
 import { Toaster } from 'sonner'
@@ -70,37 +72,48 @@ export const Route = createRootRouteWithContext<{
 })
 
 function RootComponent() {
+  const location = useLocation()
+
+  // Check if current route is a public page (no sidebar)
+  const isPublicPage = ['/login', '/signup', '/onboarding'].includes(location.pathname)
+
   return (
-    <RootDocument>
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Dashboard
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Overview</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
+    <RootDocument isPublicPage={isPublicPage}>
+      {isPublicPage ? (
+        // Public pages: no sidebar, just render the page
+        <Outlet />
+      ) : (
+        // Protected pages: show sidebar and header
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <Breadcrumb>
+                <BreadcrumbList>
+                  <BreadcrumbItem className="hidden md:block">
+                    <BreadcrumbLink href="#">
+                      Dashboard
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator className="hidden md:block" />
+                  <BreadcrumbItem>
+                    <BreadcrumbPage>Overview</BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+            </div>
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <Outlet />
           </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <Outlet />
-        </div>
-      </SidebarInset>
+        </SidebarInset>
+      )}
     </RootDocument>
   )
 }
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument({ children, isPublicPage }: { children: React.ReactNode; isPublicPage?: boolean }) {
   return (
     <html>
       <head>
@@ -131,13 +144,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         />
       </head>
       <body>
-        <ThemeProvider defaultTheme="system" defaultColorScheme="default">
-          <SidebarProvider>
-            <AppSidebar />
-            {children}
-          </SidebarProvider>
-          <Toaster richColors position="top-right" />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider defaultTheme="system" defaultColorScheme="default">
+            {isPublicPage ? (
+              // Public pages: no sidebar
+              children
+            ) : (
+              // Protected pages: with sidebar
+              <SidebarProvider>
+                <AppSidebar />
+                {children}
+              </SidebarProvider>
+            )}
+            <Toaster richColors position="top-right" />
+          </ThemeProvider>
+        </AuthProvider>
 
         <Scripts />
       </body>

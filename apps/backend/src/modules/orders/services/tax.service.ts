@@ -29,12 +29,13 @@ export interface TaxCalculationResult {
  * Calculate tax for an order based on shipping address and items
  */
 export async function calculateOrderTax(
-  input: TaxCalculationInput
+  input: TaxCalculationInput,
+  organizationId: string
 ): Promise<TaxCalculationResult> {
   const { shippingState, shippingCountry, items } = input;
 
   // 1. Find applicable tax jurisdiction
-  const jurisdiction = await findTaxJurisdiction(shippingState, shippingCountry);
+  const jurisdiction = await findTaxJurisdiction(shippingState, shippingCountry, organizationId);
 
   if (!jurisdiction) {
     // No tax jurisdiction found (e.g., international order, no tax in this state)
@@ -109,7 +110,7 @@ export async function calculateOrderTax(
  * Find the applicable tax jurisdiction for a given address
  * Priority: State > Country
  */
-async function findTaxJurisdiction(state: string, country: string) {
+async function findTaxJurisdiction(state: string, country: string, organizationId: string) {
   const now = new Date();
 
   // First, try to find state-specific tax
@@ -120,6 +121,7 @@ async function findTaxJurisdiction(state: string, country: string) {
       and(
         eq(taxJurisdictionsTable.stateCode, state),
         eq(taxJurisdictionsTable.country, country),
+        eq(taxJurisdictionsTable.organizationId, organizationId),
         eq(taxJurisdictionsTable.isActive, true),
         // Check effective dates
         lte(taxJurisdictionsTable.effectiveFrom, now),
@@ -143,6 +145,7 @@ async function findTaxJurisdiction(state: string, country: string) {
       and(
         eq(taxJurisdictionsTable.country, country),
         eq(taxJurisdictionsTable.type, 'country'),
+        eq(taxJurisdictionsTable.organizationId, organizationId),
         eq(taxJurisdictionsTable.isActive, true),
         lte(taxJurisdictionsTable.effectiveFrom, now),
         or(
@@ -159,7 +162,7 @@ async function findTaxJurisdiction(state: string, country: string) {
 /**
  * Get all active tax jurisdictions
  */
-export async function getAllActiveTaxJurisdictions() {
+export async function getAllActiveTaxJurisdictions(organizationId: string) {
   const now = new Date();
 
   return await db
@@ -167,6 +170,7 @@ export async function getAllActiveTaxJurisdictions() {
     .from(taxJurisdictionsTable)
     .where(
       and(
+        eq(taxJurisdictionsTable.organizationId, organizationId),
         eq(taxJurisdictionsTable.isActive, true),
         lte(taxJurisdictionsTable.effectiveFrom, now),
         or(
@@ -181,32 +185,43 @@ export async function getAllActiveTaxJurisdictions() {
 /**
  * Get all tax jurisdictions (including inactive)
  */
-export async function getAllTaxJurisdictions() {
+export async function getAllTaxJurisdictions(organizationId: string) {
   return await db
     .select()
     .from(taxJurisdictionsTable)
+    .where(eq(taxJurisdictionsTable.organizationId, organizationId))
     .orderBy(taxJurisdictionsTable.name);
 }
 
 /**
  * Get tax jurisdictions by type
  */
-export async function getTaxJurisdictionsByType(type: 'country' | 'state' | 'county' | 'city') {
+export async function getTaxJurisdictionsByType(type: 'country' | 'state' | 'county' | 'city', organizationId: string) {
   return await db
     .select()
     .from(taxJurisdictionsTable)
-    .where(eq(taxJurisdictionsTable.type, type))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.type, type),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .orderBy(taxJurisdictionsTable.name);
 }
 
 /**
  * Get tax jurisdiction by ID
  */
-export async function getTaxJurisdictionById(id: string) {
+export async function getTaxJurisdictionById(id: string, organizationId: string) {
   const results = await db
     .select()
     .from(taxJurisdictionsTable)
-    .where(eq(taxJurisdictionsTable.id, id))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.id, id),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .limit(1);
 
   if (results.length === 0) {
@@ -219,19 +234,22 @@ export async function getTaxJurisdictionById(id: string) {
 /**
  * Create a new tax jurisdiction
  */
-export async function createTaxJurisdiction(data: {
-  name: string;
-  type: 'country' | 'state' | 'county' | 'city';
-  country?: string;
-  stateCode?: string;
-  countyName?: string;
-  cityName?: string;
-  rate: number;
-  effectiveFrom?: Date;
-  effectiveTo?: Date | null;
-  isActive?: boolean;
-  description?: string;
-}) {
+export async function createTaxJurisdiction(
+  data: {
+    name: string;
+    type: 'country' | 'state' | 'county' | 'city';
+    country?: string;
+    stateCode?: string;
+    countyName?: string;
+    cityName?: string;
+    rate: number;
+    effectiveFrom?: Date;
+    effectiveTo?: Date | null;
+    isActive?: boolean;
+    description?: string;
+  },
+  organizationId: string
+) {
   const results = await db
     .insert(taxJurisdictionsTable)
     .values({
@@ -246,6 +264,7 @@ export async function createTaxJurisdiction(data: {
       effectiveTo: data.effectiveTo || null,
       isActive: data.isActive ?? true,
       description: data.description,
+      organizationId,
     })
     .returning();
 
@@ -269,7 +288,8 @@ export async function updateTaxJurisdiction(
     effectiveTo?: Date | null;
     isActive?: boolean;
     description?: string;
-  }
+  },
+  organizationId: string
 ) {
   const updateData: Record<string, any> = {};
 
@@ -292,7 +312,12 @@ export async function updateTaxJurisdiction(
   const results = await db
     .update(taxJurisdictionsTable)
     .set(updateData)
-    .where(eq(taxJurisdictionsTable.id, id))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.id, id),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .returning();
 
   if (results.length === 0) {
@@ -305,11 +330,16 @@ export async function updateTaxJurisdiction(
 /**
  * Deactivate a tax jurisdiction
  */
-export async function deactivateTaxJurisdiction(id: string) {
+export async function deactivateTaxJurisdiction(id: string, organizationId: string) {
   const results = await db
     .update(taxJurisdictionsTable)
     .set({ isActive: false })
-    .where(eq(taxJurisdictionsTable.id, id))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.id, id),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .returning();
 
   if (results.length === 0) {
@@ -322,11 +352,16 @@ export async function deactivateTaxJurisdiction(id: string) {
 /**
  * Activate a tax jurisdiction
  */
-export async function activateTaxJurisdiction(id: string) {
+export async function activateTaxJurisdiction(id: string, organizationId: string) {
   const results = await db
     .update(taxJurisdictionsTable)
     .set({ isActive: true })
-    .where(eq(taxJurisdictionsTable.id, id))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.id, id),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .returning();
 
   if (results.length === 0) {
@@ -339,10 +374,15 @@ export async function activateTaxJurisdiction(id: string) {
 /**
  * Delete a tax jurisdiction
  */
-export async function deleteTaxJurisdiction(id: string) {
+export async function deleteTaxJurisdiction(id: string, organizationId: string) {
   const results = await db
     .delete(taxJurisdictionsTable)
-    .where(eq(taxJurisdictionsTable.id, id))
+    .where(
+      and(
+        eq(taxJurisdictionsTable.id, id),
+        eq(taxJurisdictionsTable.organizationId, organizationId)
+      )
+    )
     .returning();
 
   if (results.length === 0) {

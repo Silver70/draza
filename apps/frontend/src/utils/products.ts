@@ -1,17 +1,14 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import { Category, CategoryWithProductCount, Product, ProductsResponse, Collection, CollectionWithProductCount, ProductWithVariants, ProductVariant} from '../types/productTypes'
-
-// TODO: Update this to your actual API URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export const fetchProducts = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching products...')
     try {
-      const response = await axios.get<ProductsResponse>(
-        `${API_BASE_URL}/products`,
+      const response = await apiClient.get<ProductsResponse>(
+        `/products`,
       )
 
       if (response.data.success) {
@@ -37,8 +34,8 @@ export const fetchSingleProduct = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching product with id ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: Product }>(
-        `${API_BASE_URL}/products/${data}`,
+      const response = await apiClient.get<{ success: boolean; data: Product }>(
+        `/products/${data}`,
       )
 
       if (response.data.success) {
@@ -57,8 +54,8 @@ export const createProduct = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating product...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Product }>(
-        `${API_BASE_URL}/products`,
+      const response = await apiClient.post<{ success: boolean; data: Product }>(
+        `/products`,
         data,
       )
 
@@ -79,8 +76,8 @@ export const activateProduct = createServerFn({ method: 'POST' })
   .handler(async ({ data: productId }) => {
     console.info(`Activating product ${productId}...`)
     try {
-      const response = await axios.put<{ success: boolean; data: Product }>(
-        `${API_BASE_URL}/products/${productId}/activate`,
+      const response = await apiClient.put<{ success: boolean; data: Product }>(
+        `/products/${productId}/activate`,
       )
 
       if (response.data.success) {
@@ -100,8 +97,8 @@ export const deactivateProduct = createServerFn({ method: 'POST' })
   .handler(async ({ data: productId }) => {
     console.info(`Deactivating product ${productId}...`)
     try {
-      const response = await axios.put<{ success: boolean; data: Product }>(
-        `${API_BASE_URL}/products/${productId}/deactivate`,
+      const response = await apiClient.put<{ success: boolean; data: Product }>(
+        `/products/${productId}/deactivate`,
       )
 
       if (response.data.success) {
@@ -127,10 +124,10 @@ export const fetchCategories = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching categories...')
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: Category[]
-      }>(`${API_BASE_URL}/products/categories`)
+      }>(`/products/categories`)
 
       if (response.data.success) {
         return response.data.data
@@ -153,10 +150,10 @@ export const fetchCategoriesWithProductCount = createServerFn({ method: 'GET' })
   async () => {
     console.info('Fetching categories with product count...')
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: CategoryWithProductCount[]
-      }>(`${API_BASE_URL}/products/categories/with-counts`)
+      }>(`/products/categories/with-counts`)
 
       if (response.data.success) {
         return response.data.data
@@ -180,8 +177,8 @@ export const createCategory = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating category...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Category }>(
-        `${API_BASE_URL}/products/categories`,
+      const response = await apiClient.post<{ success: boolean; data: Category }>(
+        `/products/categories`,
         data,
       )
 
@@ -201,10 +198,10 @@ export const fetchCollections = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching collections...')
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: Collection[]
-      }>(`${API_BASE_URL}/products/collections`)
+      }>(`/products/collections`)
 
       if (response.data.success) {
         return response.data.data
@@ -228,10 +225,10 @@ export const fetchCollectionsWithProductCount = createServerFn({ method: 'GET' }
   async () => {
     console.info('Fetching collections with product count...')
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: CollectionWithProductCount[]
-      }>(`${API_BASE_URL}/products/collections/with-counts`)
+      }>(`/products/collections/with-counts`)
 
       if (response.data.success) {
         return response.data.data
@@ -257,10 +254,10 @@ export const fetchCollectionWithProducts = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching collection ${data} with products...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: Collection & { products: Product[]; productCount: number }
-      }>(`${API_BASE_URL}/products/collections/${data}/products`)
+      }>(`/products/collections/${data}/products`)
 
       if (response.data.success) {
         return response.data.data
@@ -284,8 +281,8 @@ export const createCollection = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating collection...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Collection }>(
-        `${API_BASE_URL}/products/collections`,
+      const response = await apiClient.post<{ success: boolean; data: Collection }>(
+        `/products/collections`,
         data,
       )
 
@@ -305,8 +302,8 @@ export const addProductsToCollection = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Adding products to collection...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: any }>(
-        `${API_BASE_URL}/products/collections/${data.collectionId}/products/bulk`,
+      const response = await apiClient.post<{ success: boolean; data: any }>(
+        `/products/collections/${data.collectionId}/products/bulk`,
         { productIds: data.productIds },
       )
 
@@ -345,10 +342,10 @@ export const fetchAttributes = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching attributes...')
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: Attribute[]
-      }>(`${API_BASE_URL}/products/attributes?withValues=true`)
+      }>(`/products/attributes?withValues=true`)
 
       if (response.data.success) {
         return response.data.data
@@ -374,8 +371,8 @@ export const createAttribute = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating attribute...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: Attribute }>(
-        `${API_BASE_URL}/products/attributes`,
+      const response = await apiClient.post<{ success: boolean; data: Attribute }>(
+        `/products/attributes`,
         data,
       )
 
@@ -396,10 +393,10 @@ export const addAttributeValue = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Adding attribute value...', data)
     try {
-      const response = await axios.post<{
+      const response = await apiClient.post<{
         success: boolean
         data: AttributeValue
-      }>(`${API_BASE_URL}/products/attributes/${data.attributeId}/values`, {
+      }>(`/products/attributes/${data.attributeId}/values`, {
         value: data.value,
       })
 
@@ -427,7 +424,7 @@ export const previewVariants = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Previewing variants...', data)
     try {
-      const response = await axios.post<{
+      const response = await apiClient.post<{
         success: boolean
         data: {
           variants: Array<{
@@ -442,7 +439,7 @@ export const previewVariants = createServerFn({ method: 'POST' })
             }>
           }>
         }
-      }>(`${API_BASE_URL}/products/preview-variants`, data)
+      }>(`/products/preview-variants`, data)
 
       if (response.data.success) {
         return response.data.data.variants
@@ -471,10 +468,10 @@ export const createProductWithVariants = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating product with variants...', data)
     try {
-      const response = await axios.post<{
+      const response = await apiClient.post<{
         success: boolean
         data: { product: Product; variantResult: any }
-      }>(`${API_BASE_URL}/products/with-variants`, data)
+      }>(`/products/with-variants`, data)
 
       if (response.data.success) {
         return response.data.data
@@ -493,10 +490,10 @@ export const fetchProductWithVariants = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching product ${data} with variants...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: ProductWithVariants
-      }>(`${API_BASE_URL}/products/${data}/variants`)
+      }>(`/products/${data}/variants`)
 
       if (response.data.success) {
         return response.data.data
@@ -521,8 +518,8 @@ export const fetchAllProductsWithVariants = createServerFn({ method: 'GET' }).ha
     console.info('Fetching all products with variants...')
     try {
       // First fetch all products
-      const productsResponse = await axios.get<ProductsResponse>(
-        `${API_BASE_URL}/products`,
+      const productsResponse = await apiClient.get<ProductsResponse>(
+        `/products`,
       )
 
       if (!productsResponse.data.success) {
@@ -535,10 +532,10 @@ export const fetchAllProductsWithVariants = createServerFn({ method: 'GET' }).ha
       const productsWithVariants = await Promise.all(
         products.map(async (product) => {
           try {
-            const variantsResponse = await axios.get<{
+            const variantsResponse = await apiClient.get<{
               success: boolean
               data: ProductWithVariants
-            }>(`${API_BASE_URL}/products/${product.id}/variants`)
+            }>(`/products/${product.id}/variants`)
 
             if (variantsResponse.data.success) {
               return variantsResponse.data.data
@@ -611,7 +608,7 @@ export const uploadProductImage = async (
   if (options?.type) formData.append('type', options.type)
   if (options?.position !== undefined) formData.append('position', options.position.toString())
 
-  const response = await fetch(`${API_BASE_URL}/products/images/upload`, {
+  const response = await fetch(`/products/images/upload`, {
     method: 'POST',
     body: formData,
   })
@@ -688,7 +685,7 @@ export const uploadVariantImage = async (
   if (options?.type) formData.append('type', options.type)
   if (options?.position !== undefined) formData.append('position', options.position.toString())
 
-  const response = await fetch(`${API_BASE_URL}/products/variants/images/upload`, {
+  const response = await fetch(`/products/variants/images/upload`, {
     method: 'POST',
     body: formData,
   })
@@ -755,10 +752,10 @@ export const fetchProductImages = createServerFn({ method: 'GET' })
   .handler(async ({ data: productId }) => {
     console.info(`Fetching images for product ${productId}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: ProductImage[]
-      }>(`${API_BASE_URL}/products/images/${productId}`)
+      }>(`/products/images/${productId}`)
 
       if (response.data.success) {
         return response.data.data
@@ -779,10 +776,10 @@ export const fetchVariantImages = createServerFn({ method: 'GET' })
   .handler(async ({ data: variantId }) => {
     console.info(`Fetching images for variant ${variantId}...`)
     try {
-      const response = await axios.get<{
+      const response = await apiClient.get<{
         success: boolean
         data: ProductVariantImage[]
-      }>(`${API_BASE_URL}/products/variants/images/${variantId}`)
+      }>(`/products/variants/images/${variantId}`)
 
       if (response.data.success) {
         return response.data.data

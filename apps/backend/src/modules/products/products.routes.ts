@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 import { productsService } from "./services/products.service";
 import { categoriesService } from "./services/categories.service";
 import { collectionsService } from "./services/collections.service";
@@ -28,10 +29,11 @@ export const productsRoutes = new Hono();
 
 /**
  * GET /products
- * Get all products with optional filters
+ * Get all products with optional filters (scoped to organization)
  */
 productsRoutes.get("/", async (c) => {
   try {
+    const organizationId = getOrganizationId(c); // Extract organization from context
     const { categoryId, isActive, search } = c.req.query();
 
     const filters = {
@@ -40,7 +42,7 @@ productsRoutes.get("/", async (c) => {
       search: search || undefined,
     };
 
-    const products = await productsService.findAll(filters);
+    const products = await productsService.findAll(filters, organizationId);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch products";
@@ -50,11 +52,12 @@ productsRoutes.get("/", async (c) => {
 
 /**
  * GET /products/active
- * Get only active products (customer-facing)
+ * Get only active products (customer-facing, scoped to organization)
  */
 productsRoutes.get("/active", async (c) => {
   try {
-    const products = await productsService.findActiveProducts();
+    const organizationId = getOrganizationId(c); // Extract organization from context
+    const products = await productsService.findActiveProducts(organizationId);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch active products";
@@ -68,8 +71,9 @@ productsRoutes.get("/active", async (c) => {
  */
 productsRoutes.get("/low-stock", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const threshold = parseInt(c.req.query("threshold") || "10");
-    const products = await productsService.findLowStockProducts(threshold);
+    const products = await productsService.findLowStockProducts(organizationId, threshold);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch low stock products";
@@ -83,7 +87,8 @@ productsRoutes.get("/low-stock", async (c) => {
  */
 productsRoutes.get("/out-of-stock", async (c) => {
   try {
-    const products = await productsService.findOutOfStockProducts();
+    const organizationId = getOrganizationId(c);
+    const products = await productsService.findOutOfStockProducts(organizationId);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch out of stock products";
@@ -100,7 +105,8 @@ productsRoutes.get("/out-of-stock", async (c) => {
  */
 productsRoutes.get("/categories", async (c) => {
   try {
-    const categories = await categoriesService.findAll();
+    const organizationId = getOrganizationId(c);
+    const categories = await categoriesService.findAll(organizationId);
     return c.json({ success: true, data: categories });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch categories";
@@ -114,7 +120,8 @@ productsRoutes.get("/categories", async (c) => {
  */
 productsRoutes.get("/categories/tree", async (c) => {
   try {
-    const tree = await categoriesService.getCategoryTree();
+    const organizationId = getOrganizationId(c);
+    const tree = await categoriesService.getCategoryTree(organizationId);
     return c.json({ success: true, data: tree });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch category tree";
@@ -128,7 +135,8 @@ productsRoutes.get("/categories/tree", async (c) => {
  */
 productsRoutes.get("/categories/root", async (c) => {
   try {
-    const categories = await categoriesService.findRootCategories();
+    const organizationId = getOrganizationId(c);
+    const categories = await categoriesService.findRootCategories(organizationId);
     return c.json({ success: true, data: categories });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch root categories";
@@ -142,8 +150,9 @@ productsRoutes.get("/categories/root", async (c) => {
  */
 productsRoutes.get("/categories/with-products", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const activeOnly = c.req.query("activeOnly") === "true";
-    const categories = await categoriesService.findCategoriesWithProducts(activeOnly);
+    const categories = await categoriesService.findCategoriesWithProducts(organizationId, activeOnly);
     return c.json({ success: true, data: categories });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch categories";
@@ -157,10 +166,11 @@ productsRoutes.get("/categories/with-products", async (c) => {
  */
 productsRoutes.get("/categories/with-counts", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const activeOnly = c.req.query("activeOnly") === "true";
     const categories = activeOnly
-      ? await categoriesService.findAllWithActiveProductCounts()
-      : await categoriesService.findAllWithProductCounts();
+      ? await categoriesService.findAllWithActiveProductCounts(organizationId)
+      : await categoriesService.findAllWithProductCounts(organizationId);
     return c.json({ success: true, data: categories });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch categories with counts";
@@ -174,8 +184,9 @@ productsRoutes.get("/categories/with-counts", async (c) => {
  */
 productsRoutes.get("/categories/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const category = await categoriesService.findById(id);
+    const category = await categoriesService.findById(id, organizationId);
     return c.json({ success: true, data: category });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Category not found";
@@ -189,8 +200,9 @@ productsRoutes.get("/categories/:id", async (c) => {
  */
 productsRoutes.get("/categories/:id/children", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const category = await categoriesService.findByIdWithChildren(id);
+    const category = await categoriesService.findByIdWithChildren(id, organizationId);
     return c.json({ success: true, data: category });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Category not found";
@@ -204,8 +216,9 @@ productsRoutes.get("/categories/:id/children", async (c) => {
  */
 productsRoutes.get("/categories/:id/breadcrumb", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const breadcrumb = await categoriesService.getBreadcrumb(id);
+    const breadcrumb = await categoriesService.getBreadcrumb(id, organizationId);
     return c.json({ success: true, data: breadcrumb });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Category not found";
@@ -219,8 +232,9 @@ productsRoutes.get("/categories/:id/breadcrumb", async (c) => {
  */
 productsRoutes.get("/categories/slug/:slug", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const slug = c.req.param("slug");
-    const category = await categoriesService.findBySlug(slug);
+    const category = await categoriesService.findBySlug(slug, organizationId);
     return c.json({ success: true, data: category });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Category not found";
@@ -234,8 +248,9 @@ productsRoutes.get("/categories/slug/:slug", async (c) => {
  */
 productsRoutes.post("/categories", zValidator("json", createCategorySchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
-    const category = await categoriesService.create(data);
+    const category = await categoriesService.create(data, organizationId);
     return c.json({ success: true, data: category }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create category";
@@ -249,9 +264,10 @@ productsRoutes.post("/categories", zValidator("json", createCategorySchema), asy
  */
 productsRoutes.put("/categories/:id", zValidator("json", updateCategorySchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
-    const category = await categoriesService.update(id, data);
+    const category = await categoriesService.update(id, data, organizationId);
     return c.json({ success: true, data: category });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update category";
@@ -265,9 +281,10 @@ productsRoutes.put("/categories/:id", zValidator("json", updateCategorySchema), 
  */
 productsRoutes.put("/categories/:id/move", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { newParentId } = await c.req.json();
-    const category = await categoriesService.moveCategory(id, newParentId);
+    const category = await categoriesService.moveCategory(id, newParentId, organizationId);
     return c.json({ success: true, data: category });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to move category";
@@ -281,6 +298,7 @@ productsRoutes.put("/categories/:id/move", async (c) => {
  */
 productsRoutes.delete("/categories/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { deleteChildren, moveChildrenTo } = c.req.query();
 
@@ -289,7 +307,7 @@ productsRoutes.delete("/categories/:id", async (c) => {
       moveChildrenTo: moveChildrenTo || undefined,
     };
 
-    await categoriesService.delete(id, options);
+    await categoriesService.delete(id, organizationId, options);
     return c.json({ success: true, message: "Category deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete category";
@@ -306,7 +324,8 @@ productsRoutes.delete("/categories/:id", async (c) => {
  */
 productsRoutes.get("/collections", async (c) => {
   try {
-    const collections = await collectionsService.findAll();
+    const organizationId = getOrganizationId(c);
+    const collections = await collectionsService.findAll(organizationId);
     return c.json({ success: true, data: collections });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch collections";
@@ -320,7 +339,8 @@ productsRoutes.get("/collections", async (c) => {
  */
 productsRoutes.get("/collections/active", async (c) => {
   try {
-    const collections = await collectionsService.findActiveCollections();
+    const organizationId = getOrganizationId(c);
+    const collections = await collectionsService.findActiveCollections(organizationId);
     return c.json({ success: true, data: collections });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch active collections";
@@ -334,7 +354,8 @@ productsRoutes.get("/collections/active", async (c) => {
  */
 productsRoutes.get("/collections/with-counts", async (c) => {
   try {
-    const collections = await collectionsService.findAllWithProductCounts();
+    const organizationId = getOrganizationId(c);
+    const collections = await collectionsService.findAllWithProductCounts(organizationId);
     return c.json({ success: true, data: collections });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch collections with counts";
@@ -348,8 +369,9 @@ productsRoutes.get("/collections/with-counts", async (c) => {
  */
 productsRoutes.get("/collections/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const collection = await collectionsService.findById(id);
+    const collection = await collectionsService.findById(id, organizationId);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Collection not found";
@@ -363,9 +385,10 @@ productsRoutes.get("/collections/:id", async (c) => {
  */
 productsRoutes.get("/collections/:id/products", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const activeOnly = c.req.query("activeOnly") === "true";
-    const collection = await collectionsService.findByIdWithProducts(id, activeOnly);
+    const collection = await collectionsService.findByIdWithProducts(id, organizationId, activeOnly);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Collection not found";
@@ -379,8 +402,9 @@ productsRoutes.get("/collections/:id/products", async (c) => {
  */
 productsRoutes.get("/collections/slug/:slug", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const slug = c.req.param("slug");
-    const collection = await collectionsService.findBySlug(slug);
+    const collection = await collectionsService.findBySlug(slug, organizationId);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Collection not found";
@@ -394,8 +418,9 @@ productsRoutes.get("/collections/slug/:slug", async (c) => {
  */
 productsRoutes.post("/collections", zValidator("json", createCollectionSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
-    const collection = await collectionsService.create(data);
+    const collection = await collectionsService.create(data, organizationId);
     return c.json({ success: true, data: collection }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create collection";
@@ -409,9 +434,10 @@ productsRoutes.post("/collections", zValidator("json", createCollectionSchema), 
  */
 productsRoutes.post("/collections/:id/products", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { productId, position } = await c.req.json();
-    const result = await collectionsService.addProduct(id, productId, position);
+    const result = await collectionsService.addProduct(id, productId, organizationId, position);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to add product to collection";
@@ -425,9 +451,10 @@ productsRoutes.post("/collections/:id/products", async (c) => {
  */
 productsRoutes.post("/collections/:id/products/bulk", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { productIds } = await c.req.json();
-    const result = await collectionsService.addMultipleProducts(id, productIds);
+    const result = await collectionsService.addMultipleProducts(id, productIds, organizationId);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to add products to collection";
@@ -441,9 +468,10 @@ productsRoutes.post("/collections/:id/products/bulk", async (c) => {
  */
 productsRoutes.put("/collections/:id", zValidator("json", updateCollectionSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
-    const collection = await collectionsService.update(id, data);
+    const collection = await collectionsService.update(id, data, organizationId);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update collection";
@@ -457,8 +485,9 @@ productsRoutes.put("/collections/:id", zValidator("json", updateCollectionSchema
  */
 productsRoutes.put("/collections/:id/activate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const collection = await collectionsService.activate(id);
+    const collection = await collectionsService.activate(id, organizationId);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to activate collection";
@@ -472,8 +501,9 @@ productsRoutes.put("/collections/:id/activate", async (c) => {
  */
 productsRoutes.put("/collections/:id/deactivate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const collection = await collectionsService.deactivate(id);
+    const collection = await collectionsService.deactivate(id, organizationId);
     return c.json({ success: true, data: collection });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to deactivate collection";
@@ -487,8 +517,9 @@ productsRoutes.put("/collections/:id/deactivate", async (c) => {
  */
 productsRoutes.delete("/collections/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await collectionsService.delete(id);
+    await collectionsService.delete(id, organizationId);
     return c.json({ success: true, message: "Collection deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete collection";
@@ -502,9 +533,10 @@ productsRoutes.delete("/collections/:id", async (c) => {
  */
 productsRoutes.delete("/collections/:collectionId/products/:productId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const collectionId = c.req.param("collectionId");
     const productId = c.req.param("productId");
-    await collectionsService.removeProduct(collectionId, productId);
+    await collectionsService.removeProduct(collectionId, productId, organizationId);
     return c.json({ success: true, message: "Product removed from collection" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to remove product from collection";
@@ -521,11 +553,12 @@ productsRoutes.delete("/collections/:collectionId/products/:productId", async (c
  */
 productsRoutes.get("/attributes", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const withValues = c.req.query("withValues") === "true";
 
     const attributes = withValues
-      ? await attributesService.findAllAttributesWithValues()
-      : await attributesService.findAllAttributes();
+      ? await attributesService.findAllAttributesWithValues(organizationId)
+      : await attributesService.findAllAttributes(organizationId);
 
     return c.json({ success: true, data: attributes });
   } catch (error) {
@@ -540,12 +573,13 @@ productsRoutes.get("/attributes", async (c) => {
  */
 productsRoutes.get("/attributes/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const withValues = c.req.query("withValues") === "true";
 
     const attribute = withValues
-      ? await attributesService.findAttributeWithValues(id)
-      : await attributesService.findAttributeById(id);
+      ? await attributesService.findAttributeWithValues(id, organizationId)
+      : await attributesService.findAttributeById(id, organizationId);
 
     return c.json({ success: true, data: attribute });
   } catch (error) {
@@ -560,8 +594,9 @@ productsRoutes.get("/attributes/:id", async (c) => {
  */
 productsRoutes.get("/attributes/:id/values", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const values = await attributesService.findValuesByAttributeId(id);
+    const values = await attributesService.findValuesByAttributeId(id, organizationId);
     return c.json({ success: true, data: values });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch attribute values";
@@ -575,8 +610,9 @@ productsRoutes.get("/attributes/:id/values", async (c) => {
  */
 productsRoutes.post("/attributes", zValidator("json", createAttributeSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
-    const attribute = await attributesService.createAttribute(data);
+    const attribute = await attributesService.createAttribute(data, organizationId);
     return c.json({ success: true, data: attribute }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create attribute";
@@ -590,8 +626,9 @@ productsRoutes.post("/attributes", zValidator("json", createAttributeSchema), as
  */
 productsRoutes.post("/attributes/with-values", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const attribute = await attributesService.createAttributeWithValues(data);
+    const attribute = await attributesService.createAttributeWithValues(data, organizationId);
     return c.json({ success: true, data: attribute }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create attribute with values";
@@ -605,9 +642,10 @@ productsRoutes.post("/attributes/with-values", async (c) => {
  */
 productsRoutes.post("/attributes/:id/values", zValidator("json", createAttributeValueSchema.omit({ attributeId: true })), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const attributeId = c.req.param("id");
     const data = c.req.valid("json");
-    const value = await attributesService.createAttributeValue({ ...data, attributeId });
+    const value = await attributesService.createAttributeValue({ ...data, attributeId }, organizationId);
     return c.json({ success: true, data: value }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create attribute value";
@@ -621,9 +659,10 @@ productsRoutes.post("/attributes/:id/values", zValidator("json", createAttribute
  */
 productsRoutes.post("/attributes/:id/values/bulk", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const attributeId = c.req.param("id");
     const { values } = await c.req.json();
-    const result = await attributesService.createMultipleAttributeValues(attributeId, values);
+    const result = await attributesService.createMultipleAttributeValues(attributeId, values, organizationId);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create attribute values";
@@ -637,9 +676,10 @@ productsRoutes.post("/attributes/:id/values/bulk", async (c) => {
  */
 productsRoutes.put("/attributes/:id", zValidator("json", updateAttributeSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
-    const attribute = await attributesService.updateAttribute(id, data);
+    const attribute = await attributesService.updateAttribute(id, data, organizationId);
     return c.json({ success: true, data: attribute });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update attribute";
@@ -669,8 +709,9 @@ productsRoutes.put("/attribute-values/:id", zValidator("json", updateAttributeVa
  */
 productsRoutes.delete("/attributes/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await attributesService.deleteAttribute(id);
+    await attributesService.deleteAttribute(id, organizationId);
     return c.json({ success: true, message: "Attribute deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete attribute";
@@ -701,8 +742,9 @@ productsRoutes.delete("/attribute-values/:id", async (c) => {
  */
 productsRoutes.get("/variants/:id/attributes", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const attributes = await attributesService.getVariantAttributes(id);
+    const attributes = await attributesService.getVariantAttributes(id, organizationId);
     return c.json({ success: true, data: attributes });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch variant attributes";
@@ -716,12 +758,13 @@ productsRoutes.get("/variants/:id/attributes", async (c) => {
  */
 productsRoutes.post("/variants/:id/attributes", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const productVariantId = c.req.param("id");
     const { attributeValueId } = await c.req.json();
     const result = await attributesService.linkAttributeToVariant({
       productVariantId,
       attributeValueId,
-    });
+    }, organizationId);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to link attribute to variant";
@@ -771,6 +814,7 @@ productsRoutes.delete("/variants/:variantId/attributes/:valueId", async (c) => {
  */
 productsRoutes.post("/images/upload", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const body = await c.req.parseBody();
     const file = body.file as File;
     const productId = body.productId as string;
@@ -785,6 +829,7 @@ productsRoutes.post("/images/upload", async (c) => {
     const buffer = await file.arrayBuffer();
     const result = await imagesService.uploadProductImage({
       productId,
+      organizationId,
       file: Buffer.from(buffer),
       filename: file.name,
       altText,
@@ -806,6 +851,7 @@ productsRoutes.post("/images/upload", async (c) => {
  */
 productsRoutes.post("/variants/images/upload", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const body = await c.req.parseBody();
     const file = body.file as File;
     const productVariantId = body.productVariantId as string;
@@ -820,6 +866,7 @@ productsRoutes.post("/variants/images/upload", async (c) => {
     const buffer = await file.arrayBuffer();
     const result = await imagesService.uploadProductVariantImage({
       productVariantId,
+      organizationId,
       file: Buffer.from(buffer),
       filename: file.name,
       altText,
@@ -979,8 +1026,9 @@ productsRoutes.delete("/variants/images/:imageId", async (c) => {
  */
 productsRoutes.get("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const product = await productsService.findById(id);
+    const product = await productsService.findById(id, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Product not found";
@@ -994,8 +1042,9 @@ productsRoutes.get("/:id", async (c) => {
  */
 productsRoutes.get("/:id/variants", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const product = await productsService.findByIdWithVariants(id);
+    const product = await productsService.findByIdWithVariants(id, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Product not found";
@@ -1009,8 +1058,9 @@ productsRoutes.get("/:id/variants", async (c) => {
  */
 productsRoutes.get("/:id/availability", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const availability = await productsService.checkAvailability(id);
+    const availability = await productsService.checkAvailability(id, organizationId);
     return c.json({ success: true, data: availability });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Product not found";
@@ -1024,8 +1074,9 @@ productsRoutes.get("/:id/availability", async (c) => {
  */
 productsRoutes.get("/slug/:slug", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const slug = c.req.param("slug");
-    const product = await productsService.findBySlug(slug);
+    const product = await productsService.findBySlug(slug, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Product not found";
@@ -1039,8 +1090,9 @@ productsRoutes.get("/slug/:slug", async (c) => {
  */
 productsRoutes.get("/slug/:slug/variants", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const slug = c.req.param("slug");
-    const product = await productsService.findBySlugWithVariants(slug);
+    const product = await productsService.findBySlugWithVariants(slug, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Product not found";
@@ -1054,8 +1106,9 @@ productsRoutes.get("/slug/:slug/variants", async (c) => {
  */
 productsRoutes.post("/", zValidator("json", createProductSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
-    const product = await productsService.create(data);
+    const product = await productsService.create(data, organizationId);
     return c.json({ success: true, data: product }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create product";
@@ -1089,8 +1142,9 @@ productsRoutes.post("/preview-variants", async (c) => {
  */
 productsRoutes.post("/with-variants", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const result = await productsService.createProductWithVariants(data);
+    const result = await productsService.createProductWithVariants(data, organizationId);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create product with variants";
@@ -1105,8 +1159,9 @@ productsRoutes.post("/with-variants", async (c) => {
  */
 productsRoutes.post("/generate-variants", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const result = await productsService.createProductWithGeneratedVariants(data);
+    const result = await productsService.createProductWithGeneratedVariants(data, organizationId);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to generate variants";
@@ -1120,9 +1175,10 @@ productsRoutes.post("/generate-variants", async (c) => {
  */
 productsRoutes.post("/:id/variants/generate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { attributes, defaultPrice, defaultQuantity } = await c.req.json();
-    const result = await productsService.generateAndCreateVariants(id, attributes, defaultPrice, defaultQuantity);
+    const result = await productsService.generateAndCreateVariants(id, organizationId, attributes, defaultPrice, defaultQuantity);
     return c.json({ success: true, data: result }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to generate variants";
@@ -1136,9 +1192,10 @@ productsRoutes.post("/:id/variants/generate", async (c) => {
  */
 productsRoutes.put("/:id", zValidator("json", updateProductSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
-    const product = await productsService.update(id, data);
+    const product = await productsService.update(id, data, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update product";
@@ -1152,8 +1209,9 @@ productsRoutes.put("/:id", zValidator("json", updateProductSchema), async (c) =>
  */
 productsRoutes.put("/:id/activate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const product = await productsService.activate(id);
+    const product = await productsService.activate(id, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to activate product";
@@ -1167,8 +1225,9 @@ productsRoutes.put("/:id/activate", async (c) => {
  */
 productsRoutes.put("/:id/deactivate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const product = await productsService.deactivate(id);
+    const product = await productsService.deactivate(id, organizationId);
     return c.json({ success: true, data: product });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to deactivate product";
@@ -1182,9 +1241,10 @@ productsRoutes.put("/:id/deactivate", async (c) => {
  */
 productsRoutes.delete("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const hard = c.req.query("hard") === "true";
-    await productsService.delete(id, hard);
+    await productsService.delete(id, organizationId, hard);
     return c.json({ success: true, message: "Product deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete product";

@@ -11,7 +11,7 @@ export const analyticsRepo = {
   /**
    * Get total revenue across all orders
    */
-  async getTotalRevenue() {
+  async getTotalRevenue(organizationId: string) {
     const result = await db
       .select({
         totalRevenue: sql<string>`COALESCE(${sum(ordersTable.total)}, 0)`,
@@ -19,7 +19,8 @@ export const analyticsRepo = {
         totalTax: sql<string>`COALESCE(${sum(ordersTable.tax)}, 0)`,
         totalShipping: sql<string>`COALESCE(${sum(ordersTable.shippingCost)}, 0)`,
       })
-      .from(ordersTable);
+      .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId));
 
     return result[0];
   },
@@ -27,13 +28,14 @@ export const analyticsRepo = {
   /**
    * Get revenue breakdown by order status
    */
-  async getRevenueByStatus() {
+  async getRevenueByStatus(organizationId: string) {
     const result = await db
       .select({
         status: ordersTable.status,
         revenue: sql<string>`COALESCE(SUM(${ordersTable.total}), 0)`,
       })
       .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId))
       .groupBy(ordersTable.status);
 
     return result;
@@ -42,12 +44,13 @@ export const analyticsRepo = {
   /**
    * Get total number of orders
    */
-  async getTotalOrders() {
+  async getTotalOrders(organizationId: string) {
     const result = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
       })
-      .from(ordersTable);
+      .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId));
 
     return result[0].count;
   },
@@ -55,13 +58,14 @@ export const analyticsRepo = {
   /**
    * Get order count breakdown by status
    */
-  async getOrdersByStatus() {
+  async getOrdersByStatus(organizationId: string) {
     const result = await db
       .select({
         status: ordersTable.status,
         count: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId))
       .groupBy(ordersTable.status);
 
     return result;
@@ -70,12 +74,13 @@ export const analyticsRepo = {
   /**
    * Get total number of customers
    */
-  async getTotalCustomers() {
+  async getTotalCustomers(organizationId: string) {
     const result = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
       })
-      .from(customersTable);
+      .from(customersTable)
+      .where(eq(customersTable.organizationId, organizationId));
 
     return result[0].count;
   },
@@ -83,13 +88,14 @@ export const analyticsRepo = {
   /**
    * Get customer breakdown (registered vs guest)
    */
-  async getCustomerBreakdown() {
+  async getCustomerBreakdown(organizationId: string) {
     const result = await db
       .select({
         isGuest: customersTable.is_guest,
         count: sql<number>`COUNT(*)::int`,
       })
       .from(customersTable)
+      .where(eq(customersTable.organizationId, organizationId))
       .groupBy(customersTable.is_guest);
 
     return result;
@@ -98,7 +104,7 @@ export const analyticsRepo = {
   /**
    * Get low stock count
    */
-  async getLowStockCount(threshold: number = 10) {
+  async getLowStockCount(organizationId: string, threshold: number = 10) {
     const result = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
@@ -106,6 +112,7 @@ export const analyticsRepo = {
       .from(productVariantsTable)
       .where(
         and(
+          eq(productVariantsTable.organizationId, organizationId),
           sql`${productVariantsTable.quantityInStock} > 0`,
           sql`${productVariantsTable.quantityInStock} <= ${threshold}`
         )
@@ -117,13 +124,18 @@ export const analyticsRepo = {
   /**
    * Get out of stock count
    */
-  async getOutOfStockCount() {
+  async getOutOfStockCount(organizationId: string) {
     const result = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
       })
       .from(productVariantsTable)
-      .where(eq(productVariantsTable.quantityInStock, 0));
+      .where(
+        and(
+          eq(productVariantsTable.organizationId, organizationId),
+          eq(productVariantsTable.quantityInStock, 0)
+        )
+      );
 
     return result[0].count;
   },
@@ -133,7 +145,7 @@ export const analyticsRepo = {
   /**
    * Get revenue trends over time
    */
-  async getRevenueTrend(period: "day" | "week" | "month" = "week", limit: number = 30) {
+  async getRevenueTrend(organizationId: string, period: "day" | "week" | "month" = "week", limit: number = 30) {
     let dateFormat: string;
 
     switch (period) {
@@ -157,6 +169,7 @@ export const analyticsRepo = {
         orderCount: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId))
       .groupBy(sql`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)})`)
       .orderBy(sql`TO_CHAR(${ordersTable.createdAt}, ${sql.raw(`'${dateFormat}'`)}) DESC`)
       .limit(limit);
@@ -169,7 +182,7 @@ export const analyticsRepo = {
   /**
    * Get average items per order
    */
-  async getAverageItemsPerOrder() {
+  async getAverageItemsPerOrder(organizationId: string) {
     const result = await db
       .select({
         averageItems: sql<string>`COALESCE(AVG(item_count), 0)`,
@@ -181,6 +194,8 @@ export const analyticsRepo = {
             item_count: sql<number>`SUM(${orderItemsTable.quantity})`,
           })
           .from(orderItemsTable)
+          .innerJoin(ordersTable, eq(orderItemsTable.orderId, ordersTable.id))
+          .where(eq(ordersTable.organizationId, organizationId))
           .groupBy(orderItemsTable.orderId)
           .as("order_items_summary")
       );
@@ -191,7 +206,7 @@ export const analyticsRepo = {
   /**
    * Get recent orders with customer info
    */
-  async getRecentOrders(limit: number = 10) {
+  async getRecentOrders(organizationId: string, limit: number = 10) {
     const result = await db
       .select({
         id: ordersTable.id,
@@ -204,6 +219,7 @@ export const analyticsRepo = {
       })
       .from(ordersTable)
       .innerJoin(customersTable, eq(ordersTable.customerId, customersTable.id))
+      .where(eq(ordersTable.organizationId, organizationId))
       .orderBy(desc(ordersTable.createdAt))
       .limit(limit);
 
@@ -215,12 +231,13 @@ export const analyticsRepo = {
   /**
    * Get customers with repeat purchases
    */
-  async getRepeatCustomerCount() {
+  async getRepeatCustomerCount(organizationId: string) {
     const result = await db
       .select({
         count: sql<number>`COUNT(DISTINCT ${ordersTable.customerId})::int`,
       })
       .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId))
       .groupBy(ordersTable.customerId)
       .having(sql`COUNT(*) > 1`);
 
@@ -230,7 +247,7 @@ export const analyticsRepo = {
   /**
    * Get top customers by total spending
    */
-  async getTopCustomers(limit: number = 10) {
+  async getTopCustomers(organizationId: string, limit: number = 10) {
     const result = await db
       .select({
         id: customersTable.id,
@@ -242,6 +259,7 @@ export const analyticsRepo = {
       })
       .from(customersTable)
       .innerJoin(ordersTable, eq(customersTable.id, ordersTable.customerId))
+      .where(eq(customersTable.organizationId, organizationId))
       .groupBy(customersTable.id, customersTable.first_name, customersTable.last_name, customersTable.email)
       .orderBy(desc(sql`SUM(${ordersTable.total})`))
       .limit(limit);
@@ -252,7 +270,7 @@ export const analyticsRepo = {
   /**
    * Get customer lifetime value average
    */
-  async getAverageCustomerLifetimeValue() {
+  async getAverageCustomerLifetimeValue(organizationId: string) {
     const result = await db
       .select({
         averageLTV: sql<string>`COALESCE(AVG(customer_total), 0)`,
@@ -264,6 +282,7 @@ export const analyticsRepo = {
             customer_total: sql<number>`SUM(${ordersTable.total})`,
           })
           .from(ordersTable)
+          .where(eq(ordersTable.organizationId, organizationId))
           .groupBy(ordersTable.customerId)
           .as("customer_totals")
       );
@@ -274,7 +293,7 @@ export const analyticsRepo = {
   /**
    * Get customer geography distribution
    */
-  async getCustomerGeography() {
+  async getCustomerGeography(organizationId: string) {
     const result = await db
       .select({
         country: addressesTable.country,
@@ -282,6 +301,8 @@ export const analyticsRepo = {
         customerCount: sql<number>`COUNT(DISTINCT ${addressesTable.customerId})::int`,
       })
       .from(addressesTable)
+      .innerJoin(customersTable, eq(addressesTable.customerId, customersTable.id))
+      .where(eq(customersTable.organizationId, organizationId))
       .groupBy(addressesTable.country, addressesTable.state)
       .orderBy(desc(sql`COUNT(DISTINCT ${addressesTable.customerId})`))
       .limit(20);
@@ -294,20 +315,22 @@ export const analyticsRepo = {
   /**
    * Get total products and variants
    */
-  async getProductStats() {
+  async getProductStats(organizationId: string) {
     const productCount = await db
       .select({
         total: sql<number>`COUNT(*)::int`,
         active: sql<number>`COUNT(*) FILTER (WHERE ${productsTable.isActive} = true)::int`,
       })
-      .from(productsTable);
+      .from(productsTable)
+      .where(eq(productsTable.organizationId, organizationId));
 
     const variantCount = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
         averagePrice: sql<string>`COALESCE(AVG(${productVariantsTable.price}), 0)`,
       })
-      .from(productVariantsTable);
+      .from(productVariantsTable)
+      .where(eq(productVariantsTable.organizationId, organizationId));
 
     return {
       totalProducts: productCount[0].total,
@@ -320,7 +343,7 @@ export const analyticsRepo = {
   /**
    * Get top selling products
    */
-  async getTopSellingProducts(limit: number = 10, sortBy: "quantity" | "revenue" = "revenue") {
+  async getTopSellingProducts(organizationId: string, limit: number = 10, sortBy: "quantity" | "revenue" = "revenue") {
     const orderByClause = sortBy === "quantity"
       ? desc(sql`SUM(${orderItemsTable.quantity})`)
       : desc(sql`SUM(${orderItemsTable.totalPrice})`);
@@ -337,6 +360,7 @@ export const analyticsRepo = {
       .from(orderItemsTable)
       .innerJoin(productVariantsTable, eq(orderItemsTable.productVariantId, productVariantsTable.id))
       .innerJoin(productsTable, eq(productVariantsTable.productId, productsTable.id))
+      .where(eq(productsTable.organizationId, organizationId))
       .groupBy(productsTable.id, productsTable.name, productVariantsTable.id, productVariantsTable.sku)
       .orderBy(orderByClause)
       .limit(limit);
@@ -347,7 +371,7 @@ export const analyticsRepo = {
   /**
    * Get low stock products
    */
-  async getLowStockProducts(threshold: number = 10, limit: number = 20) {
+  async getLowStockProducts(organizationId: string, threshold: number = 10, limit: number = 20) {
     const result = await db
       .select({
         variantId: productVariantsTable.id,
@@ -360,6 +384,7 @@ export const analyticsRepo = {
       .innerJoin(productsTable, eq(productVariantsTable.productId, productsTable.id))
       .where(
         and(
+          eq(productVariantsTable.organizationId, organizationId),
           sql`${productVariantsTable.quantityInStock} > 0`,
           sql`${productVariantsTable.quantityInStock} <= ${threshold}`
         )
@@ -373,7 +398,7 @@ export const analyticsRepo = {
   /**
    * Get out of stock products
    */
-  async getOutOfStockProducts(limit: number = 20) {
+  async getOutOfStockProducts(organizationId: string, limit: number = 20) {
     const result = await db
       .select({
         variantId: productVariantsTable.id,
@@ -384,7 +409,12 @@ export const analyticsRepo = {
       })
       .from(productVariantsTable)
       .innerJoin(productsTable, eq(productVariantsTable.productId, productsTable.id))
-      .where(eq(productVariantsTable.quantityInStock, 0))
+      .where(
+        and(
+          eq(productVariantsTable.organizationId, organizationId),
+          eq(productVariantsTable.quantityInStock, 0)
+        )
+      )
       .orderBy(productsTable.name)
       .limit(limit);
 
@@ -396,12 +426,13 @@ export const analyticsRepo = {
   /**
    * Get total inventory value
    */
-  async getTotalInventoryValue() {
+  async getTotalInventoryValue(organizationId: string) {
     const result = await db
       .select({
         totalValue: sql<string>`COALESCE(SUM(${productVariantsTable.price} * ${productVariantsTable.quantityInStock}), 0)`,
       })
-      .from(productVariantsTable);
+      .from(productVariantsTable)
+      .where(eq(productVariantsTable.organizationId, organizationId));
 
     return result[0].totalValue;
   },
@@ -411,7 +442,7 @@ export const analyticsRepo = {
   /**
    * Get tax collected by jurisdiction
    */
-  async getTaxByJurisdiction() {
+  async getTaxByJurisdiction(organizationId: string) {
     const result = await db
       .select({
         jurisdictionName: ordersTable.taxJurisdictionName,
@@ -419,7 +450,12 @@ export const analyticsRepo = {
         orderCount: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
-      .where(sql`${ordersTable.taxJurisdictionName} IS NOT NULL`)
+      .where(
+        and(
+          eq(ordersTable.organizationId, organizationId),
+          sql`${ordersTable.taxJurisdictionName} IS NOT NULL`
+        )
+      )
       .groupBy(ordersTable.taxJurisdictionName)
       .orderBy(desc(sql`SUM(${ordersTable.tax})`));
 
@@ -429,7 +465,7 @@ export const analyticsRepo = {
   /**
    * Get shipping analytics by method
    */
-  async getShippingByMethod() {
+  async getShippingByMethod(organizationId: string) {
     const result = await db
       .select({
         methodName: ordersTable.shippingMethodName,
@@ -437,7 +473,12 @@ export const analyticsRepo = {
         revenue: sql<string>`COALESCE(SUM(${ordersTable.shippingCost}), 0)`,
       })
       .from(ordersTable)
-      .where(sql`${ordersTable.shippingMethodName} IS NOT NULL`)
+      .where(
+        and(
+          eq(ordersTable.organizationId, organizationId),
+          sql`${ordersTable.shippingMethodName} IS NOT NULL`
+        )
+      )
       .groupBy(ordersTable.shippingMethodName)
       .orderBy(desc(sql`COUNT(*)`));
 
@@ -447,13 +488,18 @@ export const analyticsRepo = {
   /**
    * Get free shipping orders count
    */
-  async getFreeShippingOrdersCount() {
+  async getFreeShippingOrdersCount(organizationId: string) {
     const result = await db
       .select({
         count: sql<number>`COUNT(*)::int`,
       })
       .from(ordersTable)
-      .where(eq(ordersTable.shippingCost, "0.00"));
+      .where(
+        and(
+          eq(ordersTable.organizationId, organizationId),
+          eq(ordersTable.shippingCost, "0.00")
+        )
+      );
 
     return result[0].count;
   },
@@ -461,12 +507,13 @@ export const analyticsRepo = {
   /**
    * Get average shipping cost
    */
-  async getAverageShippingCost() {
+  async getAverageShippingCost(organizationId: string) {
     const result = await db
       .select({
         average: sql<string>`COALESCE(AVG(${ordersTable.shippingCost}), 0)`,
       })
-      .from(ordersTable);
+      .from(ordersTable)
+      .where(eq(ordersTable.organizationId, organizationId));
 
     return result[0].average;
   },

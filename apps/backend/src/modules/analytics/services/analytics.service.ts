@@ -24,7 +24,7 @@ export const analyticsService = {
    * Get comprehensive dashboard overview
    * This is the main endpoint for the dashboard homepage
    */
-  getDashboardOverview: async (): Promise<DashboardOverview> => {
+  getDashboardOverview: async (organizationId: string): Promise<DashboardOverview> => {
     // Fetch all data in parallel for performance
     const [
       revenueData,
@@ -36,14 +36,14 @@ export const analyticsService = {
       lowStockCount,
       outOfStockCount,
     ] = await Promise.all([
-      analyticsRepo.getTotalRevenue(),
-      analyticsRepo.getRevenueByStatus(),
-      analyticsRepo.getTotalOrders(),
-      analyticsRepo.getOrdersByStatus(),
-      analyticsRepo.getTotalCustomers(),
-      analyticsRepo.getCustomerBreakdown(),
-      analyticsRepo.getLowStockCount(),
-      analyticsRepo.getOutOfStockCount(),
+      analyticsRepo.getTotalRevenue(organizationId),
+      analyticsRepo.getRevenueByStatus(organizationId),
+      analyticsRepo.getTotalOrders(organizationId),
+      analyticsRepo.getOrdersByStatus(organizationId),
+      analyticsRepo.getTotalCustomers(organizationId),
+      analyticsRepo.getCustomerBreakdown(organizationId),
+      analyticsRepo.getLowStockCount(organizationId),
+      analyticsRepo.getOutOfStockCount(organizationId),
     ]);
 
     // Process revenue by status
@@ -113,11 +113,11 @@ export const analyticsService = {
   /**
    * Get detailed revenue analytics
    */
-  getRevenueAnalytics: async (): Promise<RevenueAnalytics> => {
+  getRevenueAnalytics: async (organizationId: string): Promise<RevenueAnalytics> => {
     const [revenueData, revenueByStatusData, totalOrders] = await Promise.all([
-      analyticsRepo.getTotalRevenue(),
-      analyticsRepo.getRevenueByStatus(),
-      analyticsRepo.getTotalOrders(),
+      analyticsRepo.getTotalRevenue(organizationId),
+      analyticsRepo.getRevenueByStatus(organizationId),
+      analyticsRepo.getTotalOrders(organizationId),
     ]);
 
     const revenueByStatus: Record<string, string> = {};
@@ -143,10 +143,11 @@ export const analyticsService = {
    * Get revenue trends over time
    */
   getRevenueTrend: async (
+    organizationId: string,
     period: "day" | "week" | "month" = "week",
     limit: number = 30
   ): Promise<RevenueTrend[]> => {
-    const trends = await analyticsRepo.getRevenueTrend(period, limit);
+    const trends = await analyticsRepo.getRevenueTrend(organizationId, period, limit);
 
     return trends.map((trend) => ({
       date: trend.date,
@@ -160,11 +161,11 @@ export const analyticsService = {
   /**
    * Get detailed order analytics
    */
-  getOrderAnalytics: async (): Promise<OrderAnalytics> => {
+  getOrderAnalytics: async (organizationId: string): Promise<OrderAnalytics> => {
     const [totalOrders, ordersByStatusData, averageItems] = await Promise.all([
-      analyticsRepo.getTotalOrders(),
-      analyticsRepo.getOrdersByStatus(),
-      analyticsRepo.getAverageItemsPerOrder(),
+      analyticsRepo.getTotalOrders(organizationId),
+      analyticsRepo.getOrdersByStatus(organizationId),
+      analyticsRepo.getAverageItemsPerOrder(organizationId),
     ]);
 
     const ordersByStatus: Record<string, number> = {};
@@ -197,8 +198,8 @@ export const analyticsService = {
   /**
    * Get recent orders
    */
-  getRecentOrders: async (limit: number = 10): Promise<RecentOrder[]> => {
-    const orders = await analyticsRepo.getRecentOrders(limit);
+  getRecentOrders: async (organizationId: string, limit: number = 10): Promise<RecentOrder[]> => {
+    const orders = await analyticsRepo.getRecentOrders(organizationId, limit);
 
     return orders.map((order) => ({
       id: order.id,
@@ -215,17 +216,17 @@ export const analyticsService = {
   /**
    * Get detailed customer analytics
    */
-  getCustomerAnalytics: async (): Promise<CustomerAnalytics> => {
+  getCustomerAnalytics: async (organizationId: string): Promise<CustomerAnalytics> => {
     const [
       totalCustomers,
       customerBreakdownData,
       repeatCustomerCount,
       averageLTV,
     ] = await Promise.all([
-      analyticsRepo.getTotalCustomers(),
-      analyticsRepo.getCustomerBreakdown(),
-      analyticsRepo.getRepeatCustomerCount(),
-      analyticsRepo.getAverageCustomerLifetimeValue(),
+      analyticsRepo.getTotalCustomers(organizationId),
+      analyticsRepo.getCustomerBreakdown(organizationId),
+      analyticsRepo.getRepeatCustomerCount(organizationId),
+      analyticsRepo.getAverageCustomerLifetimeValue(organizationId),
     ]);
 
     let registeredCustomers = 0;
@@ -255,8 +256,8 @@ export const analyticsService = {
   /**
    * Get top customers by spending
    */
-  getTopCustomers: async (limit: number = 10): Promise<TopCustomer[]> => {
-    const customers = await analyticsRepo.getTopCustomers(limit);
+  getTopCustomers: async (organizationId: string, limit: number = 10): Promise<TopCustomer[]> => {
+    const customers = await analyticsRepo.getTopCustomers(organizationId, limit);
 
     return customers.map((customer) => ({
       id: customer.id,
@@ -270,8 +271,8 @@ export const analyticsService = {
   /**
    * Get customer geography distribution
    */
-  getCustomerGeography: async (): Promise<CustomerGeography[]> => {
-    const geography = await analyticsRepo.getCustomerGeography();
+  getCustomerGeography: async (organizationId: string): Promise<CustomerGeography[]> => {
+    const geography = await analyticsRepo.getCustomerGeography(organizationId);
 
     return geography.map((item) => ({
       country: item.country,
@@ -285,8 +286,8 @@ export const analyticsService = {
   /**
    * Get product analytics overview
    */
-  getProductAnalytics: async (): Promise<ProductAnalytics> => {
-    const stats = await analyticsRepo.getProductStats();
+  getProductAnalytics: async (organizationId: string): Promise<ProductAnalytics> => {
+    const stats = await analyticsRepo.getProductStats(organizationId);
 
     return {
       totalProducts: stats.totalProducts,
@@ -300,10 +301,11 @@ export const analyticsService = {
    * Get top selling products
    */
   getTopSellingProducts: async (
+    organizationId: string,
     limit: number = 10,
     sortBy: "quantity" | "revenue" = "revenue"
   ): Promise<TopSellingProduct[]> => {
-    const products = await analyticsRepo.getTopSellingProducts(limit, sortBy);
+    const products = await analyticsRepo.getTopSellingProducts(organizationId, limit, sortBy);
 
     return products.map((product) => ({
       productId: product.productId,
@@ -319,10 +321,11 @@ export const analyticsService = {
    * Get low stock products
    */
   getLowStockProducts: async (
+    organizationId: string,
     threshold: number = 10,
     limit: number = 20
   ): Promise<LowStockProduct[]> => {
-    const products = await analyticsRepo.getLowStockProducts(threshold, limit);
+    const products = await analyticsRepo.getLowStockProducts(organizationId, threshold, limit);
 
     return products.map((product) => ({
       variantId: product.variantId,
@@ -336,8 +339,8 @@ export const analyticsService = {
   /**
    * Get out of stock products
    */
-  getOutOfStockProducts: async (limit: number = 20): Promise<LowStockProduct[]> => {
-    const products = await analyticsRepo.getOutOfStockProducts(limit);
+  getOutOfStockProducts: async (organizationId: string, limit: number = 20): Promise<LowStockProduct[]> => {
+    const products = await analyticsRepo.getOutOfStockProducts(organizationId, limit);
 
     return products.map((product) => ({
       variantId: product.variantId,
@@ -353,13 +356,13 @@ export const analyticsService = {
   /**
    * Get inventory analytics
    */
-  getInventoryAnalytics: async (): Promise<InventoryAnalytics> => {
+  getInventoryAnalytics: async (organizationId: string): Promise<InventoryAnalytics> => {
     const [totalValue, lowStockCount, outOfStockCount, productStats] =
       await Promise.all([
-        analyticsRepo.getTotalInventoryValue(),
-        analyticsRepo.getLowStockCount(),
-        analyticsRepo.getOutOfStockCount(),
-        analyticsRepo.getProductStats(),
+        analyticsRepo.getTotalInventoryValue(organizationId),
+        analyticsRepo.getLowStockCount(organizationId),
+        analyticsRepo.getOutOfStockCount(organizationId),
+        analyticsRepo.getProductStats(organizationId),
       ]);
 
     return {
@@ -376,10 +379,11 @@ export const analyticsService = {
    * Get sales trends (alias for revenue trends with additional metrics)
    */
   getSalesTrends: async (
+    organizationId: string,
     period: "day" | "week" | "month" = "week",
     limit: number = 30
   ): Promise<SalesTrend[]> => {
-    const trends = await analyticsRepo.getRevenueTrend(period, limit);
+    const trends = await analyticsRepo.getRevenueTrend(organizationId, period, limit);
 
     return trends.map((trend) => {
       const revenue = parseFloat(trend.revenue);
@@ -400,10 +404,10 @@ export const analyticsService = {
   /**
    * Get tax analytics
    */
-  getTaxAnalytics: async (): Promise<TaxAnalytics> => {
+  getTaxAnalytics: async (organizationId: string): Promise<TaxAnalytics> => {
     const [totalRevenue, taxByJurisdiction] = await Promise.all([
-      analyticsRepo.getTotalRevenue(),
-      analyticsRepo.getTaxByJurisdiction(),
+      analyticsRepo.getTotalRevenue(organizationId),
+      analyticsRepo.getTaxByJurisdiction(organizationId),
     ]);
 
     return {
@@ -419,13 +423,13 @@ export const analyticsService = {
   /**
    * Get shipping analytics
    */
-  getShippingAnalytics: async (): Promise<ShippingAnalytics> => {
+  getShippingAnalytics: async (organizationId: string): Promise<ShippingAnalytics> => {
     const [totalRevenue, shippingByMethod, freeShippingCount, averageShipping] =
       await Promise.all([
-        analyticsRepo.getTotalRevenue(),
-        analyticsRepo.getShippingByMethod(),
-        analyticsRepo.getFreeShippingOrdersCount(),
-        analyticsRepo.getAverageShippingCost(),
+        analyticsRepo.getTotalRevenue(organizationId),
+        analyticsRepo.getShippingByMethod(organizationId),
+        analyticsRepo.getFreeShippingOrdersCount(organizationId),
+        analyticsRepo.getAverageShippingCost(organizationId),
       ]);
 
     return {

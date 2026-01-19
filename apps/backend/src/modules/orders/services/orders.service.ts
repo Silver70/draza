@@ -14,11 +14,11 @@ export const ordersService = {
   /**
    * Get all orders with optional filtering
    */
-  findAll: async (filters?: {
+  findAll: async (organizationId: string, filters?: {
     customerId?: string;
     status?: string;
   }) => {
-    let orders = await ordersRepo.getAllOrders();
+    let orders = await ordersRepo.getAllOrders(organizationId);
 
     if (!orders || orders.length === 0) {
       return [];
@@ -39,47 +39,47 @@ export const ordersService = {
   /**
    * Get orders by customer ID
    */
-  findByCustomerId: async (customerId: string) => {
-    // Verify customer exists
-    const customer = await customersRepo.getCustomerById(customerId);
+  findByCustomerId: async (customerId: string, organizationId: string) => {
+    // Verify customer exists and belongs to organization
+    const customer = await customersRepo.getCustomerById(customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
-    return await ordersRepo.getOrdersByCustomerId(customerId);
+    return await ordersRepo.getOrdersByCustomerId(customerId, organizationId);
   },
 
   /**
    * Get orders by status
    */
-  findByStatus: async (status: string) => {
+  findByStatus: async (status: string, organizationId: string) => {
     const validStatuses = ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"];
     if (!validStatuses.includes(status)) {
       throw new Error(`Invalid status. Must be one of: ${validStatuses.join(", ")}`);
     }
 
-    return await ordersRepo.getOrdersByStatus(status);
+    return await ordersRepo.getOrdersByStatus(status, organizationId);
   },
 
   /**
    * Get pending orders
    */
-  findPendingOrders: async () => {
-    return await ordersRepo.getOrdersByStatus("pending");
+  findPendingOrders: async (organizationId: string) => {
+    return await ordersRepo.getOrdersByStatus("pending", organizationId);
   },
 
   /**
    * Get processing orders
    */
-  findProcessingOrders: async () => {
-    return await ordersRepo.getOrdersByStatus("processing");
+  findProcessingOrders: async (organizationId: string) => {
+    return await ordersRepo.getOrdersByStatus("processing", organizationId);
   },
 
   /**
    * Get a single order by ID
    */
-  findById: async (id: string) => {
-    const order = await ordersRepo.getOrderById(id);
+  findById: async (id: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderById(id, organizationId);
 
     if (!order) {
       throw new Error("Order not found");
@@ -91,8 +91,8 @@ export const ordersService = {
   /**
    * Get order by order number
    */
-  findByOrderNumber: async (orderNumber: string) => {
-    const order = await ordersRepo.getOrderByOrderNumber(orderNumber);
+  findByOrderNumber: async (orderNumber: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderByOrderNumber(orderNumber, organizationId);
 
     if (!order) {
       throw new Error("Order not found");
@@ -104,8 +104,8 @@ export const ordersService = {
   /**
    * Get order with items
    */
-  findByIdWithItems: async (id: string) => {
-    const order = await ordersRepo.getOrderWithItems(id);
+  findByIdWithItems: async (id: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderWithItems(id, organizationId);
 
     if (!order) {
       throw new Error("Order not found");
@@ -117,8 +117,8 @@ export const ordersService = {
   /**
    * Get order with all relations (customer, addresses, items with products)
    */
-  findByIdWithRelations: async (id: string) => {
-    const order = await ordersRepo.getOrderWithRelations(id);
+  findByIdWithRelations: async (id: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderWithRelations(id, organizationId);
 
     if (!order) {
       throw new Error("Order not found");
@@ -131,12 +131,15 @@ export const ordersService = {
    * Get available shipping options for cart
    * Used by frontend to display shipping options before order creation
    */
-  getAvailableShippingOptions: async (data: {
-    items: Array<{
-      productVariantId: string;
-      quantity: number;
-    }>;
-  }) => {
+  getAvailableShippingOptions: async (
+    data: {
+      items: Array<{
+        productVariantId: string;
+        quantity: number;
+      }>;
+    },
+    organizationId: string
+  ) => {
     // Calculate cart subtotal
     let subtotal = 0;
     let totalWeight = 0; // TODO: Add weight to product variants
@@ -151,11 +154,11 @@ export const ordersService = {
       subtotal += itemTotal;
     }
 
-    // Get all available shipping options
+    // Get all available shipping options for this organization
     const shippingOptions = await calculateShippingOptions({
       subtotal,
       totalWeight,
-    });
+    }, organizationId);
 
     return shippingOptions;
   },
@@ -164,15 +167,18 @@ export const ordersService = {
    * Get all active shipping methods
    * Used by admin settings to select default shipping method
    */
-  getAllShippingMethods: async () => {
+  getAllShippingMethods: async (organizationId: string) => {
     const { getAllActiveShippingMethods } = await import('./shipping.service');
-    return await getAllActiveShippingMethods();
+    return await getAllActiveShippingMethods(organizationId);
   },
 
   /**
    * Validate order items before creating order
    */
-  validateOrderItems: async (items: Array<{ productVariantId: string; quantity: number }>): Promise<Array<{
+  validateOrderItems: async (
+    items: Array<{ productVariantId: string; quantity: number }>,
+    organizationId: string
+  ): Promise<Array<{
     variantId: string;
     sku: string;
     price: string;
@@ -215,27 +221,30 @@ export const ordersService = {
    * Discounts are applied before tax calculation
    * Campaign attribution is handled automatically if sessionId is provided
    */
-  create: async (data: {
-    customerId: string;
-    shippingAddressId: string;
-    billingAddressId: string;
-    items: Array<{
-      productVariantId: string;
-      quantity: number;
-    }>;
-    shippingMethodId: string; // Selected shipping method
-    discountCode?: string; // Optional discount code
-    sessionId?: string; // Optional session ID for campaign attribution
-    notes?: string;
-  }) => {
-    // Validate customer exists
-    const customer = await customersRepo.getCustomerById(data.customerId);
+  create: async (
+    data: {
+      customerId: string;
+      shippingAddressId: string;
+      billingAddressId: string;
+      items: Array<{
+        productVariantId: string;
+        quantity: number;
+      }>;
+      shippingMethodId: string; // Selected shipping method
+      discountCode?: string; // Optional discount code
+      sessionId?: string; // Optional session ID for campaign attribution
+      notes?: string;
+    },
+    organizationId: string
+  ) => {
+    // Validate customer exists and belongs to organization
+    const customer = await customersRepo.getCustomerById(data.customerId, organizationId);
     if (!customer) {
       throw new Error("Customer not found");
     }
 
     // Validate shipping address exists and belongs to customer
-    const shippingAddress = await addressesRepo.getAddressById(data.shippingAddressId);
+    const shippingAddress = await addressesRepo.getAddressById(organizationId, data.shippingAddressId);
     if (!shippingAddress) {
       throw new Error("Shipping address not found");
     }
@@ -244,7 +253,7 @@ export const ordersService = {
     }
 
     // Validate billing address exists and belongs to customer
-    const billingAddress = await addressesRepo.getAddressById(data.billingAddressId);
+    const billingAddress = await addressesRepo.getAddressById(organizationId, data.billingAddressId);
     if (!billingAddress) {
       throw new Error("Billing address not found");
     }
@@ -256,10 +265,11 @@ export const ordersService = {
     if (!data.items || data.items.length === 0) {
       throw new Error("Order must contain at least one item");
     }
-    await ordersService.validateOrderItems(data.items);
+    await ordersService.validateOrderItems(data.items, organizationId);
 
     // Prepare order items with prices and get product IDs for tax calculation
     const orderItems: Array<{
+      organizationId: string;
       productVariantId: string;
       quantity: number;
       unitPrice: string;
@@ -284,6 +294,7 @@ export const ordersService = {
       const totalPrice = itemTotal.toFixed(2);
 
       orderItems.push({
+        organizationId,
         productVariantId: item.productVariantId,
         quantity: item.quantity,
         unitPrice,
@@ -306,6 +317,7 @@ export const ordersService = {
     if (data.discountCode) {
       try {
         discountData = await discountCodesService.calculateCodeDiscount(
+          organizationId,
           data.discountCode,
           subtotal
         );
@@ -330,10 +342,10 @@ export const ordersService = {
         ...item,
         subtotal: item.subtotal * (taxableAmount / subtotal), // Proportionally reduce each item's subtotal
       })),
-    });
+    }, organizationId);
 
     // Calculate shipping cost based on selected method
-    const shippingMethod = await getShippingMethod(data.shippingMethodId);
+    const shippingMethod = await getShippingMethod(data.shippingMethodId, organizationId);
     if (!shippingMethod) {
       throw new Error("Shipping method not found");
     }
@@ -341,7 +353,7 @@ export const ordersService = {
     const shippingOptions = await calculateShippingOptions({
       subtotal,
       totalWeight: 0, // TODO: Add weight to product variants
-    });
+    }, organizationId);
 
     const selectedShipping = shippingOptions.find(
       (option) => option.methodId === data.shippingMethodId
@@ -367,6 +379,7 @@ export const ordersService = {
 
     // Create order data with snapshotted tax and shipping info
     const orderData: NewOrder = {
+      organizationId,
       orderNumber,
       customerId: data.customerId,
       shippingAddressId: data.shippingAddressId,
@@ -389,7 +402,7 @@ export const ordersService = {
       notes: data.notes || null,
     };
 
-    // Create order with items in transaction
+    // Create order with items in transaction (organizationId is already in orderData)
     const order = await ordersRepo.createOrder(orderData, orderItems);
 
     // Record applied discount in order_discounts table
@@ -410,7 +423,7 @@ export const ordersService = {
 
       // Increment discount code usage count
       if (discountData.discountCode) {
-        await discountCodesService.incrementUsage(discountData.discountCode.id);
+        await discountCodesService.incrementUsage(discountData.discountCode.id, organizationId);
       }
     }
 
@@ -432,7 +445,8 @@ export const ordersService = {
           data.sessionId,
           order.id,
           data.customerId,
-          order.total
+          order.total,
+          organizationId
         );
       } catch (error) {
         // Log error but don't fail the order
@@ -446,13 +460,13 @@ export const ordersService = {
   /**
    * Update order status
    */
-  updateStatus: async (id: string, status: string): Promise<any> => {
+  updateStatus: async (id: string, status: string, organizationId: string): Promise<any> => {
     const validStatuses = ["pending", "processing", "shipped", "delivered", "cancelled", "refunded"];
     if (!validStatuses.includes(status)) {
       throw new Error(`Invalid status. Must be one of: ${validStatuses.join(", ")}`);
     }
 
-    const order = await ordersRepo.getOrderById(id);
+    const order = await ordersRepo.getOrderById(id, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -468,7 +482,7 @@ export const ordersService = {
 
     // If cancelling order, restore inventory
     if (status === "cancelled" && order.status !== "cancelled") {
-      const orderWithItems = await ordersRepo.getOrderWithItems(id);
+      const orderWithItems = await ordersRepo.getOrderWithItems(id, organizationId);
       if (orderWithItems?.items) {
         for (const item of orderWithItems.items) {
           const variant = await productVariantsRepo.getProductVariantById(item.productVariantId);
@@ -482,7 +496,7 @@ export const ordersService = {
       }
     }
 
-    const updatedOrder = await ordersRepo.updateOrderStatus(id, status);
+    const updatedOrder = await ordersRepo.updateOrderStatus(id, status, organizationId);
     if (!updatedOrder) {
       throw new Error("Failed to update order status");
     }
@@ -492,29 +506,29 @@ export const ordersService = {
   /**
    * Mark order as processing (admin accepted the order)
    */
-  markAsProcessing: async (id: string): Promise<any> => {
-    return await ordersService.updateStatus(id, "processing");
+  markAsProcessing: async (id: string, organizationId: string): Promise<any> => {
+    return await ordersService.updateStatus(id, "processing", organizationId);
   },
 
   /**
    * Mark order as shipped
    */
-  markAsShipped: async (id: string): Promise<any> => {
-    return await ordersService.updateStatus(id, "shipped");
+  markAsShipped: async (id: string, organizationId: string): Promise<any> => {
+    return await ordersService.updateStatus(id, "shipped", organizationId);
   },
 
   /**
    * Mark order as delivered
    */
-  markAsDelivered: async (id: string): Promise<any> => {
-    return await ordersService.updateStatus(id, "delivered");
+  markAsDelivered: async (id: string, organizationId: string): Promise<any> => {
+    return await ordersService.updateStatus(id, "delivered", organizationId);
   },
 
   /**
    * Cancel an order
    */
-  cancel: async (id: string, reason?: string) => {
-    const order = await ordersRepo.getOrderById(id);
+  cancel: async (id: string, organizationId: string, reason?: string) => {
+    const order = await ordersRepo.getOrderById(id, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -525,7 +539,7 @@ export const ordersService = {
     }
 
     // Update status to cancelled (inventory will be restored in updateStatus)
-    await ordersService.updateStatus(id, "cancelled");
+    await ordersService.updateStatus(id, "cancelled", organizationId);
 
     // Optionally add cancellation reason to notes
     if (reason) {
@@ -533,11 +547,11 @@ export const ordersService = {
         ? `${order.notes}\n\nCancellation reason: ${reason}`
         : `Cancellation reason: ${reason}`;
 
-      await ordersRepo.updateOrder(id, { notes });
+      await ordersRepo.updateOrder(id, { notes }, organizationId);
     }
 
     // Return the updated order
-    const updatedOrder = await ordersRepo.getOrderById(id);
+    const updatedOrder = await ordersRepo.getOrderById(id, organizationId);
     if (!updatedOrder) {
       throw new Error("Order not found after cancellation");
     }
@@ -547,8 +561,8 @@ export const ordersService = {
   /**
    * Process refund for an order
    */
-  refund: async (id: string, reason?: string) => {
-    const order = await ordersRepo.getOrderById(id);
+  refund: async (id: string, organizationId: string, reason?: string) => {
+    const order = await ordersRepo.getOrderById(id, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -560,7 +574,7 @@ export const ordersService = {
 
     // If refunding a delivered order, restore inventory
     if (order.status === "delivered") {
-      const orderWithItems = await ordersRepo.getOrderWithItems(id);
+      const orderWithItems = await ordersRepo.getOrderWithItems(id, organizationId);
       if (orderWithItems?.items) {
         for (const item of orderWithItems.items) {
           const variant = await productVariantsRepo.getProductVariantById(item.productVariantId);
@@ -575,7 +589,7 @@ export const ordersService = {
     }
 
     // Update status to refunded
-    const updatedOrder = await ordersRepo.updateOrderStatus(id, "refunded");
+    const updatedOrder = await ordersRepo.updateOrderStatus(id, "refunded", organizationId);
 
     // Add refund reason to notes
     if (reason) {
@@ -583,7 +597,7 @@ export const ordersService = {
         ? `${order.notes}\n\nRefund reason: ${reason}`
         : `Refund reason: ${reason}`;
 
-      await ordersRepo.updateOrder(id, { notes });
+      await ordersRepo.updateOrder(id, { notes }, organizationId);
     }
 
     return updatedOrder;
@@ -592,8 +606,8 @@ export const ordersService = {
   /**
    * Add notes to an order
    */
-  addNotes: async (id: string, notes: string) => {
-    const order = await ordersRepo.getOrderById(id);
+  addNotes: async (id: string, notes: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderById(id, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -602,14 +616,14 @@ export const ordersService = {
       ? `${order.notes}\n\n${notes}`
       : notes;
 
-    return await ordersRepo.updateOrder(id, { notes: updatedNotes });
+    return await ordersRepo.updateOrder(id, { notes: updatedNotes }, organizationId);
   },
 
   /**
    * Get order statistics
    */
-  getStats: async (orderId: string) => {
-    const order = await ordersRepo.getOrderWithItems(orderId);
+  getStats: async (orderId: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderWithItems(orderId, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -635,8 +649,8 @@ export const ordersService = {
   /**
    * Get customer order statistics
    */
-  getCustomerOrderStats: async (customerId: string) => {
-    const orders = await ordersRepo.getOrdersByCustomerId(customerId);
+  getCustomerOrderStats: async (customerId: string, organizationId: string) => {
+    const orders = await ordersRepo.getOrdersByCustomerId(customerId, organizationId);
 
     const totalOrders = orders.length;
     const totalSpent = orders.reduce((sum, order) => sum + parseFloat(order.total), 0);
@@ -658,8 +672,8 @@ export const ordersService = {
   /**
    * Delete an order (admin only, use with caution)
    */
-  delete: async (id: string) => {
-    const order = await ordersRepo.getOrderById(id);
+  delete: async (id: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderById(id, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }
@@ -670,14 +684,14 @@ export const ordersService = {
     }
 
     // Order items will be cascade deleted
-    return await ordersRepo.deleteOrder(id);
+    return await ordersRepo.deleteOrder(id, organizationId);
   },
 
   /**
    * Get applied discounts for an order
    */
-  getOrderDiscounts: async (orderId: string) => {
-    const order = await ordersRepo.getOrderById(orderId);
+  getOrderDiscounts: async (orderId: string, organizationId: string) => {
+    const order = await ordersRepo.getOrderById(orderId, organizationId);
     if (!order) {
       throw new Error("Order not found");
     }

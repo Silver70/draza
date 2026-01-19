@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { cartService } from "./services/cart.service";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 import {
   getCartSchema,
   addItemToCartSchema,
@@ -25,9 +26,10 @@ export const cartRoutes = new Hono();
  */
 cartRoutes.get("/", zValidator("query", getCartSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { sessionId, customerId } = c.req.valid("query");
 
-    const cart = await cartService.getOrCreateCart(sessionId, customerId);
+    const cart = await cartService.getOrCreateCart(organizationId, sessionId, customerId);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -42,9 +44,10 @@ cartRoutes.get("/", zValidator("query", getCartSchema), async (c) => {
  */
 cartRoutes.post("/items", zValidator("json", addItemToCartSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
 
-    const cart = await cartService.addItem(data);
+    const cart = await cartService.addItem(organizationId, data);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -59,10 +62,11 @@ cartRoutes.post("/items", zValidator("json", addItemToCartSchema), async (c) => 
  */
 cartRoutes.put("/items/:itemId", zValidator("json", updateCartItemSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const itemId = c.req.param("itemId");
     const { sessionId, quantity } = c.req.valid("json");
 
-    const cart = await cartService.updateItemQuantity(sessionId, itemId, { sessionId, quantity });
+    const cart = await cartService.updateItemQuantity(organizationId, sessionId, itemId, { sessionId, quantity });
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -77,10 +81,11 @@ cartRoutes.put("/items/:itemId", zValidator("json", updateCartItemSchema), async
  */
 cartRoutes.delete("/items/:itemId", zValidator("query", removeCartItemSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const itemId = c.req.param("itemId");
     const { sessionId } = c.req.valid("query");
 
-    const cart = await cartService.removeItem(sessionId, itemId);
+    const cart = await cartService.removeItem(organizationId, sessionId, itemId);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -95,9 +100,10 @@ cartRoutes.delete("/items/:itemId", zValidator("query", removeCartItemSchema), a
  */
 cartRoutes.post("/discount", zValidator("json", applyDiscountCodeSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
 
-    const result = await cartService.applyDiscountCode(data);
+    const result = await cartService.applyDiscountCode(organizationId, data);
 
     return c.json({ success: true, data: result });
   } catch (error) {
@@ -112,9 +118,10 @@ cartRoutes.post("/discount", zValidator("json", applyDiscountCodeSchema), async 
  */
 cartRoutes.delete("/discount", zValidator("query", removeDiscountCodeSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { sessionId } = c.req.valid("query");
 
-    const cart = await cartService.removeDiscountCode(sessionId);
+    const cart = await cartService.removeDiscountCode(organizationId, sessionId);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -129,9 +136,10 @@ cartRoutes.delete("/discount", zValidator("query", removeDiscountCodeSchema), as
  */
 cartRoutes.post("/calculate", zValidator("json", calculateTotalsSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
 
-    const totals = await cartService.calculateTotals(data);
+    const totals = await cartService.calculateTotals(organizationId, data);
 
     return c.json({ success: true, data: totals });
   } catch (error) {
@@ -146,9 +154,10 @@ cartRoutes.post("/calculate", zValidator("json", calculateTotalsSchema), async (
  */
 cartRoutes.delete("/clear", zValidator("query", clearCartSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { sessionId } = c.req.valid("query");
 
-    const cart = await cartService.clearCart(sessionId);
+    const cart = await cartService.clearCart(organizationId, sessionId);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -163,9 +172,10 @@ cartRoutes.delete("/clear", zValidator("query", clearCartSchema), async (c) => {
  */
 cartRoutes.post("/checkout", zValidator("json", checkoutSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
 
-    const order = await cartService.checkout(data);
+    const order = await cartService.checkout(organizationId, data);
 
     return c.json({ success: true, data: order });
   } catch (error) {
@@ -180,9 +190,10 @@ cartRoutes.post("/checkout", zValidator("json", checkoutSchema), async (c) => {
  */
 cartRoutes.post("/merge", zValidator("json", mergeCartsSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
 
-    const cart = await cartService.mergeGuestCart(data);
+    const cart = await cartService.mergeGuestCart(organizationId, data);
 
     return c.json({ success: true, data: cart });
   } catch (error) {
@@ -199,7 +210,8 @@ cartRoutes.post("/merge", zValidator("json", mergeCartsSchema), async (c) => {
  */
 cartRoutes.get("/admin/active", async (c) => {
   try {
-    const carts = await cartService.getActiveCarts();
+    const organizationId = getOrganizationId(c);
+    const carts = await cartService.getActiveCarts(organizationId);
 
     return c.json({ success: true, data: carts });
   } catch (error) {
@@ -214,9 +226,10 @@ cartRoutes.get("/admin/active", async (c) => {
  */
 cartRoutes.get("/admin/abandoned", zValidator("query", abandonedCartsQuerySchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { hoursAgo, minValue } = c.req.valid("query");
 
-    const carts = await cartService.getAbandonedCarts(hoursAgo, minValue);
+    const carts = await cartService.getAbandonedCarts(organizationId, hoursAgo, minValue);
 
     return c.json({ success: true, data: carts });
   } catch (error) {
@@ -231,7 +244,8 @@ cartRoutes.get("/admin/abandoned", zValidator("query", abandonedCartsQuerySchema
  */
 cartRoutes.get("/admin/metrics", async (c) => {
   try {
-    const metrics = await cartService.getCartMetrics();
+    const organizationId = getOrganizationId(c);
+    const metrics = await cartService.getCartMetrics(organizationId);
 
     return c.json({ success: true, data: metrics });
   } catch (error) {

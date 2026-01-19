@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import {
   CartResponse,
   CartsResponse,
@@ -17,8 +17,6 @@ import {
   AbandonedCartsFilters,
 } from '../types/cartTypes'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 // ==================== CART OPERATIONS ====================
 
 /**
@@ -33,8 +31,8 @@ export const fetchCart = createServerFn({ method: 'GET' })
       params.append('sessionId', data.sessionId)
       if (data.customerId) params.append('customerId', data.customerId)
 
-      const response = await axios.get<CartResponse>(
-        `${API_BASE_URL}/cart?${params.toString()}`,
+      const response = await apiClient.get<CartResponse>(
+        `/cart?${params.toString()}`,
       )
 
       if (response.data.success) {
@@ -62,8 +60,8 @@ export const addItemToCart = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Adding item to cart...', data)
     try {
-      const response = await axios.post<CartResponse>(
-        `${API_BASE_URL}/cart/items`,
+      const response = await apiClient.post<CartResponse>(
+        `/cart/items`,
         data,
       )
 
@@ -86,8 +84,8 @@ export const updateCartItemQuantity = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Updating cart item quantity...', data)
     try {
-      const response = await axios.put<CartResponse>(
-        `${API_BASE_URL}/cart/items/${data.itemId}`,
+      const response = await apiClient.put<CartResponse>(
+        `/cart/items/${data.itemId}`,
         data.input,
       )
 
@@ -110,8 +108,8 @@ export const removeCartItem = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Removing cart item...', data)
     try {
-      const response = await axios.delete<CartResponse>(
-        `${API_BASE_URL}/cart/items/${data.itemId}?sessionId=${data.sessionId}`,
+      const response = await apiClient.delete<CartResponse>(
+        `/cart/items/${data.itemId}?sessionId=${data.sessionId}`,
       )
 
       if (response.data.success) {
@@ -133,8 +131,8 @@ export const clearCart = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Clearing cart...', data)
     try {
-      const response = await axios.delete<CartResponse>(
-        `${API_BASE_URL}/cart/clear?sessionId=${data.sessionId}`,
+      const response = await apiClient.delete<CartResponse>(
+        `/cart/clear?sessionId=${data.sessionId}`,
       )
 
       if (response.data.success) {
@@ -158,8 +156,8 @@ export const applyDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Applying discount code...', data)
     try {
-      const response = await axios.post<ApplyDiscountResponse>(
-        `${API_BASE_URL}/cart/discount`,
+      const response = await apiClient.post<ApplyDiscountResponse>(
+        `/cart/discount`,
         data,
       )
 
@@ -182,8 +180,8 @@ export const removeDiscountCode = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Removing discount code...', data)
     try {
-      const response = await axios.delete<CartResponse>(
-        `${API_BASE_URL}/cart/discount?sessionId=${data.sessionId}`,
+      const response = await apiClient.delete<CartResponse>(
+        `/cart/discount?sessionId=${data.sessionId}`,
       )
 
       if (response.data.success) {
@@ -207,8 +205,8 @@ export const calculateCartTotals = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Calculating cart totals...', data)
     try {
-      const response = await axios.post<CartTotalsResponse>(
-        `${API_BASE_URL}/cart/calculate`,
+      const response = await apiClient.post<CartTotalsResponse>(
+        `/cart/calculate`,
         data,
       )
 
@@ -233,8 +231,8 @@ export const checkoutCart = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Checking out cart...', data)
     try {
-      const response = await axios.post<CheckoutResponse>(
-        `${API_BASE_URL}/cart/checkout`,
+      const response = await apiClient.post<CheckoutResponse>(
+        `/cart/checkout`,
         data,
       )
 
@@ -259,8 +257,8 @@ export const mergeGuestCart = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Merging guest cart...', data)
     try {
-      const response = await axios.post<CartResponse>(
-        `${API_BASE_URL}/cart/merge`,
+      const response = await apiClient.post<CartResponse>(
+        `/cart/merge`,
         data,
       )
 
@@ -284,8 +282,8 @@ export const fetchActiveCarts = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching active carts...')
     try {
-      const response = await axios.get<CartsResponse>(
-        `${API_BASE_URL}/cart/admin/active`,
+      const response = await apiClient.get<CartsResponse>(
+        `/cart/admin/active`,
       )
 
       if (response.data.success) {
@@ -319,9 +317,9 @@ export const fetchAbandonedCarts = createServerFn({ method: 'GET' })
       if (data?.minValue) params.append('minValue', data.minValue.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/cart/admin/abandoned${queryString ? `?${queryString}` : ''}`
+      const url = `/cart/admin/abandoned${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<CartsResponse>(url)
+      const response = await apiClient.get<CartsResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -347,8 +345,8 @@ export const fetchCartMetrics = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching cart metrics...')
     try {
-      const response = await axios.get<CartMetricsResponse>(
-        `${API_BASE_URL}/cart/admin/metrics`,
+      const response = await apiClient.get<CartMetricsResponse>(
+        `/cart/admin/metrics`,
       )
 
       if (response.data.success) {

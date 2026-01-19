@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import {
   DashboardOverviewResponse,
   RevenueTrendResponse,
@@ -19,8 +19,6 @@ import {
   TopSellingProductsResponse,
 } from '../types/analyticsTypes'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 // ==================== DASHBOARD OVERVIEW ====================
 
 /**
@@ -31,8 +29,8 @@ export const fetchDashboardOverview = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching dashboard overview...')
     try {
-      const response = await axios.get<DashboardOverviewResponse>(
-        `${API_BASE_URL}/analytics/dashboard/overview`,
+      const response = await apiClient.get<DashboardOverviewResponse>(
+        `/analytics/dashboard/overview`,
       )
 
       if (response.data.success) {
@@ -71,9 +69,9 @@ export const fetchRevenueTrend = createServerFn({ method: 'GET' })
       if (data?.limit) params.append('limit', data.limit.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/revenue/trend${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/revenue/trend${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<RevenueTrendResponse>(url)
+      const response = await apiClient.get<RevenueTrendResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -111,9 +109,9 @@ export const fetchRecentOrders = createServerFn({ method: 'GET' })
       if (data?.limit) params.append('limit', data.limit.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/orders/recent${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/orders/recent${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<RecentOrdersResponse>(url)
+      const response = await apiClient.get<RecentOrdersResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -141,8 +139,8 @@ export const recentOrdersQueryOptions = (limit?: number) =>
 export const fetchCampaigns = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching campaigns...')
   try {
-    const response = await axios.get<CampaignsListResponse>(
-      `${API_BASE_URL}/analytics/campaigns`,
+    const response = await apiClient.get<CampaignsListResponse>(
+      `/analytics/campaigns`,
     )
 
     if (response.data.success) {
@@ -171,8 +169,8 @@ export const fetchCampaign = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info('Fetching campaign...', data.id)
     try {
-      const response = await axios.get<CampaignResponse>(
-        `${API_BASE_URL}/analytics/campaigns/${data.id}`,
+      const response = await apiClient.get<CampaignResponse>(
+        `/analytics/campaigns/${data.id}`,
       )
 
       if (response.data.success) {
@@ -201,8 +199,8 @@ export const fetchCampaignVisits = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info('Fetching campaign visits...', data.campaignId)
     try {
-      const response = await axios.get<CampaignVisitsResponse>(
-        `${API_BASE_URL}/analytics/campaigns/${data.campaignId}/visits`,
+      const response = await apiClient.get<CampaignVisitsResponse>(
+        `/analytics/campaigns/${data.campaignId}/visits`,
       )
 
       if (response.data.success) {
@@ -231,8 +229,8 @@ export const fetchCampaignConversions = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info('Fetching campaign conversions...', data.campaignId)
     try {
-      const response = await axios.get<CampaignConversionsResponse>(
-        `${API_BASE_URL}/analytics/campaigns/${data.campaignId}/conversions`,
+      const response = await apiClient.get<CampaignConversionsResponse>(
+        `/analytics/campaigns/${data.campaignId}/conversions`,
       )
 
       if (response.data.success) {
@@ -276,9 +274,9 @@ export const fetchCampaignAnalytics = createServerFn({ method: 'GET' })
       if (data.includeProducts) params.append('includeProducts', 'true')
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/campaigns/${data.campaignId}/analytics${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/campaigns/${data.campaignId}/analytics${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<CampaignAnalyticsResponse>(url)
+      const response = await apiClient.get<CampaignAnalyticsResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -318,8 +316,8 @@ export const campaignAnalyticsQueryOptions = (
 export const fetchCampaignOverview = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching campaign overview...')
   try {
-    const response = await axios.get<CampaignOverviewResponse>(
-      `${API_BASE_URL}/analytics/campaigns/overview`,
+    const response = await apiClient.get<CampaignOverviewResponse>(
+      `/analytics/campaigns/overview`,
     )
 
     if (response.data.success) {
@@ -355,9 +353,9 @@ export const fetchCampaignLeaderboard = createServerFn({ method: 'GET' })
       if (data?.limit) params.append('limit', data.limit.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/campaigns/leaderboard${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/campaigns/leaderboard${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<CampaignLeaderboardResponse>(url)
+      const response = await apiClient.get<CampaignLeaderboardResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -387,8 +385,8 @@ export const campaignLeaderboardQueryOptions = (filters?: {
 export const trackCampaignVisit = async (data: TrackVisitRequest) => {
   console.info('Tracking campaign visit...', data.trackingCode)
   try {
-    const response = await axios.post<TrackVisitResponse>(
-      `${API_BASE_URL}/analytics/campaigns/track-visit`,
+    const response = await apiClient.post<TrackVisitResponse>(
+      `/analytics/campaigns/track-visit`,
       data,
     )
 
@@ -423,8 +421,8 @@ export const createCampaign = async (data: {
 }) => {
   console.info('Creating campaign...', data.name)
   try {
-    const response = await axios.post<CampaignResponse>(
-      `${API_BASE_URL}/analytics/campaigns`,
+    const response = await apiClient.post<CampaignResponse>(
+      `/analytics/campaigns`,
       data,
     )
 
@@ -458,8 +456,8 @@ export const updateCampaign = async (
 ) => {
   console.info('Updating campaign...', id)
   try {
-    const response = await axios.put<CampaignResponse>(
-      `${API_BASE_URL}/analytics/campaigns/${id}`,
+    const response = await apiClient.put<CampaignResponse>(
+      `/analytics/campaigns/${id}`,
       data,
     )
 
@@ -480,8 +478,8 @@ export const updateCampaign = async (
 export const deleteCampaign = async (id: string) => {
   console.info('Deleting campaign...', id)
   try {
-    const response = await axios.delete<{ success: boolean; message: string }>(
-      `${API_BASE_URL}/analytics/campaigns/${id}`,
+    const response = await apiClient.delete<{ success: boolean; message: string }>(
+      `/analytics/campaigns/${id}`,
     )
 
     if (response.data.success) {
@@ -512,9 +510,9 @@ export const fetchSalesTrends = createServerFn({ method: 'GET' })
       if (data?.limit) params.append('limit', data.limit.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/sales/trends${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/sales/trends${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<SalesTrendsResponse>(url)
+      const response = await apiClient.get<SalesTrendsResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -552,9 +550,9 @@ export const fetchTopCustomers = createServerFn({ method: 'GET' })
       if (data?.limit) params.append('limit', data.limit.toString())
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/customers/top${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/customers/top${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<TopCustomersResponse>(url)
+      const response = await apiClient.get<TopCustomersResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -591,9 +589,9 @@ export const fetchTopSellingProducts = createServerFn({ method: 'GET' })
       if (data?.sortBy) params.append('sortBy', data.sortBy)
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/analytics/products/top-selling${queryString ? `?${queryString}` : ''}`
+      const url = `/analytics/products/top-selling${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<TopSellingProductsResponse>(url)
+      const response = await apiClient.get<TopSellingProductsResponse>(url)
 
       if (response.data.success) {
         return response.data.data

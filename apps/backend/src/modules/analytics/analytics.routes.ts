@@ -10,6 +10,7 @@ import {
   campaignListQuerySchema,
   campaignLeaderboardQuerySchema,
 } from "./analytics.types";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 
 export const analyticsRoutes = new Hono();
 
@@ -22,7 +23,8 @@ export const analyticsRoutes = new Hono();
  */
 analyticsRoutes.get("/dashboard/overview", async (c) => {
   try {
-    const overview = await analyticsService.getDashboardOverview();
+    const organizationId = getOrganizationId(c);
+    const overview = await analyticsService.getDashboardOverview(organizationId);
     return c.json({ success: true, data: overview });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch dashboard overview";
@@ -38,7 +40,8 @@ analyticsRoutes.get("/dashboard/overview", async (c) => {
  */
 analyticsRoutes.get("/revenue", async (c) => {
   try {
-    const analytics = await analyticsService.getRevenueAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getRevenueAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch revenue analytics";
@@ -53,6 +56,7 @@ analyticsRoutes.get("/revenue", async (c) => {
  */
 analyticsRoutes.get("/revenue/trend", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { period, limit } = c.req.query();
 
     const periodValue = (period === "day" || period === "week" || period === "month")
@@ -60,7 +64,7 @@ analyticsRoutes.get("/revenue/trend", async (c) => {
       : "week";
     const limitValue = limit ? parseInt(limit, 10) : 30;
 
-    const trends = await analyticsService.getRevenueTrend(periodValue, limitValue);
+    const trends = await analyticsService.getRevenueTrend(organizationId, periodValue, limitValue);
     return c.json({ success: true, data: trends });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch revenue trends";
@@ -76,7 +80,8 @@ analyticsRoutes.get("/revenue/trend", async (c) => {
  */
 analyticsRoutes.get("/orders", async (c) => {
   try {
-    const analytics = await analyticsService.getOrderAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getOrderAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch order analytics";
@@ -91,10 +96,11 @@ analyticsRoutes.get("/orders", async (c) => {
  */
 analyticsRoutes.get("/orders/recent", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { limit } = c.req.query();
     const limitValue = limit ? parseInt(limit, 10) : 10;
 
-    const orders = await analyticsService.getRecentOrders(limitValue);
+    const orders = await analyticsService.getRecentOrders(organizationId, limitValue);
     return c.json({ success: true, data: orders });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch recent orders";
@@ -110,7 +116,8 @@ analyticsRoutes.get("/orders/recent", async (c) => {
  */
 analyticsRoutes.get("/customers", async (c) => {
   try {
-    const analytics = await analyticsService.getCustomerAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getCustomerAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch customer analytics";
@@ -125,10 +132,11 @@ analyticsRoutes.get("/customers", async (c) => {
  */
 analyticsRoutes.get("/customers/top", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { limit } = c.req.query();
     const limitValue = limit ? parseInt(limit, 10) : 10;
 
-    const customers = await analyticsService.getTopCustomers(limitValue);
+    const customers = await analyticsService.getTopCustomers(organizationId, limitValue);
     return c.json({ success: true, data: customers });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch top customers";
@@ -142,7 +150,8 @@ analyticsRoutes.get("/customers/top", async (c) => {
  */
 analyticsRoutes.get("/customers/geography", async (c) => {
   try {
-    const geography = await analyticsService.getCustomerGeography();
+    const organizationId = getOrganizationId(c);
+    const geography = await analyticsService.getCustomerGeography(organizationId);
     return c.json({ success: true, data: geography });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch customer geography";
@@ -158,7 +167,8 @@ analyticsRoutes.get("/customers/geography", async (c) => {
  */
 analyticsRoutes.get("/products", async (c) => {
   try {
-    const analytics = await analyticsService.getProductAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getProductAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch product analytics";
@@ -173,12 +183,13 @@ analyticsRoutes.get("/products", async (c) => {
  */
 analyticsRoutes.get("/products/top-selling", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { limit, sortBy } = c.req.query();
 
     const limitValue = limit ? parseInt(limit, 10) : 10;
     const sortByValue = (sortBy === "quantity" || sortBy === "revenue") ? sortBy : "revenue";
 
-    const products = await analyticsService.getTopSellingProducts(limitValue, sortByValue);
+    const products = await analyticsService.getTopSellingProducts(organizationId, limitValue, sortByValue);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch top selling products";
@@ -193,12 +204,13 @@ analyticsRoutes.get("/products/top-selling", async (c) => {
  */
 analyticsRoutes.get("/products/low-stock", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { threshold, limit } = c.req.query();
 
     const thresholdValue = threshold ? parseInt(threshold, 10) : 10;
     const limitValue = limit ? parseInt(limit, 10) : 20;
 
-    const products = await analyticsService.getLowStockProducts(thresholdValue, limitValue);
+    const products = await analyticsService.getLowStockProducts(organizationId, thresholdValue, limitValue);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch low stock products";
@@ -213,10 +225,11 @@ analyticsRoutes.get("/products/low-stock", async (c) => {
  */
 analyticsRoutes.get("/products/out-of-stock", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { limit } = c.req.query();
     const limitValue = limit ? parseInt(limit, 10) : 20;
 
-    const products = await analyticsService.getOutOfStockProducts(limitValue);
+    const products = await analyticsService.getOutOfStockProducts(organizationId, limitValue);
     return c.json({ success: true, data: products });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch out of stock products";
@@ -232,7 +245,8 @@ analyticsRoutes.get("/products/out-of-stock", async (c) => {
  */
 analyticsRoutes.get("/inventory", async (c) => {
   try {
-    const analytics = await analyticsService.getInventoryAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getInventoryAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch inventory analytics";
@@ -249,6 +263,7 @@ analyticsRoutes.get("/inventory", async (c) => {
  */
 analyticsRoutes.get("/sales/trends", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { period, limit } = c.req.query();
 
     const periodValue = (period === "day" || period === "week" || period === "month")
@@ -256,7 +271,7 @@ analyticsRoutes.get("/sales/trends", async (c) => {
       : "week";
     const limitValue = limit ? parseInt(limit, 10) : 30;
 
-    const trends = await analyticsService.getSalesTrends(periodValue, limitValue);
+    const trends = await analyticsService.getSalesTrends(organizationId, periodValue, limitValue);
     return c.json({ success: true, data: trends });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch sales trends";
@@ -272,7 +287,8 @@ analyticsRoutes.get("/sales/trends", async (c) => {
  */
 analyticsRoutes.get("/tax", async (c) => {
   try {
-    const analytics = await analyticsService.getTaxAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getTaxAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch tax analytics";
@@ -286,7 +302,8 @@ analyticsRoutes.get("/tax", async (c) => {
  */
 analyticsRoutes.get("/shipping", async (c) => {
   try {
-    const analytics = await analyticsService.getShippingAnalytics();
+    const organizationId = getOrganizationId(c);
+    const analytics = await analyticsService.getShippingAnalytics(organizationId);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch shipping analytics";
@@ -302,8 +319,9 @@ analyticsRoutes.get("/shipping", async (c) => {
  */
 analyticsRoutes.post("/campaigns", zValidator('json', createCampaignSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid('json');
-    const result = await campaignsService.createCampaign(data);
+    const result = await campaignsService.createCampaign(organizationId, data);
     return c.json({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create campaign";
@@ -318,6 +336,7 @@ analyticsRoutes.post("/campaigns", zValidator('json', createCampaignSchema), asy
  */
 analyticsRoutes.get("/campaigns", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { platform, isActive, parentCampaignId, search } = c.req.query();
 
     const filters: any = {};
@@ -326,7 +345,7 @@ analyticsRoutes.get("/campaigns", async (c) => {
     if (parentCampaignId !== undefined) filters.parentCampaignId = parentCampaignId;
     if (search) filters.search = search;
 
-    const campaigns = await campaignsService.listCampaigns(filters);
+    const campaigns = await campaignsService.listCampaigns(organizationId, filters);
     return c.json({ success: true, data: campaigns });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to list campaigns";
@@ -341,6 +360,7 @@ analyticsRoutes.get("/campaigns", async (c) => {
  */
 analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { metric, limit } = c.req.query();
 
     const metricValue = (metric === 'roi' || metric === 'revenue' || metric === 'conversions' || metric === 'visits')
@@ -348,7 +368,7 @@ analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
       : 'roi';
     const limitValue = limit ? parseInt(limit, 10) : 10;
 
-    const leaderboard = await campaignsService.getCampaignLeaderboard(metricValue, limitValue);
+    const leaderboard = await campaignsService.getCampaignLeaderboard(organizationId, metricValue, limitValue);
     return c.json({ success: true, data: leaderboard });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch campaign leaderboard";
@@ -362,7 +382,8 @@ analyticsRoutes.get("/campaigns/leaderboard", async (c) => {
  */
 analyticsRoutes.get("/campaigns/overview", async (c) => {
   try {
-    const overview = await campaignsService.getCampaignsOverview();
+    const organizationId = getOrganizationId(c);
+    const overview = await campaignsService.getCampaignsOverview(organizationId);
     return c.json({ success: true, data: overview });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch campaigns overview";
@@ -376,8 +397,9 @@ analyticsRoutes.get("/campaigns/overview", async (c) => {
  */
 analyticsRoutes.get("/campaigns/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const campaign = await campaignsService.getCampaignById(id);
+    const campaign = await campaignsService.getCampaignById(organizationId, id);
 
     if (!campaign) {
       return c.json({ success: false, error: "Campaign not found" }, 404);
@@ -396,8 +418,9 @@ analyticsRoutes.get("/campaigns/:id", async (c) => {
  */
 analyticsRoutes.get("/campaigns/:id/children", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const children = await campaignsService.getChildCampaigns(id);
+    const children = await campaignsService.getChildCampaigns(organizationId, id);
     return c.json({ success: true, data: children });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch child campaigns";
@@ -411,9 +434,10 @@ analyticsRoutes.get("/campaigns/:id/children", async (c) => {
  */
 analyticsRoutes.put("/campaigns/:id", zValidator('json', updateCampaignSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
     const data = c.req.valid('json');
-    const campaign = await campaignsService.updateCampaign(id, data);
+    const campaign = await campaignsService.updateCampaign(organizationId, id, data);
     return c.json({ success: true, data: campaign });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update campaign";
@@ -427,8 +451,9 @@ analyticsRoutes.put("/campaigns/:id", zValidator('json', updateCampaignSchema), 
  */
 analyticsRoutes.delete("/campaigns/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    await campaignsService.deleteCampaign(id);
+    await campaignsService.deleteCampaign(organizationId, id);
     return c.json({ success: true, data: { message: "Campaign deleted successfully" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete campaign";
@@ -442,8 +467,9 @@ analyticsRoutes.delete("/campaigns/:id", async (c) => {
  */
 analyticsRoutes.put("/campaigns/:id/activate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const campaign = await campaignsService.activateCampaign(id);
+    const campaign = await campaignsService.activateCampaign(organizationId, id);
     return c.json({ success: true, data: campaign });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to activate campaign";
@@ -457,8 +483,9 @@ analyticsRoutes.put("/campaigns/:id/activate", async (c) => {
  */
 analyticsRoutes.put("/campaigns/:id/deactivate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const campaign = await campaignsService.deactivateCampaign(id);
+    const campaign = await campaignsService.deactivateCampaign(organizationId, id);
     return c.json({ success: true, data: campaign });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to deactivate campaign";
@@ -474,8 +501,9 @@ analyticsRoutes.put("/campaigns/:id/deactivate", async (c) => {
  */
 analyticsRoutes.post("/campaigns/track-visit", zValidator('json', trackVisitSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid('json');
-    const result = await campaignsService.trackVisit(data);
+    const result = await campaignsService.trackVisit(organizationId, data);
     return c.json({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to track visit";
@@ -489,8 +517,9 @@ analyticsRoutes.post("/campaigns/track-visit", zValidator('json', trackVisitSche
  */
 analyticsRoutes.post("/campaigns/update-activity", zValidator('json', updateActivitySchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { sessionId } = c.req.valid('json');
-    await campaignsService.updateVisitActivity(sessionId);
+    await campaignsService.updateVisitActivity(organizationId, sessionId);
     return c.json({ success: true, data: { message: "Activity updated" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update activity";
@@ -504,8 +533,9 @@ analyticsRoutes.post("/campaigns/update-activity", zValidator('json', updateActi
  */
 analyticsRoutes.get("/campaigns/:id/visits", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const visits = await campaignsService.getVisitsForCampaign(id);
+    const visits = await campaignsService.getVisitsForCampaign(organizationId, id);
     return c.json({ success: true, data: visits });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch visits";
@@ -522,6 +552,7 @@ analyticsRoutes.get("/campaigns/:id/visits", async (c) => {
  */
 analyticsRoutes.get("/campaigns/:id/analytics", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
     const {
       startDate,
@@ -532,7 +563,7 @@ analyticsRoutes.get("/campaigns/:id/analytics", async (c) => {
       includeGeographic,
     } = c.req.query();
 
-    const analytics = await campaignsService.getCampaignAnalytics(id, {
+    const analytics = await campaignsService.getCampaignAnalytics(organizationId, id, {
       startDate,
       endDate,
       includeTimeline: includeTimeline === 'true',
@@ -554,8 +585,9 @@ analyticsRoutes.get("/campaigns/:id/analytics", async (c) => {
  */
 analyticsRoutes.get("/campaigns/:id/conversions", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const conversions = await campaignsService.getConversionsForCampaign(id);
+    const conversions = await campaignsService.getConversionsForCampaign(organizationId, id);
     return c.json({ success: true, data: conversions });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch conversions";
@@ -569,8 +601,9 @@ analyticsRoutes.get("/campaigns/:id/conversions", async (c) => {
  */
 analyticsRoutes.get("/campaigns/:id/parent-analytics", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param('id');
-    const analytics = await campaignsService.getParentCampaignAnalytics(id);
+    const analytics = await campaignsService.getParentCampaignAnalytics(organizationId, id);
     return c.json({ success: true, data: analytics });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch parent campaign analytics";

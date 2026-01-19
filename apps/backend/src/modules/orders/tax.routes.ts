@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import * as taxService from "./services/tax.service";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 
 export const taxRoutes = new Hono();
 
@@ -11,7 +12,8 @@ export const taxRoutes = new Hono();
  */
 taxRoutes.get("/jurisdictions", async (c) => {
   try {
-    const jurisdictions = await taxService.getAllActiveTaxJurisdictions();
+    const organizationId = getOrganizationId(c);
+    const jurisdictions = await taxService.getAllActiveTaxJurisdictions(organizationId);
     return c.json({ success: true, data: jurisdictions });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch tax jurisdictions";
@@ -25,7 +27,8 @@ taxRoutes.get("/jurisdictions", async (c) => {
  */
 taxRoutes.get("/jurisdictions/all", async (c) => {
   try {
-    const jurisdictions = await taxService.getAllTaxJurisdictions();
+    const organizationId = getOrganizationId(c);
+    const jurisdictions = await taxService.getAllTaxJurisdictions(organizationId);
     return c.json({ success: true, data: jurisdictions });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch tax jurisdictions";
@@ -39,13 +42,14 @@ taxRoutes.get("/jurisdictions/all", async (c) => {
  */
 taxRoutes.get("/jurisdictions/type/:type", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const type = c.req.param("type") as 'country' | 'state' | 'county' | 'city';
 
     if (!['country', 'state', 'county', 'city'].includes(type)) {
       return c.json({ success: false, error: "Invalid jurisdiction type" }, 400);
     }
 
-    const jurisdictions = await taxService.getTaxJurisdictionsByType(type);
+    const jurisdictions = await taxService.getTaxJurisdictionsByType(type, organizationId);
     return c.json({ success: true, data: jurisdictions });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch tax jurisdictions";
@@ -59,8 +63,9 @@ taxRoutes.get("/jurisdictions/type/:type", async (c) => {
  */
 taxRoutes.get("/jurisdictions/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const jurisdiction = await taxService.getTaxJurisdictionById(id);
+    const jurisdiction = await taxService.getTaxJurisdictionById(id, organizationId);
     return c.json({ success: true, data: jurisdiction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Tax jurisdiction not found";
@@ -74,6 +79,7 @@ taxRoutes.get("/jurisdictions/:id", async (c) => {
  */
 taxRoutes.post("/jurisdictions", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
 
     // Validate required fields
@@ -106,7 +112,7 @@ taxRoutes.post("/jurisdictions", async (c) => {
       effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : null,
       isActive: data.isActive,
       description: data.description,
-    });
+    }, organizationId);
     return c.json({ success: true, data: jurisdiction }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create tax jurisdiction";
@@ -120,6 +126,7 @@ taxRoutes.post("/jurisdictions", async (c) => {
  */
 taxRoutes.put("/jurisdictions/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = await c.req.json();
 
@@ -145,7 +152,7 @@ taxRoutes.put("/jurisdictions/:id", async (c) => {
       effectiveTo: data.effectiveTo ? new Date(data.effectiveTo) : undefined,
       isActive: data.isActive,
       description: data.description,
-    });
+    }, organizationId);
     return c.json({ success: true, data: jurisdiction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update tax jurisdiction";
@@ -159,8 +166,9 @@ taxRoutes.put("/jurisdictions/:id", async (c) => {
  */
 taxRoutes.put("/jurisdictions/:id/deactivate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const jurisdiction = await taxService.deactivateTaxJurisdiction(id);
+    const jurisdiction = await taxService.deactivateTaxJurisdiction(id, organizationId);
     return c.json({ success: true, data: jurisdiction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to deactivate tax jurisdiction";
@@ -174,8 +182,9 @@ taxRoutes.put("/jurisdictions/:id/deactivate", async (c) => {
  */
 taxRoutes.put("/jurisdictions/:id/activate", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const jurisdiction = await taxService.activateTaxJurisdiction(id);
+    const jurisdiction = await taxService.activateTaxJurisdiction(id, organizationId);
     return c.json({ success: true, data: jurisdiction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to activate tax jurisdiction";
@@ -189,8 +198,9 @@ taxRoutes.put("/jurisdictions/:id/activate", async (c) => {
  */
 taxRoutes.delete("/jurisdictions/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await taxService.deleteTaxJurisdiction(id);
+    await taxService.deleteTaxJurisdiction(id, organizationId);
     return c.json({ success: true, message: "Tax jurisdiction deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete tax jurisdiction";

@@ -7,24 +7,24 @@ export const collectionsService = {
   /**
    * Get all collections
    */
-  findAll: async () => {
-    const collections = await collectionsRepo.getAllCollections();
+  findAll: async (organizationId: string) => {
+    const collections = await collectionsRepo.getAllCollections(organizationId);
     return collections;
   },
 
   /**
    * Get active collections only (for customer-facing views)
    */
-  findActiveCollections: async () => {
-    const collections = await collectionsRepo.getActiveCollections();
+  findActiveCollections: async (organizationId: string) => {
+    const collections = await collectionsRepo.getActiveCollections(organizationId);
     return collections;
   },
 
   /**
    * Get a single collection by ID
    */
-  findById: async (id: string) => {
-    const collection = await collectionsRepo.getCollectionById(id);
+  findById: async (id: string, organizationId: string) => {
+    const collection = await collectionsRepo.getCollectionById(id, organizationId);
 
     if (!collection) {
       throw new Error("Collection not found");
@@ -36,8 +36,8 @@ export const collectionsService = {
   /**
    * Get collection by slug (for customer-facing URLs)
    */
-  findBySlug: async (slug: string) => {
-    const collection = await collectionsRepo.getCollectionBySlug(slug);
+  findBySlug: async (slug: string, organizationId: string) => {
+    const collection = await collectionsRepo.getCollectionBySlug(slug, organizationId);
 
     if (!collection) {
       throw new Error("Collection not found");
@@ -49,8 +49,8 @@ export const collectionsService = {
   /**
    * Get collection with its products
    */
-  findByIdWithProducts: async (id: string, activeOnly: boolean = false) => {
-    const collection = await collectionsRepo.getCollectionById(id);
+  findByIdWithProducts: async (id: string, organizationId: string, activeOnly: boolean = false) => {
+    const collection = await collectionsRepo.getCollectionById(id, organizationId);
 
     if (!collection) {
       throw new Error("Collection not found");
@@ -60,7 +60,7 @@ export const collectionsService = {
 
     // Get full product details
     const productIds = collectionProducts.map((cp) => cp.productId);
-    const products = await productsRepo.getAllProducts();
+    const products = await productsRepo.getAllProducts(organizationId);
     let collectionProductDetails = products.filter((p) => productIds.includes(p.id));
 
     // Filter by active status if requested
@@ -78,32 +78,32 @@ export const collectionsService = {
   /**
    * Create a new collection
    */
-  create: async (data: NewCollection | (Omit<NewCollection, "slug"> & { slug?: string })) => {
+  create: async (data: Omit<NewCollection, "organizationId"> | (Omit<NewCollection, "slug" | "organizationId"> & { slug?: string }), organizationId: string) => {
     // Auto-generate slug if not provided
     const slug = data.slug || generateSlug(data.name);
 
     // Check if slug already exists
-    const existingCollection = await collectionsRepo.getCollectionBySlug(slug);
+    const existingCollection = await collectionsRepo.getCollectionBySlug(slug, organizationId);
     if (existingCollection) {
       throw new Error("Collection with this slug already exists");
     }
 
-    return await collectionsRepo.createCollection({ ...data, slug });
+    return await collectionsRepo.createCollection({ ...data, slug }, organizationId);
   },
 
   /**
    * Update a collection
    */
-  update: async (id: string, data: UpdateCollection) => {
+  update: async (id: string, data: UpdateCollection, organizationId: string) => {
     // Check if collection exists
-    const existingCollection = await collectionsRepo.getCollectionById(id);
+    const existingCollection = await collectionsRepo.getCollectionById(id, organizationId);
     if (!existingCollection) {
       throw new Error("Collection not found");
     }
 
     // If updating slug, check it's not already taken by another collection
     if (data.slug && data.slug !== existingCollection.slug) {
-      const slugExists = await collectionsRepo.getCollectionBySlug(data.slug);
+      const slugExists = await collectionsRepo.getCollectionBySlug(data.slug, organizationId);
       if (slugExists && slugExists.id !== id) {
         throw new Error("Collection with this slug already exists");
       }
@@ -115,8 +115,8 @@ export const collectionsService = {
   /**
    * Delete a collection
    */
-  delete: async (id: string) => {
-    const collection = await collectionsRepo.getCollectionById(id);
+  delete: async (id: string, organizationId: string) => {
+    const collection = await collectionsRepo.getCollectionById(id, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
@@ -133,15 +133,15 @@ export const collectionsService = {
   /**
    * Add product to collection
    */
-  addProduct: async (collectionId: string, productId: string, position?: number) => {
+  addProduct: async (collectionId: string, productId: string, organizationId: string, position?: number) => {
     // Verify collection exists
-    const collection = await collectionsRepo.getCollectionById(collectionId);
+    const collection = await collectionsRepo.getCollectionById(collectionId, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
 
     // Verify product exists
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -164,9 +164,9 @@ export const collectionsService = {
   /**
    * Remove product from collection
    */
-  removeProduct: async (collectionId: string, productId: string) => {
+  removeProduct: async (collectionId: string, productId: string, organizationId: string) => {
     // Verify collection exists
-    const collection = await collectionsRepo.getCollectionById(collectionId);
+    const collection = await collectionsRepo.getCollectionById(collectionId, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
@@ -179,10 +179,11 @@ export const collectionsService = {
    */
   addMultipleProducts: async (
     collectionId: string,
-    productIds: string[]
+    productIds: string[],
+    organizationId: string
   ) => {
     // Verify collection exists
-    const collection = await collectionsRepo.getCollectionById(collectionId);
+    const collection = await collectionsRepo.getCollectionById(collectionId, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
@@ -200,7 +201,7 @@ export const collectionsService = {
     for (const productId of productIds) {
       try {
         // Check if product exists
-        const product = await productsRepo.getProductById(productId);
+        const product = await productsRepo.getProductById(productId, organizationId);
         if (!product) {
           results.errors.push(`Product ${productId} not found`);
           continue;
@@ -231,9 +232,9 @@ export const collectionsService = {
   /**
    * Get collections that contain a specific product
    */
-  findCollectionsByProduct: async (productId: string) => {
+  findCollectionsByProduct: async (productId: string, organizationId: string) => {
     // Verify product exists
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error("Product not found");
     }
@@ -241,15 +242,15 @@ export const collectionsService = {
     const collectionProducts = await collectionProductsRepo.getCollectionsByProductId(productId);
     const collectionIds = collectionProducts.map((cp) => cp.collectionId);
 
-    const allCollections = await collectionsRepo.getAllCollections();
+    const allCollections = await collectionsRepo.getAllCollections(organizationId);
     return allCollections.filter((c) => collectionIds.includes(c.id));
   },
 
   /**
    * Activate a collection
    */
-  activate: async (id: string) => {
-    const collection = await collectionsRepo.getCollectionById(id);
+  activate: async (id: string, organizationId: string) => {
+    const collection = await collectionsRepo.getCollectionById(id, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
@@ -260,8 +261,8 @@ export const collectionsService = {
   /**
    * Deactivate a collection
    */
-  deactivate: async (id: string) => {
-    const collection = await collectionsRepo.getCollectionById(id);
+  deactivate: async (id: string, organizationId: string) => {
+    const collection = await collectionsRepo.getCollectionById(id, organizationId);
     if (!collection) {
       throw new Error("Collection not found");
     }
@@ -272,8 +273,8 @@ export const collectionsService = {
   /**
    * Get collection with product count
    */
-  findAllWithProductCounts: async () => {
-    const collections = await collectionsRepo.getAllCollections();
+  findAllWithProductCounts: async (organizationId: string) => {
+    const collections = await collectionsRepo.getAllCollections(organizationId);
 
     const collectionsWithCounts = await Promise.all(
       collections.map(async (collection) => {

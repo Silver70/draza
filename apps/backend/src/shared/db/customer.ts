@@ -8,6 +8,7 @@ import { ordersTable } from './order';
 
 export const customersTable = pgTable('customers_table', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   user_id: uuid('user_id').references(() => usersTable.id),
   first_name: text('first_name').notNull(),
   last_name: text('last_name').notNull(),

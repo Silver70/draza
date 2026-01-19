@@ -23,6 +23,7 @@ export const imageTypeEnum = pgEnum("image_type", [
 //@ts-ignore
 export const categoriesTable = pgTable("categories", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   //@ts-ignore
@@ -36,6 +37,7 @@ export const categoriesTable = pgTable("categories", {
 
 export const productsTable = pgTable("products", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),
@@ -52,6 +54,7 @@ export const productsTable = pgTable("products", {
 
 export const productVariantsTable = pgTable("product_variants", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   productId: uuid("product_id")
     .notNull()
     .references(() => productsTable.id),
@@ -67,6 +70,7 @@ export const productVariantsTable = pgTable("product_variants", {
 
 export const attributesTable = pgTable("attributes", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   name: text("name").notNull().unique(),
 });
 
@@ -97,6 +101,7 @@ export const productVariantAttributesTable = pgTable(
 
 export const collectionsTable = pgTable("collections", {
   id: uuid("id").defaultRandom().primaryKey(),
+  organizationId: text("organization_id").notNull(), // Tenant isolation
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   description: text("description"),

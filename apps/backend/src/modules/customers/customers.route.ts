@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+import { getOrganizationId } from "../../shared/middleware/tenant.middleware";
 import { customersService, addressesService } from "./services";
 import {
   createCustomerSchema,
@@ -14,10 +15,11 @@ export const customersRoutes = new Hono();
 
 /**
  * GET /customers
- * Get all customers with optional filters
+ * Get all customers with optional filters (scoped to organization)
  */
 customersRoutes.get("/", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const { search, isGuest } = c.req.query();
 
     const filters = {
@@ -25,7 +27,7 @@ customersRoutes.get("/", async (c) => {
       isGuest: isGuest === "true" ? true : isGuest === "false" ? false : undefined,
     };
 
-    const customers = await customersService.findAll(filters);
+    const customers = await customersService.findAll(filters, organizationId);
     return c.json({ success: true, data: customers });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch customers";
@@ -39,7 +41,8 @@ customersRoutes.get("/", async (c) => {
  */
 customersRoutes.get("/registered", async (c) => {
   try {
-    const customers = await customersService.findRegisteredCustomers();
+    const organizationId = getOrganizationId(c);
+    const customers = await customersService.findRegisteredCustomers(organizationId);
     return c.json({ success: true, data: customers });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch registered customers";
@@ -53,7 +56,8 @@ customersRoutes.get("/registered", async (c) => {
  */
 customersRoutes.get("/guests", async (c) => {
   try {
-    const customers = await customersService.findGuestCustomers();
+    const organizationId = getOrganizationId(c);
+    const customers = await customersService.findGuestCustomers(organizationId);
     return c.json({ success: true, data: customers });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch guest customers";
@@ -67,13 +71,14 @@ customersRoutes.get("/guests", async (c) => {
  */
 customersRoutes.get("/search", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const searchTerm = c.req.query("q");
 
     if (!searchTerm) {
       return c.json({ success: false, error: "Search term is required" }, 400);
     }
 
-    const customers = await customersService.search(searchTerm);
+    const customers = await customersService.search(searchTerm, organizationId);
     return c.json({ success: true, data: customers });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to search customers";
@@ -87,8 +92,9 @@ customersRoutes.get("/search", async (c) => {
  */
 customersRoutes.get("/email/:email", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const email = c.req.param("email");
-    const customer = await customersService.findByEmail(email);
+    const customer = await customersService.findByEmail(email, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Customer not found";
@@ -102,8 +108,9 @@ customersRoutes.get("/email/:email", async (c) => {
  */
 customersRoutes.get("/phone/:phone", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const phone = c.req.param("phone");
-    const customer = await customersService.findByPhone(phone);
+    const customer = await customersService.findByPhone(phone, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Customer not found";
@@ -117,8 +124,9 @@ customersRoutes.get("/phone/:phone", async (c) => {
  */
 customersRoutes.get("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const customer = await customersService.findById(id);
+    const customer = await customersService.findById(id, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Customer not found";
@@ -132,8 +140,9 @@ customersRoutes.get("/:id", async (c) => {
  */
 customersRoutes.get("/:id/addresses", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const customer = await customersService.findByIdWithAddresses(id);
+    const customer = await customersService.findByIdWithAddresses(id, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Customer not found";
@@ -147,8 +156,9 @@ customersRoutes.get("/:id/addresses", async (c) => {
  */
 customersRoutes.get("/:id/stats", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    const stats = await customersService.getStats(id);
+    const stats = await customersService.getStats(id, organizationId);
     return c.json({ success: true, data: stats });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Customer not found";
@@ -162,8 +172,9 @@ customersRoutes.get("/:id/stats", async (c) => {
  */
 customersRoutes.post("/", zValidator("json", createCustomerSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = c.req.valid("json");
-    const customer = await customersService.create(data);
+    const customer = await customersService.create(data, organizationId);
     return c.json({ success: true, data: customer }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create customer";
@@ -177,8 +188,9 @@ customersRoutes.post("/", zValidator("json", createCustomerSchema), async (c) =>
  */
 customersRoutes.post("/guest", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const customer = await customersService.createGuest(data);
+    const customer = await customersService.createGuest(data, organizationId);
     return c.json({ success: true, data: customer }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create guest customer";
@@ -192,8 +204,9 @@ customersRoutes.post("/guest", async (c) => {
  */
 customersRoutes.post("/get-or-create", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const data = await c.req.json();
-    const result = await customersService.getOrCreateByEmail(data);
+    const result = await customersService.getOrCreateByEmail(data, organizationId);
     return c.json({ success: true, data: result }, result.created ? 201 : 200);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to get or create customer";
@@ -207,9 +220,10 @@ customersRoutes.post("/get-or-create", async (c) => {
  */
 customersRoutes.put("/:id", zValidator("json", updateCustomerSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const data = c.req.valid("json");
-    const customer = await customersService.update(id, data);
+    const customer = await customersService.update(id, data, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update customer";
@@ -223,6 +237,7 @@ customersRoutes.put("/:id", zValidator("json", updateCustomerSchema), async (c) 
  */
 customersRoutes.put("/:id/convert-to-registered", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
     const { userId } = await c.req.json();
 
@@ -230,7 +245,7 @@ customersRoutes.put("/:id/convert-to-registered", async (c) => {
       return c.json({ success: false, error: "userId is required" }, 400);
     }
 
-    const customer = await customersService.convertGuestToRegistered(id, userId);
+    const customer = await customersService.convertGuestToRegistered(id, userId, organizationId);
     return c.json({ success: true, data: customer });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to convert customer";
@@ -244,8 +259,9 @@ customersRoutes.put("/:id/convert-to-registered", async (c) => {
  */
 customersRoutes.delete("/:id", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const id = c.req.param("id");
-    await customersService.delete(id);
+    await customersService.delete(id, organizationId);
     return c.json({ success: true, message: "Customer deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete customer";
@@ -261,8 +277,9 @@ customersRoutes.delete("/:id", async (c) => {
  */
 customersRoutes.get("/:customerId/addresses/all", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
-    const addresses = await addressesService.findByCustomerId(customerId);
+    const addresses = await addressesService.findByCustomerId(customerId, organizationId);
     return c.json({ success: true, data: addresses });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch addresses";
@@ -276,8 +293,9 @@ customersRoutes.get("/:customerId/addresses/all", async (c) => {
  */
 customersRoutes.get("/:customerId/addresses/default", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
-    const address = await addressesService.findDefaultByCustomerId(customerId);
+    const address = await addressesService.findDefaultByCustomerId(customerId, organizationId);
     return c.json({ success: true, data: address });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No default address found";
@@ -291,8 +309,9 @@ customersRoutes.get("/:customerId/addresses/default", async (c) => {
  */
 customersRoutes.get("/:customerId/addresses/stats", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
-    const stats = await addressesService.getCustomerAddressStats(customerId);
+    const stats = await addressesService.getCustomerAddressStats(customerId, organizationId);
     return c.json({ success: true, data: stats });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to fetch address stats";
@@ -306,8 +325,9 @@ customersRoutes.get("/:customerId/addresses/stats", async (c) => {
  */
 customersRoutes.get("/addresses/:addressId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const addressId = c.req.param("addressId");
-    const address = await addressesService.findById(addressId);
+    const address = await addressesService.findById(addressId, organizationId);
     return c.json({ success: true, data: address });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Address not found";
@@ -321,9 +341,10 @@ customersRoutes.get("/addresses/:addressId", async (c) => {
  */
 customersRoutes.post("/:customerId/addresses", zValidator("json", createAddressSchema.omit({ customerId: true })), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
     const data = c.req.valid("json");
-    const address = await addressesService.create({ ...data, customerId });
+    const address = await addressesService.create({ ...data, customerId }, organizationId);
     return c.json({ success: true, data: address }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to create address";
@@ -337,9 +358,10 @@ customersRoutes.post("/:customerId/addresses", zValidator("json", createAddressS
  */
 customersRoutes.put("/addresses/:addressId", zValidator("json", updateAddressSchema), async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const addressId = c.req.param("addressId");
     const data = c.req.valid("json");
-    const address = await addressesService.update(addressId, data);
+    const address = await addressesService.update(addressId, data, organizationId);
     return c.json({ success: true, data: address });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update address";
@@ -353,9 +375,10 @@ customersRoutes.put("/addresses/:addressId", zValidator("json", updateAddressSch
  */
 customersRoutes.put("/:customerId/addresses/:addressId/set-default", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const customerId = c.req.param("customerId");
     const addressId = c.req.param("addressId");
-    const address = await addressesService.setAsDefault(customerId, addressId);
+    const address = await addressesService.setAsDefault(customerId, addressId, organizationId);
     return c.json({ success: true, data: address });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to set default address";
@@ -369,8 +392,9 @@ customersRoutes.put("/:customerId/addresses/:addressId/set-default", async (c) =
  */
 customersRoutes.delete("/addresses/:addressId", async (c) => {
   try {
+    const organizationId = getOrganizationId(c);
     const addressId = c.req.param("addressId");
-    await addressesService.delete(addressId);
+    await addressesService.delete(addressId, organizationId);
     return c.json({ success: true, message: "Address deleted successfully" });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to delete address";

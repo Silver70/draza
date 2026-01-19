@@ -7,6 +7,7 @@ const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'draza-product-images';
 
 export type UploadProductImageData = {
   productId: string;
+  organizationId: string;
   file: File | Blob | Buffer;
   filename: string;
   altText?: string;
@@ -16,6 +17,7 @@ export type UploadProductImageData = {
 
 export type UploadProductVariantImageData = {
   productVariantId: string;
+  organizationId: string;
   file: File | Blob | Buffer;
   filename: string;
   altText?: string;
@@ -28,10 +30,10 @@ export const imagesService = {
    * Upload a product image (Storage + Database)
    */
   uploadProductImage: async (data: UploadProductImageData) => {
-    const { productId, file, filename, altText, type = 'gallery', position = 0 } = data;
+    const { productId, organizationId, file, filename, altText, type = 'gallery', position = 0 } = data;
 
     // Verify product exists
-    const product = await productsRepo.getProductById(productId);
+    const product = await productsRepo.getProductById(productId, organizationId);
     if (!product) {
       throw new Error('Product not found');
     }

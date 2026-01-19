@@ -9,6 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as SettingsRouteRouteImport } from './routes/settings/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
@@ -32,6 +35,21 @@ import { Route as DiscountsDiscountIdEditRouteImport } from './routes/discounts/
 import { Route as DiscountsDiscountIdCodesRouteImport } from './routes/discounts/$discountId/codes'
 import { Route as InventoryCollectionsCollectionIdAddProductsRouteImport } from './routes/inventory/collections/$collectionId/add-products'
 
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRouteRoute = SettingsRouteRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -150,6 +168,9 @@ const InventoryCollectionsCollectionIdAddProductsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/signup': typeof SignupRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
@@ -174,6 +195,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/signup': typeof SignupRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
@@ -199,6 +223,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/settings': typeof SettingsRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/onboarding': typeof OnboardingRoute
+  '/signup': typeof SignupRoute
   '/campaigns/$campaignId': typeof CampaignsCampaignIdRoute
   '/campaigns/create': typeof CampaignsCreateRoute
   '/customers/create': typeof CustomersCreateRoute
@@ -225,6 +252,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/settings'
+    | '/login'
+    | '/onboarding'
+    | '/signup'
     | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
@@ -249,6 +279,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/settings'
+    | '/login'
+    | '/onboarding'
+    | '/signup'
     | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
@@ -273,6 +306,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/settings'
+    | '/login'
+    | '/onboarding'
+    | '/signup'
     | '/campaigns/$campaignId'
     | '/campaigns/create'
     | '/customers/create'
@@ -298,6 +334,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SettingsRouteRoute: typeof SettingsRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  OnboardingRoute: typeof OnboardingRoute
+  SignupRoute: typeof SignupRoute
   CampaignsCampaignIdRoute: typeof CampaignsCampaignIdRoute
   CampaignsCreateRoute: typeof CampaignsCreateRoute
   CustomersCreateRoute: typeof CustomersCreateRoute
@@ -320,6 +359,27 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -494,6 +554,9 @@ const SettingsRouteRouteWithChildren = SettingsRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SettingsRouteRoute: SettingsRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
+  OnboardingRoute: OnboardingRoute,
+  SignupRoute: SignupRoute,
   CampaignsCampaignIdRoute: CampaignsCampaignIdRoute,
   CampaignsCreateRoute: CampaignsCreateRoute,
   CustomersCreateRoute: CustomersCreateRoute,

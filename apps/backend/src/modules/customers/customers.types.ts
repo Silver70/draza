@@ -5,12 +5,12 @@ import { addressesTable } from "../../shared/db/address";
 
 // Customer types
 export type Customer = InferSelectModel<typeof customersTable>;
-export type NewCustomer = InferInsertModel<typeof customersTable>;
+export type NewCustomer = Omit<InferInsertModel<typeof customersTable>, "organizationId">;
 export type UpdateCustomer = Partial<Omit<NewCustomer, "id" | "createdAt">>;
 
 // Address types
 export type Address = InferSelectModel<typeof addressesTable>;
-export type NewAddress = InferInsertModel<typeof addressesTable>;
+export type NewAddress = Omit<InferInsertModel<typeof addressesTable>, "organizationId">;
 export type UpdateAddress = Partial<Omit<NewAddress, "id" | "createdAt" | "updatedAt">>;
 
 // Extended types with relations

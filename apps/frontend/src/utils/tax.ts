@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import {
   TaxJurisdiction,
   CreateTaxJurisdictionInput,
@@ -8,14 +8,12 @@ import {
   JurisdictionType,
 } from '../types/taxTypes'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 // Fetch all active tax jurisdictions
 export const fetchActiveTaxJurisdictions = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching active tax jurisdictions...')
   try {
-    const response = await axios.get<{ success: boolean; data: TaxJurisdiction[] }>(
-      `${API_BASE_URL}/tax/jurisdictions`,
+    const response = await apiClient.get<{ success: boolean; data: TaxJurisdiction[] }>(
+      `/tax/jurisdictions`,
     )
 
     if (response.data.success) {
@@ -39,8 +37,8 @@ export const activeTaxJurisdictionsQueryOptions = () =>
 export const fetchAllTaxJurisdictions = createServerFn({ method: 'GET' }).handler(async () => {
   console.info('Fetching all tax jurisdictions...')
   try {
-    const response = await axios.get<{ success: boolean; data: TaxJurisdiction[] }>(
-      `${API_BASE_URL}/tax/jurisdictions/all`,
+    const response = await apiClient.get<{ success: boolean; data: TaxJurisdiction[] }>(
+      `/tax/jurisdictions/all`,
     )
 
     if (response.data.success) {
@@ -66,8 +64,8 @@ export const fetchTaxJurisdictionsByType = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching tax jurisdictions of type ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: TaxJurisdiction[] }>(
-        `${API_BASE_URL}/tax/jurisdictions/type/${data}`,
+      const response = await apiClient.get<{ success: boolean; data: TaxJurisdiction[] }>(
+        `/tax/jurisdictions/type/${data}`,
       )
 
       if (response.data.success) {
@@ -93,8 +91,8 @@ export const fetchTaxJurisdictionById = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching tax jurisdiction ${data}...`)
     try {
-      const response = await axios.get<{ success: boolean; data: TaxJurisdiction }>(
-        `${API_BASE_URL}/tax/jurisdictions/${data}`,
+      const response = await apiClient.get<{ success: boolean; data: TaxJurisdiction }>(
+        `/tax/jurisdictions/${data}`,
       )
 
       if (response.data.success) {
@@ -120,8 +118,8 @@ export const createTaxJurisdiction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating tax jurisdiction...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: TaxJurisdiction }>(
-        `${API_BASE_URL}/tax/jurisdictions`,
+      const response = await apiClient.post<{ success: boolean; data: TaxJurisdiction }>(
+        `/tax/jurisdictions`,
         data,
       )
 
@@ -143,8 +141,8 @@ export const updateTaxJurisdiction = createServerFn({ method: 'POST' })
     console.info(`Updating tax jurisdiction ${data.id}...`, data)
     try {
       const { id, ...updateData } = data
-      const response = await axios.put<{ success: boolean; data: TaxJurisdiction }>(
-        `${API_BASE_URL}/tax/jurisdictions/${id}`,
+      const response = await apiClient.put<{ success: boolean; data: TaxJurisdiction }>(
+        `/tax/jurisdictions/${id}`,
         updateData,
       )
 
@@ -165,8 +163,8 @@ export const deactivateTaxJurisdiction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deactivating tax jurisdiction ${data}...`)
     try {
-      const response = await axios.put<{ success: boolean; data: TaxJurisdiction }>(
-        `${API_BASE_URL}/tax/jurisdictions/${data}/deactivate`,
+      const response = await apiClient.put<{ success: boolean; data: TaxJurisdiction }>(
+        `/tax/jurisdictions/${data}/deactivate`,
       )
 
       if (response.data.success) {
@@ -186,8 +184,8 @@ export const activateTaxJurisdiction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Activating tax jurisdiction ${data}...`)
     try {
-      const response = await axios.put<{ success: boolean; data: TaxJurisdiction }>(
-        `${API_BASE_URL}/tax/jurisdictions/${data}/activate`,
+      const response = await apiClient.put<{ success: boolean; data: TaxJurisdiction }>(
+        `/tax/jurisdictions/${data}/activate`,
       )
 
       if (response.data.success) {
@@ -207,8 +205,8 @@ export const deleteTaxJurisdiction = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting tax jurisdiction ${data}...`)
     try {
-      const response = await axios.delete<{ success: boolean; message: string }>(
-        `${API_BASE_URL}/tax/jurisdictions/${data}`,
+      const response = await apiClient.delete<{ success: boolean; message: string }>(
+        `/tax/jurisdictions/${data}`,
       )
 
       if (response.data.success) {

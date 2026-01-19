@@ -13,6 +13,7 @@ export const jurisdictionTypeEnum = pgEnum('jurisdiction_type', [
 // Tax jurisdictions (states, counties, cities)
 export const taxJurisdictionsTable = pgTable('tax_jurisdictions', {
   id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: text('organization_id').notNull(), // Tenant isolation
   name: text('name').notNull(), // e.g., "California", "Los Angeles County"
   type: jurisdictionTypeEnum('type').notNull(),
   country: text('country').notNull().default('USA'),

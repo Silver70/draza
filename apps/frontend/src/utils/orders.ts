@@ -1,6 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
 import { createServerFn } from '@tanstack/react-start'
-import axios from 'redaxios'
+import apiClient from '~/lib/apiClient'
 import {
   CreateOrderInput,
   UpdateOrderInput,
@@ -13,8 +13,6 @@ import {
   OrderStatus,
 } from '../types/orderTypes'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-
 // Fetch all orders
 export const fetchOrders = createServerFn({ method: 'GET' })
   .inputValidator((d?: { customerId?: string; status?: OrderStatus }) => d)
@@ -26,9 +24,9 @@ export const fetchOrders = createServerFn({ method: 'GET' })
       if (data?.status) params.append('status', data.status)
 
       const queryString = params.toString()
-      const url = `${API_BASE_URL}/orders${queryString ? `?${queryString}` : ''}`
+      const url = `/orders${queryString ? `?${queryString}` : ''}`
 
-      const response = await axios.get<OrdersResponse>(url)
+      const response = await apiClient.get<OrdersResponse>(url)
 
       if (response.data.success) {
         return response.data.data
@@ -56,8 +54,8 @@ export const fetchOrder = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order with id ${data}...`)
     try {
-      const response = await axios.get<OrderResponse>(
-        `${API_BASE_URL}/orders/${data}`,
+      const response = await apiClient.get<OrderResponse>(
+        `/orders/${data}`,
       )
 
       if (response.data.success) {
@@ -83,8 +81,8 @@ export const fetchOrderWithItems = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order with items for id ${data}...`)
     try {
-      const response = await axios.get<OrderWithItemsResponse>(
-        `${API_BASE_URL}/orders/${data}/items`,
+      const response = await apiClient.get<OrderWithItemsResponse>(
+        `/orders/${data}/items`,
       )
 
       if (response.data.success) {
@@ -110,8 +108,8 @@ export const fetchOrderDetails = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order details for id ${data}...`)
     try {
-      const response = await axios.get<OrderWithDetailsResponse>(
-        `${API_BASE_URL}/orders/${data}/details`,
+      const response = await apiClient.get<OrderWithDetailsResponse>(
+        `/orders/${data}/details`,
       )
 
       if (response.data.success) {
@@ -137,8 +135,8 @@ export const fetchOrderByNumber = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order with number ${data}...`)
     try {
-      const response = await axios.get<OrderResponse>(
-        `${API_BASE_URL}/orders/number/${data}`,
+      const response = await apiClient.get<OrderResponse>(
+        `/orders/number/${data}`,
       )
 
       if (response.data.success) {
@@ -164,8 +162,8 @@ export const fetchOrdersByStatus = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching ${data} orders...`)
     try {
-      const response = await axios.get<OrdersResponse>(
-        `${API_BASE_URL}/orders/status/${data}`,
+      const response = await apiClient.get<OrdersResponse>(
+        `/orders/status/${data}`,
       )
 
       if (response.data.success) {
@@ -190,8 +188,8 @@ export const fetchPendingOrders = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching pending orders...')
     try {
-      const response = await axios.get<OrdersResponse>(
-        `${API_BASE_URL}/orders/pending`,
+      const response = await apiClient.get<OrdersResponse>(
+        `/orders/pending`,
       )
 
       if (response.data.success) {
@@ -217,8 +215,8 @@ export const fetchProcessingOrders = createServerFn({ method: 'GET' }).handler(
   async () => {
     console.info('Fetching processing orders...')
     try {
-      const response = await axios.get<OrdersResponse>(
-        `${API_BASE_URL}/orders/processing`,
+      const response = await apiClient.get<OrdersResponse>(
+        `/orders/processing`,
       )
 
       if (response.data.success) {
@@ -245,8 +243,8 @@ export const fetchCustomerOrders = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching orders for customer ${data}...`)
     try {
-      const response = await axios.get<OrdersResponse>(
-        `${API_BASE_URL}/orders/customer/${data}`,
+      const response = await apiClient.get<OrdersResponse>(
+        `/orders/customer/${data}`,
       )
 
       if (response.data.success) {
@@ -272,8 +270,8 @@ export const fetchCustomerOrderStats = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching order stats for customer ${data}...`)
     try {
-      const response = await axios.get<CustomerOrderStatsResponse>(
-        `${API_BASE_URL}/orders/customer/${data}/stats`,
+      const response = await apiClient.get<CustomerOrderStatsResponse>(
+        `/orders/customer/${data}/stats`,
       )
 
       if (response.data.success) {
@@ -299,8 +297,8 @@ export const fetchOrderStats = createServerFn({ method: 'GET' })
   .handler(async ({ data }) => {
     console.info(`Fetching stats for order ${data}...`)
     try {
-      const response = await axios.get<OrderStatsResponse>(
-        `${API_BASE_URL}/orders/${data}/stats`,
+      const response = await apiClient.get<OrderStatsResponse>(
+        `/orders/${data}/stats`,
       )
 
       if (response.data.success) {
@@ -339,8 +337,8 @@ export const getShippingOptions = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Fetching shipping options...', data)
     try {
-      const response = await axios.post<{ success: boolean; data: ShippingOption[] }>(
-        `${API_BASE_URL}/orders/shipping-options`,
+      const response = await apiClient.post<{ success: boolean; data: ShippingOption[] }>(
+        `/orders/shipping-options`,
         data,
       )
 
@@ -361,8 +359,8 @@ export const createOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info('Creating order...', data)
     try {
-      const response = await axios.post<OrderResponse>(
-        `${API_BASE_URL}/orders`,
+      const response = await apiClient.post<OrderResponse>(
+        `/orders`,
         data,
       )
 
@@ -383,8 +381,8 @@ export const updateOrderStatus = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Updating order ${data.orderId} status to ${data.status}...`)
     try {
-      const response = await axios.put<OrderResponse>(
-        `${API_BASE_URL}/orders/${data.orderId}/status`,
+      const response = await apiClient.put<OrderResponse>(
+        `/orders/${data.orderId}/status`,
         { status: data.status },
       )
 
@@ -405,8 +403,8 @@ export const updateOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Updating order ${data.orderId}...`, data.updates)
     try {
-      const response = await axios.put<OrderResponse>(
-        `${API_BASE_URL}/orders/${data.orderId}`,
+      const response = await apiClient.put<OrderResponse>(
+        `/orders/${data.orderId}`,
         data.updates,
       )
 
@@ -427,8 +425,8 @@ export const markOrderAsProcessing = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Marking order ${data} as processing...`)
     try {
-      const response = await axios.put<OrderResponse>(
-        `${API_BASE_URL}/orders/${data}/process`,
+      const response = await apiClient.put<OrderResponse>(
+        `/orders/${data}/process`,
       )
 
       if (response.data.success) {
@@ -448,8 +446,8 @@ export const markOrderAsShipped = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Marking order ${data} as shipped...`)
     try {
-      const response = await axios.put<OrderResponse>(
-        `${API_BASE_URL}/orders/${data}/ship`,
+      const response = await apiClient.put<OrderResponse>(
+        `/orders/${data}/ship`,
       )
 
       if (response.data.success) {
@@ -469,8 +467,8 @@ export const markOrderAsDelivered = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Marking order ${data} as delivered...`)
     try {
-      const response = await axios.put<OrderResponse>(
-        `${API_BASE_URL}/orders/${data}/deliver`,
+      const response = await apiClient.put<OrderResponse>(
+        `/orders/${data}/deliver`,
       )
 
       if (response.data.success) {
@@ -490,8 +488,8 @@ export const cancelOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Cancelling order ${data.orderId}...`)
     try {
-      const response = await axios.post<OrderResponse>(
-        `${API_BASE_URL}/orders/${data.orderId}/cancel`,
+      const response = await apiClient.post<OrderResponse>(
+        `/orders/${data.orderId}/cancel`,
         { reason: data.reason },
       )
 
@@ -512,8 +510,8 @@ export const refundOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Refunding order ${data.orderId}...`)
     try {
-      const response = await axios.post<OrderResponse>(
-        `${API_BASE_URL}/orders/${data.orderId}/refund`,
+      const response = await apiClient.post<OrderResponse>(
+        `/orders/${data.orderId}/refund`,
         { reason: data.reason },
       )
 
@@ -534,8 +532,8 @@ export const addOrderNotes = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Adding notes to order ${data.orderId}...`)
     try {
-      const response = await axios.post<OrderResponse>(
-        `${API_BASE_URL}/orders/${data.orderId}/notes`,
+      const response = await apiClient.post<OrderResponse>(
+        `/orders/${data.orderId}/notes`,
         { notes: data.notes },
       )
 
@@ -556,8 +554,8 @@ export const deleteOrder = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     console.info(`Deleting order ${data}...`)
     try {
-      const response = await axios.delete<OrderResponse>(
-        `${API_BASE_URL}/orders/${data}`,
+      const response = await apiClient.delete<OrderResponse>(
+        `/orders/${data}`,
       )
 
       if (response.data.success) {
@@ -592,8 +590,8 @@ export const fetchShippingMethods = createServerFn({ method: 'GET' })
   .handler(async () => {
     console.info('Fetching shipping methods...')
     try {
-      const response = await axios.get<{ success: boolean; data: ShippingMethod[] }>(
-        `${API_BASE_URL}/orders/shipping-methods`,
+      const response = await apiClient.get<{ success: boolean; data: ShippingMethod[] }>(
+        `/orders/shipping-methods`,
       )
 
       if (response.data.success) {

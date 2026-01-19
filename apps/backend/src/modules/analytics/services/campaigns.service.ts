@@ -12,7 +12,7 @@ export const campaignsService = {
   /**
    * Create a new campaign
    */
-  createCampaign: async (data: {
+  createCampaign: async (organizationId: string, data: {
     parentCampaignId?: string;
     name: string;
     description?: string;
@@ -45,7 +45,7 @@ export const campaignsService = {
       startsAt: data.startsAt ? new Date(data.startsAt) : undefined,
       endsAt: data.endsAt ? new Date(data.endsAt) : undefined,
       metadata: data.metadata,
-    });
+    }, organizationId);
 
     // Generate tracking URL (you'll replace with your actual domain)
     const trackingUrl = `${process.env.FRONTEND_URL || 'https://yourstore.com'}?utm_campaign=${trackingCode}`;
@@ -59,29 +59,29 @@ export const campaignsService = {
   /**
    * Get campaign by ID
    */
-  getCampaignById: async (id: string): Promise<Campaign | undefined> => {
-    const campaign = await campaignsRepo.getCampaignById(id);
+  getCampaignById: async (id: string, organizationId: string): Promise<Campaign | undefined> => {
+    const campaign = await campaignsRepo.getCampaignById(id, organizationId);
     return campaign as Campaign | undefined;
   },
 
   /**
    * List campaigns with filters
    */
-  listCampaigns: async (filters: {
+  listCampaigns: async (organizationId: string, filters: {
     platform?: string;
     isActive?: boolean;
     parentCampaignId?: string;
     search?: string;
   }): Promise<Campaign[]> => {
-    const campaigns = await campaignsRepo.listCampaigns(filters);
+    const campaigns = await campaignsRepo.listCampaigns(filters, organizationId);
     return campaigns as Campaign[];
   },
 
   /**
    * Get child campaigns
    */
-  getChildCampaigns: async (parentCampaignId: string): Promise<Campaign[]> => {
-    const campaigns = await campaignsRepo.getChildCampaigns(parentCampaignId);
+  getChildCampaigns: async (parentCampaignId: string, organizationId: string): Promise<Campaign[]> => {
+    const campaigns = await campaignsRepo.getChildCampaigns(parentCampaignId, organizationId);
     return campaigns as Campaign[];
   },
 
@@ -90,6 +90,7 @@ export const campaignsService = {
    */
   updateCampaign: async (
     id: string,
+    organizationId: string,
     data: {
       name?: string;
       description?: string;
@@ -114,30 +115,30 @@ export const campaignsService = {
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.metadata !== undefined) updateData.metadata = data.metadata;
 
-    const campaign = await campaignsRepo.updateCampaign(id, updateData);
+    const campaign = await campaignsRepo.updateCampaign(id, updateData, organizationId);
     return campaign as Campaign;
   },
 
   /**
    * Delete campaign
    */
-  deleteCampaign: async (id: string): Promise<void> => {
-    await campaignsRepo.deleteCampaign(id);
+  deleteCampaign: async (id: string, organizationId: string): Promise<void> => {
+    await campaignsRepo.deleteCampaign(id, organizationId);
   },
 
   /**
    * Activate campaign
    */
-  activateCampaign: async (id: string): Promise<Campaign> => {
-    const campaign = await campaignsRepo.updateCampaign(id, { isActive: true });
+  activateCampaign: async (id: string, organizationId: string): Promise<Campaign> => {
+    const campaign = await campaignsRepo.updateCampaign(id, { isActive: true }, organizationId);
     return campaign as Campaign;
   },
 
   /**
    * Deactivate campaign
    */
-  deactivateCampaign: async (id: string): Promise<Campaign> => {
-    const campaign = await campaignsRepo.updateCampaign(id, { isActive: false });
+  deactivateCampaign: async (id: string, organizationId: string): Promise<Campaign> => {
+    const campaign = await campaignsRepo.updateCampaign(id, { isActive: false }, organizationId);
     return campaign as Campaign;
   },
 
@@ -146,7 +147,7 @@ export const campaignsService = {
   /**
    * Track a visit
    */
-  trackVisit: async (data: {
+  trackVisit: async (organizationId: string, data: {
     trackingCode: string;
     sessionId: string;
     landingPage?: string;
@@ -158,7 +159,8 @@ export const campaignsService = {
   }): Promise<{ visitId: string; campaignId: string; expiresAt: Date }> => {
     // Find campaign by tracking code
     const campaign = await campaignsRepo.getCampaignByTrackingCode(
-      data.trackingCode
+      data.trackingCode,
+      organizationId
     );
 
     if (!campaign) {
@@ -171,12 +173,13 @@ export const campaignsService = {
 
     // Check if session already has an active visit
     const existingVisit = await campaignsRepo.findActiveVisitBySessionId(
+      organizationId,
       data.sessionId
     );
 
     if (existingVisit && existingVisit.campaignId === campaign.id) {
       // Update existing visit activity
-      const updated = await campaignsRepo.updateVisitActivity(existingVisit.id);
+      const updated = await campaignsRepo.updateVisitActivity(organizationId, existingVisit.id);
       return {
         visitId: updated.id,
         campaignId: updated.campaignId,
@@ -208,7 +211,7 @@ export const campaignsService = {
       country: data.country,
       city: data.city,
       deviceType,
-    });
+    }, organizationId);
 
     return {
       visitId: visit.id,
@@ -220,10 +223,10 @@ export const campaignsService = {
   /**
    * Update visit activity (extend expiration)
    */
-  updateVisitActivity: async (sessionId: string): Promise<void> => {
-    const visit = await campaignsRepo.findActiveVisitBySessionId(sessionId);
+  updateVisitActivity: async (organizationId: string, sessionId: string): Promise<void> => {
+    const visit = await campaignsRepo.findActiveVisitBySessionId(organizationId, sessionId);
     if (visit) {
-      await campaignsRepo.updateVisitActivity(visit.id);
+      await campaignsRepo.updateVisitActivity(organizationId, visit.id);
     }
   },
 
@@ -235,7 +238,8 @@ export const campaignsService = {
     sessionId: string,
     orderId: string,
     customerId: string,
-    orderTotal: string
+    orderTotal: string,
+    organizationId: string
   ): Promise<void> => {
     // Find all active visits for this session (last-touch attribution)
     const visits = await campaignsRepo.findAllActiveVisitsBySessionId(sessionId);
@@ -261,21 +265,21 @@ export const campaignsService = {
       orderId,
       customerId,
       revenue: orderTotal,
-    });
+    }, organizationId);
   },
 
   /**
    * Get visits for a campaign
    */
-  getVisitsForCampaign: async (campaignId: string) => {
-    return await campaignsRepo.getVisitsForCampaign(campaignId);
+  getVisitsForCampaign: async (campaignId: string, organizationId: string) => {
+    return await campaignsRepo.getVisitsForCampaign(campaignId, organizationId);
   },
 
   /**
    * Get conversions for a campaign
    */
-  getConversionsForCampaign: async (campaignId: string) => {
-    return await campaignsRepo.getConversionsForCampaign(campaignId);
+  getConversionsForCampaign: async (campaignId: string, organizationId: string) => {
+    return await campaignsRepo.getConversionsForCampaign(campaignId, organizationId);
   },
 
   // ==================== ANALYTICS ====================
@@ -285,6 +289,7 @@ export const campaignsService = {
    */
   getCampaignAnalytics: async (
     campaignId: string,
+    organizationId: string,
     options: {
       startDate?: string;
       endDate?: string;
@@ -295,7 +300,7 @@ export const campaignsService = {
     } = {}
   ): Promise<CampaignAnalytics> => {
     // Get campaign
-    const campaign = await campaignsRepo.getCampaignById(campaignId);
+    const campaign = await campaignsRepo.getCampaignById(campaignId, organizationId);
     if (!campaign) {
       throw new Error('Campaign not found');
     }
@@ -307,6 +312,7 @@ export const campaignsService = {
     // Get metrics
     const metrics = await campaignsRepo.getCampaignMetrics(
       campaignId,
+      organizationId,
       startDate,
       endDate
     );
@@ -349,6 +355,7 @@ export const campaignsService = {
     if (options.includeTimeline) {
       const timeline = await campaignsRepo.getCampaignTimeline(
         campaignId,
+        organizationId,
         startDate,
         endDate
       );
@@ -362,7 +369,7 @@ export const campaignsService = {
 
     // Optional: Include top products
     if (options.includeProducts) {
-      const products = await campaignsRepo.getTopProductsFromCampaign(campaignId);
+      const products = await campaignsRepo.getTopProductsFromCampaign(campaignId, organizationId);
       result.topProducts = products.map((p) => ({
         productId: p.productId,
         productName: p.productName,
@@ -373,7 +380,7 @@ export const campaignsService = {
 
     // Optional: Include device breakdown
     if (options.includeDeviceBreakdown) {
-      const devices = await campaignsRepo.getDeviceBreakdown(campaignId);
+      const devices = await campaignsRepo.getDeviceBreakdown(campaignId, organizationId);
       result.deviceBreakdown = devices.map((d) => ({
         deviceType: d.deviceType || 'unknown',
         visits: d.visits,
@@ -383,7 +390,7 @@ export const campaignsService = {
 
     // Optional: Include geographic breakdown
     if (options.includeGeographic) {
-      const geo = await campaignsRepo.getGeographicBreakdown(campaignId);
+      const geo = await campaignsRepo.getGeographicBreakdown(campaignId, organizationId);
       result.geographicBreakdown = geo.map((g) => ({
         country: g.country || 'Unknown',
         visits: g.visits,
@@ -399,21 +406,22 @@ export const campaignsService = {
    * Get parent campaign analytics with children
    */
   getParentCampaignAnalytics: async (
-    parentCampaignId: string
+    parentCampaignId: string,
+    organizationId: string
   ): Promise<ParentCampaignAnalytics> => {
     // Get parent campaign
-    const campaign = await campaignsRepo.getCampaignById(parentCampaignId);
+    const campaign = await campaignsRepo.getCampaignById(parentCampaignId, organizationId);
     if (!campaign) {
       throw new Error('Campaign not found');
     }
 
     // Get child campaigns
-    const children = await campaignsRepo.getChildCampaigns(parentCampaignId);
+    const children = await campaignsRepo.getChildCampaigns(parentCampaignId, organizationId);
 
     // Get metrics for all children
     const childMetrics = await Promise.all(
       children.map(async (child) => {
-        const metrics = await campaignsRepo.getCampaignMetrics(child.id);
+        const metrics = await campaignsRepo.getCampaignMetrics(child.id, organizationId);
         const cost = parseFloat(child.cost);
         const revenue = parseFloat(metrics.totalRevenue);
         const roi = cost > 0 ? (((revenue - cost) / cost) * 100).toFixed(2) : '0.00';
@@ -500,21 +508,22 @@ export const campaignsService = {
    * Get campaign leaderboard
    */
   getCampaignLeaderboard: async (
+    organizationId: string,
     metric: 'roi' | 'revenue' | 'conversions' | 'visits' = 'roi',
     limit: number = 10
   ): Promise<CampaignSummary[]> => {
-    return await campaignsRepo.getCampaignLeaderboard(metric, limit);
+    return await campaignsRepo.getCampaignLeaderboard(organizationId, metric, limit);
   },
 
   /**
    * Get overview of all campaigns
    */
-  getCampaignsOverview: async () => {
-    const campaigns = await campaignsRepo.listCampaigns({ isActive: true });
+  getCampaignsOverview: async (organizationId: string) => {
+    const campaigns = await campaignsRepo.listCampaigns({ isActive: true }, organizationId);
 
     const stats = await Promise.all(
       campaigns.map(async (campaign) => {
-        const metrics = await campaignsRepo.getCampaignMetrics(campaign.id);
+        const metrics = await campaignsRepo.getCampaignMetrics(campaign.id, organizationId);
         return {
           totalVisits: metrics.totalVisits,
           totalConversions: metrics.totalConversions,

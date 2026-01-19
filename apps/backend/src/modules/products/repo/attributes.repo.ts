@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../../../shared/db";
 import {
   attributesTable,
@@ -14,50 +14,65 @@ import {
 } from "../products.types";
 
 export const attributesRepo = {
-  async createAttribute(data: NewAttribute) {
+  async createAttribute(data: Omit<NewAttribute, "organizationId">, organizationId: string) {
     const [newAttribute] = await db
       .insert(attributesTable)
-      .values(data)
+      .values({ ...data, organizationId })
       .returning();
     return newAttribute;
   },
 
-  async getAttributeById(id: string) {
+  async getAttributeById(id: string, organizationId: string) {
     const attribute = await db
       .select()
       .from(attributesTable)
-      .where(eq(attributesTable.id, id))
+      .where(and(
+        eq(attributesTable.id, id),
+        eq(attributesTable.organizationId, organizationId)
+      ))
       .limit(1);
     return attribute[0];
   },
 
-  async getAttributeByName(name: string) {
+  async getAttributeByName(name: string, organizationId: string) {
     const attribute = await db
       .select()
       .from(attributesTable)
-      .where(eq(attributesTable.name, name))
+      .where(and(
+        eq(attributesTable.name, name),
+        eq(attributesTable.organizationId, organizationId)
+      ))
       .limit(1);
     return attribute[0];
   },
 
-  async getAllAttributes() {
-    const attributes = await db.select().from(attributesTable);
+  async getAllAttributes(organizationId: string) {
+    const attributes = await db
+      .select()
+      .from(attributesTable)
+      .where(eq(attributesTable.organizationId, organizationId));
     return attributes;
   },
 
-  async updateAttribute(id: string, data: UpdateAttribute) {
+  async updateAttribute(id: string, data: UpdateAttribute, organizationId: string) {
     const [updatedAttribute] = await db
       .update(attributesTable)
       .set(data)
-      .where(eq(attributesTable.id, id))
+      .where(and(
+        eq(attributesTable.id, id),
+        eq(attributesTable.organizationId, organizationId)
+      ))
       .returning();
     return updatedAttribute;
   },
 
-  async deleteAttribute(id: string) {
+  async deleteAttribute(id: string, organizationId: string) {
     await db
       .delete(attributesTable)
-      .where(eq(attributesTable.id, id));
+      .where(and(
+        eq(attributesTable.id, id),
+        eq(attributesTable.organizationId, organizationId)
+      ));
   },
 };
 
