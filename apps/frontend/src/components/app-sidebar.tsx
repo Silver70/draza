@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   ChartNoAxesColumnIncreasing
 } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 import { NavFlat } from "~/components/nav-flat"
 import { NavMain } from "~/components/nav-main"
@@ -27,6 +28,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "~/components/ui/sidebar"
+import { currentUserQueryOptions } from "~/utils/auth"
 
 // Navigation config for Store Management
 const storeNavigation = [
@@ -100,18 +102,22 @@ const teams = [
  
 ]
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
-  const isDeveloperPortal = activeTeam.name === "Developer Portal"
+  const { data: authData } = useQuery(currentUserQueryOptions())
+
+  // Use authenticated user data or fallback to placeholder
+  const user = authData
+    ? {
+        name: authData.user.name,
+        email: authData.user.email,
+        avatar: authData.user.image || '',
+      }
+    : {
+        name: "Guest",
+        email: "guest@example.com",
+        avatar: '',
+      }
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -119,12 +125,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={teams} onTeamChange={setActiveTeam} />
       </SidebarHeader>
       <SidebarContent>
-      
+
           <NavFlat items={activeTeam.navigation || []} label="Platform" />
-    
+
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

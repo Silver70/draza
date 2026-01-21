@@ -23,9 +23,12 @@ if (typeof window === 'undefined') {
       const cookie = headers.get('cookie')
       if (cookie) {
         config.headers['Cookie'] = cookie
+        console.log('[apiClient] Forwarding cookies to backend:', cookie.substring(0, 50) + '...')
+      } else {
+        console.log('[apiClient] No cookies found in request headers')
       }
     } catch (error) {
-      console.warn('Could not get request headers:', error)
+      console.error('[apiClient] Error getting request headers:', error)
     }
 
     return config
