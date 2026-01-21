@@ -244,7 +244,7 @@ export const ordersService = {
     }
 
     // Validate shipping address exists and belongs to customer
-    const shippingAddress = await addressesRepo.getAddressById(organizationId, data.shippingAddressId);
+    const shippingAddress = await addressesRepo.getAddressById(data.shippingAddressId, organizationId);
     if (!shippingAddress) {
       throw new Error("Shipping address not found");
     }
@@ -253,7 +253,7 @@ export const ordersService = {
     }
 
     // Validate billing address exists and belongs to customer
-    const billingAddress = await addressesRepo.getAddressById(organizationId, data.billingAddressId);
+    const billingAddress = await addressesRepo.getAddressById(data.billingAddressId, organizationId);
     if (!billingAddress) {
       throw new Error("Billing address not found");
     }

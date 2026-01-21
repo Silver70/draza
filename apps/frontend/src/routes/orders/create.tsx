@@ -27,6 +27,7 @@ import {
   productsQueryOptions,
   fetchProductWithVariants,
 } from '~/utils/products'
+import type { Product, ProductVariant } from '~/types/productTypes'
 import { createOrder, getShippingOptions, type ShippingOption } from '~/utils/orders'
 
 export const Route = createFileRoute('/orders/create')({
@@ -68,9 +69,25 @@ const parsePrice = (price: number | string): number => {
   return typeof price === 'number' ? price : parseFloat(String(price))
 }
 
+// Type for variant with product info for display
+type VariantOption = {
+  variantId: string
+  productId: string
+  productName: string
+  variantSku: string
+  variantName: string
+  price: number | string
+  stock: number
+  displayLabel: string
+}
+
 function RouteComponent() {
   const navigate = useNavigate()
   const { data: products } = useSuspenseQuery(productsQueryOptions())
+
+  // Variant Options State
+  const [variantOptions, setVariantOptions] = useState<VariantOption[]>([])
+  const [isLoadingVariants, setIsLoadingVariants] = useState(true)
 
   // Customer & Address State
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
@@ -133,6 +150,48 @@ function RouteComponent() {
       }
     },
   })
+
+  // Fetch all product variants on mount
+  useEffect(() => {
+    const fetchAllVariants = async () => {
+      setIsLoadingVariants(true)
+      try {
+        const allVariants: VariantOption[] = []
+
+        for (const product of products) {
+          try {
+            const productData = await fetchProductWithVariants({ data: product.id })
+
+            if (productData.variants && productData.variants.length > 0) {
+              productData.variants.forEach((variant: ProductVariant) => {
+                allVariants.push({
+                  variantId: variant.id,
+                  productId: product.id,
+                  productName: product.name,
+                  variantSku: variant.sku,
+                  variantName: '', // Variants don't have a name field in the DB
+                  price: variant.price,
+                  stock: typeof variant.quantityInStock === 'number' ? variant.quantityInStock : parseInt(String(variant.quantityInStock)),
+                  displayLabel: `${product.name} - ${variant.sku} - $${parsePrice(variant.price).toFixed(2)}`,
+                })
+              })
+            }
+          } catch (error) {
+            console.error(`Error fetching variants for product ${product.id}:`, error)
+          }
+        }
+
+        setVariantOptions(allVariants)
+      } catch (error) {
+        console.error('Error fetching variants:', error)
+        toast.error('Failed to load product variants')
+      } finally {
+        setIsLoadingVariants(false)
+      }
+    }
+
+    fetchAllVariants()
+  }, [products])
 
   // Search customers when query changes
   useEffect(() => {
@@ -252,54 +311,45 @@ function RouteComponent() {
     form.setFieldValue('billingAddressId', '')
   }
 
-  // Handle adding product to order
-  const handleAddProduct = async (productId: string) => {
-    try {
-      const productData = await fetchProductWithVariants({ data: productId })
-
-      if (!productData.variants || productData.variants.length === 0) {
-        toast.error('This product has no available variants')
-        return
-      }
-
-      // For now, add the first variant (in a real app, we'd show a variant selector)
-      const variant = productData.variants[0]!
-
-      // Check if already in order
-      const existingItem = orderItems.find(item => item.productVariantId === variant.id)
-      if (existingItem) {
-        toast.info('Product already in order', {
-          description: 'Please update the quantity of the existing item.',
-        })
-        return
-      }
-
-      const newItem: OrderItem = {
-        id: crypto.randomUUID(),
-        productVariantId: variant.id,
-        productName: productData.name,
-        variantSku: variant.sku,
-        variantDetails: '', // Would show attribute details here
-        unitPrice: parsePrice(variant.price),
-        quantity: 1,
-        availableStock: typeof variant.quantityInStock === 'number' ? variant.quantityInStock : parseInt(String(variant.quantityInStock)),
-      }
-
-      const updatedItems = [...orderItems, newItem]
-      setOrderItems(updatedItems)
-
-      // Update form value
-      form.setFieldValue('items', updatedItems.map(item => ({
-        productVariantId: item.productVariantId,
-        quantity: item.quantity,
-      })))
-
-      toast.success('Product added to order')
-      setSelectedProductId('')
-    } catch (error) {
-      console.error('Error adding product:', error)
-      toast.error('Failed to add product')
+  // Handle adding variant to order
+  const handleAddVariant = (variantId: string) => {
+    const variantOption = variantOptions.find(v => v.variantId === variantId)
+    if (!variantOption) {
+      toast.error('Variant not found')
+      return
     }
+
+    // Check if already in order
+    const existingItem = orderItems.find(item => item.productVariantId === variantId)
+    if (existingItem) {
+      toast.info('Product already in order', {
+        description: 'Please update the quantity of the existing item.',
+      })
+      return
+    }
+
+    const newItem: OrderItem = {
+      id: crypto.randomUUID(),
+      productVariantId: variantOption.variantId,
+      productName: variantOption.productName,
+      variantSku: variantOption.variantSku,
+      variantDetails: variantOption.variantName,
+      unitPrice: parsePrice(variantOption.price),
+      quantity: 1,
+      availableStock: variantOption.stock,
+    }
+
+    const updatedItems = [...orderItems, newItem]
+    setOrderItems(updatedItems)
+
+    // Update form value
+    form.setFieldValue('items', updatedItems.map(item => ({
+      productVariantId: item.productVariantId,
+      quantity: item.quantity,
+    })))
+
+    toast.success('Product added to order')
+    setSelectedProductId('')
   }
 
   // Handle removing item from order
@@ -525,25 +575,29 @@ function RouteComponent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Product Search */}
+          {/* Product Variant Search */}
           <div className="space-y-2">
             <FieldLabel htmlFor="product-search">Add Product</FieldLabel>
-            <div className="flex gap-2">
-              <Combobox
-                options={products.map(product => ({
-                  value: product.id,
-                  label: product.name,
-                }))}
-                value={selectedProductId}
-                onSelect={(value) => {
-                  handleAddProduct(value)
-                }}
-                placeholder="Search products..."
-                searchPlaceholder="Type to search..."
-                emptyText="No products found."
-                triggerClassName="flex-1"
-              />
-            </div>
+            {isLoadingVariants ? (
+              <div className="text-sm text-muted-foreground py-2">Loading product variants...</div>
+            ) : (
+              <div className="flex gap-2">
+                <Combobox
+                  options={variantOptions.map(variant => ({
+                    value: variant.variantId,
+                    label: variant.displayLabel,
+                  }))}
+                  value={selectedProductId}
+                  onSelect={(value) => {
+                    handleAddVariant(value)
+                  }}
+                  placeholder="Search products by name or SKU..."
+                  searchPlaceholder="Type to search..."
+                  emptyText="No product variants found."
+                  triggerClassName="flex-1"
+                />
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -563,6 +617,9 @@ function RouteComponent() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="font-medium">{item.productName}</div>
+                      {item.variantDetails && (
+                        <div className="text-sm text-muted-foreground">{item.variantDetails}</div>
+                      )}
                       <div className="text-sm text-muted-foreground font-mono">{item.variantSku}</div>
                       <div className="text-sm text-muted-foreground mt-1">
                         ${parsePrice(item.unitPrice).toFixed(2)} each
