@@ -19,11 +19,10 @@ import { ErrorComponent } from '~/components/Error'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import {
-  searchCustomers,
-  fetchCustomerWithAddresses,
   type Customer,
   type Address
-} from '~/utils/customers'
+} from '~/types/customerTypes'
+import { searchCustomers, fetchCustomerWithAddresses } from '~/utils/customers'
 import {
   productsQueryOptions,
   fetchProductWithVariants,
@@ -283,7 +282,7 @@ function RouteComponent() {
         variantDetails: '', // Would show attribute details here
         unitPrice: parsePrice(variant.price),
         quantity: 1,
-        availableStock: typeof variant.quantity === 'number' ? variant.quantity : parseInt(String(variant.quantity)),
+        availableStock: typeof variant.quantityInStock === 'number' ? variant.quantityInStock : parseInt(String(variant.quantityInStock)),
       }
 
       const updatedItems = [...orderItems, newItem]

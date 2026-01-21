@@ -62,7 +62,7 @@ function RouteComponent() {
               Orders will appear here once customers start placing them.
             </p>
             <Link
-              to="/"
+              to="/orders/create"
               className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
             >
               Create Order
