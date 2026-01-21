@@ -8,6 +8,18 @@ export const auth = betterAuth({
     provider: "pg"
   }),
 
+  // Critical auth settings
+  secret: process.env.BETTER_AUTH_SECRET!,
+  baseURL: process.env.BETTER_AUTH_URL!,
+  basePath: '/api/auth',
+
+  // Trusted origins for CORS
+  trustedOrigins: [
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:5173'
+  ],
+
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false, // TODO: Enable after email setup
@@ -37,6 +49,18 @@ export const auth = betterAuth({
   // Session configuration
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24 // Update every 24 hours
+    updateAge: 60 * 60 * 24, // Update every 24 hours
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5 // 5 minutes
+    }
+  },
+
+  // Advanced configuration for cookies
+  advanced: {
+    cookiePrefix: "better-auth",
+    crossSubDomainCookies: {
+      enabled: false
+    }
   }
 })

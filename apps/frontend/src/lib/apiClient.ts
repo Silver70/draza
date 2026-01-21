@@ -11,7 +11,28 @@ const apiClient = axios.create({
   }
 })
 
-// Only add interceptors in browser context (not during SSR)
+// Server-side: Forward cookies from incoming request
+if (typeof window === 'undefined') {
+  apiClient.interceptors.request.use(async (config) => {
+    try {
+      // Import getRequestHeaders only on server-side
+      const { getRequestHeaders } = await import('@tanstack/react-start/server')
+      const headers = getRequestHeaders()
+
+      // Forward the cookie header from the incoming request
+      const cookie = headers.get('cookie')
+      if (cookie) {
+        config.headers['Cookie'] = cookie
+      }
+    } catch (error) {
+      console.warn('Could not get request headers:', error)
+    }
+
+    return config
+  })
+}
+
+// Client-side: Add interceptors for browser context
 if (typeof window !== 'undefined') {
   // Add auth headers to every request
   apiClient.interceptors.request.use(async (config) => {

@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, useRouter } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import {
   dashboardOverviewQueryOptions,
@@ -10,19 +10,13 @@ import { SalesTrendChart } from '~/components/dashboard/SalesTrendChart'
 import { CustomerGrowthChart } from '~/components/dashboard/CustomerGrowthChart'
 import { RecentOrdersTable } from '~/components/dashboard/RecentOrdersTable'
 import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
-import { authClient } from '~/lib/auth.client'
+import { useAuth } from '~/contexts/AuthContext'
+import { useEffect } from 'react'
 
 export const Route = createFileRoute('/')({
   component: Home,
-  beforeLoad: async () => {
-    // Check if user is authenticated
-    const session = await authClient.getSession()
-    if (!session?.data) {
-      throw redirect({ to: '/login' })
-    }
-  },
   loader: ({ context }) => {
-    // Prefetch all dashboard data
+    // Prefetch all dashboard data server-side
     context.queryClient.ensureQueryData(dashboardOverviewQueryOptions())
     context.queryClient.ensureQueryData(revenueTrendQueryOptions({ period: 'week', limit: 8 }))
     context.queryClient.ensureQueryData(recentOrdersQueryOptions(5))
@@ -30,12 +24,35 @@ export const Route = createFileRoute('/')({
 })
 
 function Home() {
-  // Fetch dashboard data
+  const { user, organization, isLoading } = useAuth()
+  const router = useRouter()
+
+  // Fetch dashboard data (pre-fetched by loader)
   const { data: overview } = useSuspenseQuery(dashboardOverviewQueryOptions())
   const { data: revenueTrend } = useSuspenseQuery(
     revenueTrendQueryOptions({ period: 'week', limit: 8 })
   )
   const { data: recentOrders } = useSuspenseQuery(recentOrdersQueryOptions(5))
+
+  // Client-side route protection
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.navigate({ to: '/login' })
+      } else if (!organization) {
+        router.navigate({ to: '/onboarding' })
+      }
+    }
+  }, [user, organization, isLoading, router])
+
+  // Show loading while checking auth
+  if (isLoading || !user || !organization) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
 
   // Calculate formatted values
   const formattedRevenue = `$${parseFloat(overview.totalRevenue).toLocaleString()}`

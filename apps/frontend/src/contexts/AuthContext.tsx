@@ -25,12 +25,14 @@ interface AuthContextType {
   organization: Organization | null
   organizations: Organization[]
   isLoading: boolean
+  error: string | null
   login: (email: string, password: string) => Promise<void>
   signup: (email: string, password: string, name: string) => Promise<void>
   logout: () => Promise<void>
   switchOrganization: (orgId: string) => Promise<void>
   createOrganization: (name: string, slug?: string) => Promise<void>
   refreshAuth: () => Promise<void>
+  clearError: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,6 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [organization, setOrganization] = useState<Organization | null>(null)
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -47,53 +50,93 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function checkAuth() {
     try {
-      const session = await authClient.getSession()
+      setError(null)
+      const session = await authClient.getSession().catch((err) => {
+        // If fetch fails (network error, etc), treat as no session
+        console.warn('Failed to fetch session:', err)
+        return { data: null, error: err }
+      })
+
       if (session?.data?.user) {
         setUser(session.data.user as User)
 
-        // Get organizations - use listUserOrganizations
+        // Get organizations list
         const orgsResponse = await authClient.organization.list()
         if (orgsResponse.data) {
-          const orgsWithRoles = await Promise.all(
-            orgsResponse.data.map(async (org: any) => {
-              const memberResponse = await authClient.organization.getFullOrganization({
-                query: { organizationId: org.id }
-              })
-              const member = memberResponse.data?.members.find(
+          // Get active organization ID from session
+          const activeOrgId = (session.data.session as any)?.activeOrganizationId
+
+          // OPTIMIZED: Only fetch full org details for active org
+          if (activeOrgId) {
+            const activeOrgResponse = await authClient.organization.getFullOrganization({
+              query: { organizationId: activeOrgId }
+            })
+
+            if (activeOrgResponse?.data) {
+              const member = activeOrgResponse.data.members.find(
                 (m: any) => m.userId === session.data?.user.id
               )
-              return {
-                ...org,
-                role: (member?.role || 'member') as 'owner' | 'admin' | 'member'
-              }
-            })
-          )
-          setOrganizations(orgsWithRoles)
-        }
 
-        // Get active organization from session
-        const activeOrgId = (session.data.session as any)?.activeOrganizationId
-        if (activeOrgId) {
-          const activeOrgResponse = await authClient.organization.getFullOrganization({
-            query: { organizationId: activeOrgId }
-          })
-          if (activeOrgResponse?.data) {
-            const member = activeOrgResponse.data.members.find(
-              (m: any) => m.userId === session.data?.user.id
-            )
-            setOrganization({
-              id: activeOrgResponse.data.id,
-              name: activeOrgResponse.data.name,
-              slug: activeOrgResponse.data.slug,
-              logo: activeOrgResponse.data.logo || undefined,
-              createdAt: activeOrgResponse.data.createdAt,
-              role: (member?.role || 'member') as 'owner' | 'admin' | 'member'
+              // Set active organization
+              setOrganization({
+                id: activeOrgResponse.data.id,
+                name: activeOrgResponse.data.name,
+                slug: activeOrgResponse.data.slug,
+                logo: activeOrgResponse.data.logo || undefined,
+                createdAt: activeOrgResponse.data.createdAt,
+                role: (member?.role || 'member') as 'owner' | 'admin' | 'member'
+              })
+
+              // Build organizations list with active org having full details
+              const orgsWithRoles = orgsResponse.data.map((org: any) => {
+                if (org.id === activeOrgId) {
+                  return {
+                    id: activeOrgResponse.data!.id,
+                    name: activeOrgResponse.data!.name,
+                    slug: activeOrgResponse.data!.slug,
+                    logo: activeOrgResponse.data!.logo || undefined,
+                    createdAt: activeOrgResponse.data!.createdAt,
+                    role: (member?.role || 'member') as 'owner' | 'admin' | 'member'
+                  }
+                }
+                return {
+                  ...org,
+                  role: 'member' as const // Default role for non-active orgs
+                }
+              })
+              setOrganizations(orgsWithRoles)
+            }
+          } else if (orgsResponse.data.length > 0) {
+            // No active org but user has orgs - automatically set the first one as active
+            const firstOrg = orgsResponse.data[0]
+            await authClient.organization.setActive({
+              organizationId: firstOrg.id
             })
+            // Recursively call checkAuth to reload with the newly set active org
+            await checkAuth()
+            return
+          } else {
+            // No organizations at all - user needs to create one
+            setOrganizations([])
           }
         }
+      } else {
+        // No session - clear state
+        setUser(null)
+        setOrganization(null)
+        setOrganizations([])
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      const errorMessage = error instanceof Error
+        ? error.message
+        : 'Authentication failed. Please try logging in again.'
+      setError(errorMessage)
+
+      // Clear auth state on error
+      setUser(null)
+      setOrganization(null)
+      setOrganizations([])
     } finally {
       setIsLoading(false)
     }
@@ -169,18 +212,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await checkAuth()
   }
 
+  function clearError() {
+    setError(null)
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
       organization,
       organizations,
       isLoading,
+      error,
       login,
       signup,
       logout,
       switchOrganization,
       createOrganization,
-      refreshAuth
+      refreshAuth,
+      clearError
     }}>
       {children}
     </AuthContext.Provider>

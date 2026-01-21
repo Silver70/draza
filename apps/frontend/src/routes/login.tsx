@@ -25,6 +25,8 @@ function LoginPage() {
 
     try {
       await login(email, password)
+      // Give the auth context time to update before redirecting
+      await new Promise(resolve => setTimeout(resolve, 100))
       router.navigate({ to: '/' })
     } catch (err: any) {
       setError(err.message || 'Invalid email or password')
