@@ -608,9 +608,11 @@ export const uploadProductImage = async (
   if (options?.type) formData.append('type', options.type)
   if (options?.position !== undefined) formData.append('position', options.position.toString())
 
-  const response = await fetch(`/products/images/upload`, {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const response = await fetch(`${API_BASE_URL}/products/images/upload`, {
     method: 'POST',
     body: formData,
+    credentials: 'include', // Important for sending cookies
   })
 
   const result = await response.json()
@@ -685,9 +687,11 @@ export const uploadVariantImage = async (
   if (options?.type) formData.append('type', options.type)
   if (options?.position !== undefined) formData.append('position', options.position.toString())
 
-  const response = await fetch(`/products/variants/images/upload`, {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const response = await fetch(`${API_BASE_URL}/products/variants/images/upload`, {
     method: 'POST',
     body: formData,
+    credentials: 'include', // Important for sending cookies
   })
 
   const result = await response.json()

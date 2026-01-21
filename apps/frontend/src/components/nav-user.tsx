@@ -9,6 +9,7 @@ import {
   Sun,
   Monitor,
 } from "lucide-react"
+import { useNavigate } from "@tanstack/react-router"
 
 import {
   Avatar,
@@ -31,6 +32,7 @@ import {
   useSidebar,
 } from "~/components/ui/sidebar"
 import { useTheme } from "~/components/theme-provider"
+import { useAuth } from "~/contexts/AuthContext"
 
 export function NavUser({
   user,
@@ -43,6 +45,8 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { theme, colorScheme, setTheme, setColorScheme } = useTheme()
+  const { logout } = useAuth()
+  const navigate = useNavigate()
 
   const colorSchemes = [
     { value: "default", label: "Default", color: "bg-gray-500" },
@@ -59,6 +63,16 @@ export function NavUser({
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
     }
     return name.slice(0, 2).toUpperCase()
+  }
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate({ to: '/login' })
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
   }
 
   return (
@@ -152,7 +166,7 @@ export function NavUser({
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>
